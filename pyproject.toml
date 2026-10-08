@@ -1,0 +1,24 @@
+[project]
+name = "civ-backend"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "bcrypt>=5.0.0",
+    "cryptography>=50.0.2",
+    "django>=6.1.2",
+    "django-unfold>=0.108.0",
+    "djangorestframework>=3.18.3",
+    "psycopg[binary]>=3.3.6",
+    "python-dotenv>=1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+testpaths = ["tests"]

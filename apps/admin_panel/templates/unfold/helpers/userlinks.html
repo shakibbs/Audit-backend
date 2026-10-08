@@ -1,0 +1,24 @@
+{% load i18n static unfold %}
+{% comment %}Top bar, right side: environment tag, then a light/dark toggle like the portal's.{% endcomment %}
+
+{% if not is_popup %}
+    <div class="flex flex-row gap-3 items-center ml-auto">
+        {% if environment %}
+            {% include "unfold/helpers/label.html" with text=environment.0 type=environment.1 %}
+        {% endif %}
+
+        {% action_list %}
+
+        {% if nav_global_side %}
+            {{ nav_global_side }}
+        {% endif %}
+
+        <button type="button" class="civ-theme-btn"
+                x-on:click="switchTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark')"
+                x-bind:aria-label="adminTheme == 'dark' || (adminTheme == 'auto' && document.documentElement.classList.contains('dark')) ? 'Switch to light mode' : 'Switch to dark mode'"
+                title="Switch light / dark">
+            <span class="material-symbols-outlined civ-icon-moon">dark_mode</span>
+            <span class="material-symbols-outlined civ-icon-sun">light_mode</span>
+        </button>
+    </div>
+{% endif %}

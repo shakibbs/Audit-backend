@@ -1,0 +1,9 @@
+{% comment %}The portal's "iV" badge in place of the theme's icon, with the site name beside it.{% endcomment %}
+<div class="shrink-0">
+    <a href="{% url 'admin:index' %}" class="civ-badge" aria-label="Home">iV</a>
+</div>
+
+<div class="flex flex-col grow justify-center min-w-0">
+    <div class="civ-brand-name truncate">{{ branding }}</div>
+    {% if site_subheader %}<div class="civ-brand-sub truncate">{{ site_subheader }}</div>{% endif %}
+</div>

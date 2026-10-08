@@ -1,0 +1,8 @@
+{% comment %}Portal-style heading above a list page.{% endcomment %}
+<header class="civ page-head civ-page-head">
+    <div>
+        <div class="ph-eyebrow">{{ cl.model_admin.eyebrow }}</div>
+        <h1>{{ cl.opts.verbose_name_plural|capfirst }}</h1>
+        {% if cl.model_admin.page_sub %}<p class="ph-sub">{{ cl.model_admin.page_sub }}</p>{% endif %}
+    </div>
+</header>

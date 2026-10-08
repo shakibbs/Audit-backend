@@ -1,0 +1,7 @@
+{% comment %}Portal-style heading above an add or edit form.{% endcomment %}
+<header class="civ page-head civ-page-head">
+    <div>
+        <div class="ph-eyebrow">{{ opts.verbose_name_plural|capfirst }}</div>
+        <h1>{% if add %}New {{ opts.verbose_name }}{% else %}{{ original }}{% endif %}</h1>
+    </div>
+</header>

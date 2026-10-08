@@ -1,0 +1,82 @@
+{% extends 'admin/base.html' %}
+{% comment %}Admin home, built with the portal's page head, stat tiles, cards and tables.{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">CiV admin</div>
+            <h1>Dashboard</h1>
+            <p class="ph-sub">Clients, their people, our team, and a record of every sign-in and change.</p>
+        </div>
+    </header>
+
+    <div class="kpi-grid">
+        {% for s in stats %}
+            <a class="card kpi" href="{{ s.url }}">
+                <span class="kpi-tag">{{ s.tag }}</span>
+                <span class="kpi-val">{{ s.value }}</span>
+                <span class="kpi-foot">{{ s.foot }}</span>
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="two-col" style="margin-top: 20px;">
+        <section class="card">
+            <div class="card-h">
+                <div><h3>Client companies</h3><div class="card-sub">Newest first</div></div>
+                <a class="link" href="{{ clients_url }}">All clients</a>
+            </div>
+            {% if clients %}
+                <div style="overflow-x: auto;"><table class="tbl">
+                    <thead><tr><th>Company</th><th>Plan</th><th>Users</th><th>Access</th><th>Lawyer-only</th><th>Started</th></tr></thead>
+                    <tbody>
+                        {% for c in clients %}
+                            <tr>
+                                <td style="white-space: nowrap;"><a class="link" style="font-size: 13px;" href="{{ c.url }}">{{ c.name }}</a></td>
+                                <td>{{ c.plan }}</td>
+                                <td class="mono">{{ c.users }}</td>
+                                <td style="white-space: nowrap;">{% if c.level %}<span class="pill pill-teal">Level {{ c.level }}</span>{% else %}<span class="pill pill-gray">Level 0</span>{% endif %}</td>
+                                <td>{% if c.counsel %}<span class="pill pill-teal">On</span>{% else %}<span class="pill pill-gray">Off</span>{% endif %}</td>
+                                <td class="mono tiny" style="white-space: nowrap;">{{ c.start|date:"d M Y" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table></div>
+            {% else %}
+                <p class="empty">No clients yet. Add one under Client companies.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-h">
+                <div><h3>Access log</h3><div class="card-sub">Latest 10 entries · UTC</div></div>
+                <a class="link" href="{{ log_url }}">Full log</a>
+            </div>
+            {% if log %}
+                <div style="overflow-x: auto;"><table class="tbl">
+                    <thead><tr><th>When</th><th>Who</th><th>What</th><th>Object</th></tr></thead>
+                    <tbody>
+                        {% for e in log %}
+                            <tr>
+                                <td class="mono tiny" style="white-space: nowrap;">{{ e.at|date:"d M H:i" }}</td>
+                                <td>{{ e.who }}</td>
+                                <td><span class="pill pill-{{ e.label.1 }}">{{ e.label.0 }}</span></td>
+                                <td class="tiny" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ e.object }}">{{ e.object }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table></div>
+            {% else %}
+                <p class="empty">Nothing logged yet.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}
