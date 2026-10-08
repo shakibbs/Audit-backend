@@ -2,7 +2,7 @@
 
 Django + Django REST Framework + PostgreSQL for the Comply iV Automated TCPA Audit System.
 
-The client portal lives in its own repo: **[shakibbs/AUDIT](https://github.com/shakibbs/AUDIT)**.
+The client portal and the project docs live in their own repo: **[shakibbs/AUDIT](https://github.com/shakibbs/AUDIT)** (`frontend/`, `docs/`).
 The two repos never import from each other; they talk only over `/api`.
 
 ## Run it
