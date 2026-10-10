@@ -17,9 +17,10 @@ docker compose --env-file .env.production up -d --build --remove-orphans
 docker image prune -f >/dev/null
 
 echo "== check =="
+# 127.0.0.1, not localhost: in the small Linux images "localhost" can resolve to IPv6, where the apps do not listen.
 for i in $(seq 1 30); do
-  if docker compose --env-file .env.production exec -T backend python -c "import urllib.request as u; u.urlopen(u.Request('http://localhost:8000/api/health', headers={'Host': 'backend'}), timeout=5)" 2>/dev/null \
-     && docker compose --env-file .env.production exec -T portal wget -q -O /dev/null http://localhost:3000/sign-in 2>/dev/null; then
+  if docker compose --env-file .env.production exec -T backend python -c "import urllib.request as u; u.urlopen(u.Request('http://127.0.0.1:8000/api/health', headers={'Host': 'backend'}), timeout=5)" 2>/dev/null \
+     && docker compose --env-file .env.production exec -T portal wget -q -O /dev/null http://127.0.0.1:3000/sign-in 2>/dev/null; then
     docker compose --env-file .env.production ps
     echo "DEPLOY OK"
     exit 0
