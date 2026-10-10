@@ -91,9 +91,8 @@ cp .env.production.example .env.production   # fill it in (comments inside)
 docker compose --env-file .env.production up -d --build
 docker compose --env-file .env.production exec backend python manage.py createsuperuser
 
-# update later
-cd /opt/civ/AUDIT && git pull && cd /opt/civ/Audit-backend && git pull
-cd deploy && docker compose --env-file .env.production up -d --build
+# update by hand (normally automatic, see below)
+/opt/civ/deploy.sh
 
 # look
 docker compose --env-file .env.production ps
@@ -102,3 +101,18 @@ docker compose --env-file .env.production logs -f backend
 
 Files: `Dockerfile`, `deploy/entrypoint.sh` (migrate, then Gunicorn), `deploy/docker-compose.yml`,
 `deploy/.env.production.example`. In production, WhiteNoise serves the admin panel's styles.
+
+## Automatic updates (GitHub Actions)
+
+Every push to `main` in **either** repo runs that repo's tests on GitHub. Only if they pass, GitHub logs in
+to the server and runs `/opt/civ/deploy.sh` (a copy of `deploy/update.sh`): pull both repos, rebuild only
+CiV's containers, check the backend and portal answer. Results: the repo's **Actions** tab (✅ or ❌).
+
+- `.github/workflows/deploy.yml` here; the portal repo has its own (it skips docs-only pushes).
+- Repo secrets (both repos): `DEPLOY_SSH_KEY` (private key), `DEPLOY_KNOWN_HOSTS` (server identity),
+  `DEPLOY_HOST` (server IP).
+- On the server the key is locked in `/root/.ssh/authorized_keys` with
+  `command="/opt/civ/deploy.sh",restrict`: it can run the update script and nothing else.
+- After changing `deploy/update.sh`, copy it again: `cp /opt/civ/Audit-backend/deploy/update.sh /opt/civ/deploy.sh`.
+- A commit message containing `[skip ci]` pushes without deploying.
+

@@ -1,0 +1,53 @@
+# On every push to main: run the backend tests, then update the server. Broken code never goes live.
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy  # one deploy at a time
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: {POSTGRES_DB: civ, POSTGRES_USER: civ, POSTGRES_PASSWORD: civ}
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U civ" --health-interval 5s --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: test-only-key
+      DJANGO_DEBUG: "true"
+      DB_NAME: civ
+      DB_USER: civ
+      DB_PASSWORD: civ
+      DB_HOST: localhost
+      DB_PORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Throwaway lock key for the tests
+        run: echo "CIV_SECRETS_KEYS=$(openssl rand 32 | base64 | tr '+/' '-_')" >> "$GITHUB_ENV"
+      - run: uv sync --frozen
+      - run: uv run python manage.py check
+      - run: uv run pytest -q
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the server
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The key is locked on the server to run /opt/civ/deploy.sh only.
+          ssh -i ~/.ssh/deploy -o BatchMode=yes root@"$HOST"
