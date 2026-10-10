@@ -1,6 +1,7 @@
 """Numbers and lists on the admin panel's home page."""
 from datetime import timedelta
 
+from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 
@@ -8,6 +9,7 @@ from apps.access_log.labels import action_label
 from apps.access_log.models import AccessEntry
 from apps.accounts.lockout import MAX_FAILURES, WINDOW
 from apps.accounts.models import ClientUser, Invite
+from apps.billing.models import renewals_within
 from apps.clients.models import Client
 from apps.connections.models import Connection, Status
 
@@ -27,15 +29,19 @@ def dashboard(request, context: dict) -> dict:
     now = timezone.now()
     day = AccessEntry.objects.filter(at__gte=now - timedelta(hours=24))
     clients = Client.objects.filter(is_active=True)
+    by_stage = dict(Client.objects.values_list('status').annotate(n=Count('id')))
     context.update({
         'stats': [
-            stat('Active clients', clients.count(), f'{Client.objects.count()} in total', 'admin:clients_client_changelist'),
-            stat('Client users', ClientUser.objects.filter(is_active=True).count(), 'Active accounts', 'admin:accounts_clientuser_changelist'),
-            stat('Open invites', Invite.objects.filter(used_at__isnull=True, expires_at__gt=now).count(), 'Waiting for a password', 'admin:accounts_invite_changelist'),
+            stat('Active clients', by_stage.get('active', 0),
+                 f'{by_stage.get("onboarding", 0)} onboarding · {by_stage.get("trial", 0)} trial · {by_stage.get("paused", 0)} paused',
+                 'admin:clients_client_changelist'),
+            stat('Client users', ClientUser.objects.filter(is_active=True).count(), 'Active accounts', 'admin:clients_client_changelist'),
+            stat('Open invites', Invite.objects.filter(used_at__isnull=True, expires_at__gt=now).count(), 'Waiting for a password', 'admin:clients_client_changelist'),
             stat('Connections', Connection.objects.filter(status=Status.CONNECTED).count(),
                  f'{Connection.objects.filter(status=Status.WAITING).count()} waiting · '
                  f'{Connection.objects.filter(status__in=[Status.FAILED, Status.STALE]).count()} failed or stale',
-                 'admin:connections_connection_changelist'),
+                 'admin:clients_client_changelist'),
+            stat('Renewals · 30 days', renewals_within(30).count(), 'Contracts ending or renewing soon', 'admin:clients_client_changelist'),
             stat('Sign-ins · 24 h', day.filter(action='sign_in').count(),
                  f'{day.filter(action="sign_in_failed").count()} failed · {locked_count(now)} locked now', 'admin:access_log_accessentry_changelist'),
         ],

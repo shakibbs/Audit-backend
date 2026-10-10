@@ -58,12 +58,33 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `GET /api/users` · `POST /api/users` | signed in · Admin | List people · send an invite |
 | `PATCH` / `DELETE /api/users/<id>` | Admin | Change role or lawyer mark · turn off access |
 
-## Client connections
+## Client companies and their connections
 
-Admin panel → Clients → Connections, or "+ Add connection" on a client company. Paste the client's
-read-only key; it is locked on save and never shown again. "Sign in with…" tools (Salesforce, HubSpot,
-RingCentral) use "Send connect link" instead. Twilio has a live test; other tools show "Saved, not tested"
-until their connector is built.
+Admin panel → **Client companies** → click a company. One page holds everything about it:
+
+- **Summary tiles:** data access level, connected tools, active users, open invites.
+- **Tabs:** General (company details) · **Connections** · Users · Invites. **Activity** (latest access log
+  entries) sits under the tabs; "Full access log" opens all of them.
+- **Connections are added on this page**, also when creating a new company: fill in the company, add its
+  tools on the Connections tab, and one Save keeps both. Keys are locked on save and never shown again
+  (leave the fields empty to keep a saved key). Each tool has a button: **Test connection now**, or for
+  "Sign in with…" tools (Salesforce, HubSpot, RingCentral) **Send connect link to client Admins**.
+  Twilio has a live test; other tools show "Saved, not tested" until their connector is built.
+- There is no separate Connections page, and no separate Client users or Invites page: people are added and
+  edited on the **Users** tab (a new person gets an email link to set their own password). The client list's
+  search also finds a person by name or email.
+- **Onboarding card** (`apps/onboarding`): 7 steps with a progress bar. Agreement, Annex C, campaigns and
+  first sync are ticked by hand (Agreement and Annex C also tick when that document is uploaded); dialer,
+  texting and client Admin tick themselves.
+- **Stage** (General tab): Trial · Onboarding · Active · Paused · Ended, with a reason and a **Stage history**.
+  Ended blocks the client's sign-in; Paused will stop live sync (`Client.can_sync`).
+- **Contract & billing** tab (`apps/billing`): price, period, payment method, start and renewal dates,
+  auto-renew, notice period, billing contact, notes. Renewal shows under the name, in the list ("Renews",
+  amber inside the notice period) and on the dashboard.
+- **Documents** tab (`apps/documents`): agreement, Annex C, signed statements, DPA, other. Upload a file
+  (PDF, image, Word; 20 MB max) or add a link. Files are fingerprinted (SHA-256), stored privately in
+  `MEDIA_ROOT` (Docker volume `civ_media`) and opened only by CiV staff; opening is logged.
+  Never the client's customer records.
 
 ## Use it with the portal
 

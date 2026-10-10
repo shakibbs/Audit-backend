@@ -14,7 +14,7 @@ COPY . .
 # Bake the admin panel's styles into the image. The key here is only for this build step.
 RUN DJANGO_SECRET_KEY=build-only DJANGO_DEBUG=false python manage.py collectstatic --noinput
 
-RUN useradd --create-home --uid 10001 civ && chown -R civ /app
+RUN useradd --create-home --uid 10001 civ && mkdir -p /app/media && chown -R civ /app
 USER civ
 
 EXPOSE 8000

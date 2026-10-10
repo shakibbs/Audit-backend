@@ -23,7 +23,7 @@ def key_guide() -> str:
 
 class ConnectionForm(forms.ModelForm):
     account = forms.CharField(required=False, label='Account ID / username', widget=UnfoldAdminTextInputWidget(attrs={'autocomplete': 'off'}),
-                              help_text='Only for tools that need one (see the guide above).')
+                              help_text='Only for tools that need one (see "Which fields each tool needs").')
     key = forms.CharField(required=False, label='API key / token', widget=UnfoldAdminPasswordToggleWidget(attrs={'autocomplete': 'new-password'}),
                           help_text='Read-only key from the client. Locked when saved; never shown again.')
     secret = forms.CharField(required=False, label='API secret', widget=UnfoldAdminPasswordToggleWidget(attrs={'autocomplete': 'new-password'}),
@@ -34,6 +34,8 @@ class ConnectionForm(forms.ModelForm):
         fields = ('client', 'provider', 'label')
 
     def new_credentials(self) -> dict:
+        if not hasattr(self, 'cleaned_data'):
+            return {}
         return {k: self.cleaned_data.get(k, '').strip() for k in ('account', 'key', 'secret') if self.cleaned_data.get(k, '').strip()}
 
     def clean(self):
@@ -42,3 +44,11 @@ class ConnectionForm(forms.ModelForm):
         if provider and provider.auth == 'oauth' and self.new_credentials():
             raise forms.ValidationError(f'{provider.name} connects by the client clicking Allow. Leave the key fields empty and use "Send connect link".')
         return data
+
+
+class ConnectionInlineForm(ConnectionForm):
+    """The same form inside a client company's page: the client is that page's company."""
+
+    class Meta(ConnectionForm.Meta):
+        fields = ('provider', 'label')
+

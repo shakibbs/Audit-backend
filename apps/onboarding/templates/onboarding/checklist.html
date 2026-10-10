@@ -1,0 +1,38 @@
+{% comment %}Onboarding card on a client's page. Manual steps have a button; automatic ones tick themselves.{% endcomment %}
+<section class="card" style="margin-bottom: 20px;">
+    <div class="card-h">
+        <div>
+            <h3>Onboarding</h3>
+            <div class="card-sub">{% if onboarding.complete %}All steps done{% else %}{{ onboarding.done }} of {{ onboarding.total }} steps done{% endif %}</div>
+        </div>
+        <span class="pill {% if onboarding.complete %}pill-green{% else %}pill-amber{% endif %}">{{ onboarding.percent }}%</span>
+    </div>
+    <div style="padding: 0 22px 14px;">
+        <div style="height: 8px; border-radius: 6px; background: var(--surface-3); overflow: hidden;">
+            <div style="height: 100%; width: {{ onboarding.percent }}%; background: var(--brand); border-radius: 6px;"></div>
+        </div>
+    </div>
+    <table class="tbl">
+        <tbody>
+            {% for s in onboarding.steps %}
+                <tr>
+                    <td style="width: 34px;">{% if s.done %}<span class="pill pill-green">✓</span>{% else %}<span class="pill pill-gray">·</span>{% endif %}</td>
+                    <td><strong>{{ s.label }}</strong><div class="tiny">{{ s.hint }}</div></td>
+                    <td class="tiny" style="white-space: nowrap;">
+                        {% if s.auto %}<span class="pill pill-teal">Automatic</span>
+                        {% elif s.by_document %}<span class="pill pill-teal">Document uploaded</span>
+                        {% elif s.done %}{{ s.done_by|default:"CiV" }} · {{ s.done_at|date:"j M Y" }}{% endif %}
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        {% if not s.auto and not s.by_document %}
+                            <form method="post" action="{% url 'admin:clients_client_onboarding_toggle' original.pk s.code %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="civ-btn {% if s.done %}civ-btn-ghost{% endif %}">{% if s.done %}Undo{% else %}Mark done{% endif %}</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

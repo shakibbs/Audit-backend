@@ -100,7 +100,7 @@ button[type=submit], input[type=submit], a.bg-primary-600, button.bg-primary-600
 .civ .section-title h2 { font-size: 16px; font-weight: 700; color: var(--txt); margin: 0; }
 .civ .section-title span { font-size: 12px; color: var(--txt-3); }
 
-.civ .kpi-grid { display: grid; gap: 16px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.civ .kpi-grid { display: grid; gap: 16px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 @media (max-width: 1280px) { .civ .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 800px) { .civ .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .civ .kpi { padding: 18px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; transition: 0.16s; }
@@ -155,3 +155,14 @@ html.dark .civ-icon-moon { display: none; }
 /* Small teal button used inside admin forms (e.g. "+ Add connection"). */
 .civ-btn { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 13px; border-radius: 10px; background: var(--brand); color: #fff !important; font-family: var(--display); font-weight: 600; font-size: 12.5px; text-decoration: none !important; }
 .civ-btn:hover { background: #0a6a60; }
+.civ-btn-ghost { background: var(--surface); color: var(--txt) !important; border: 1px solid var(--line); }
+.civ-btn-ghost:hover { background: var(--surface); border-color: var(--brand); color: var(--brand) !important; }
+button.civ-btn { border: 0; cursor: pointer; }
+
+/* Clickable names in lists look like links (e.g. a client company opens its page). */
+#result_list tbody th a, #result_list tbody td a { color: var(--brand) !important; font-weight: 600; }
+
+/* Whole row is clickable in lists. */
+#result_list tbody tr { cursor: pointer; }
+#result_list tbody tr:hover td, #result_list tbody tr:hover th { background: var(--surface-3) !important; }
+.civ .pill-blue { background: rgba(47, 107, 255, 0.12); color: #2f6bff; }

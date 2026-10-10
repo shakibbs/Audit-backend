@@ -1,0 +1,41 @@
+{% comment %}Bottom of a client company's page: its latest access log entries.{% endcomment %}
+{% if not add %}
+<section class="civ" style="margin-top: 24px;">
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-h"><div><h3>Stage history</h3><div class="card-sub">Every move between Trial, Onboarding, Active, Paused and Ended · UTC</div></div></div>
+        {% if status_history %}
+            <div style="overflow-x:auto"><table class="tbl">
+                <thead><tr><th>When</th><th>From</th><th>To</th><th>Who</th><th>Reason</th></tr></thead>
+                <tbody>
+                    {% for c in status_history %}
+                        <tr><td class="mono tiny" style="white-space:nowrap">{{ c.changed_at|date:"d M Y H:i" }}</td>
+                            <td>{{ c.get_old_status_display|default:"(new)" }}</td><td><strong>{{ c.get_new_status_display }}</strong></td>
+                            <td>{{ c.changed_by.name|default:"-" }}</td><td class="tiny">{{ c.reason }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        {% else %}
+            <p class="empty">No stage changes yet. Change the stage on the General tab.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-h">
+            <div><h3>Activity</h3><div class="card-sub">Latest 10 entries for this company · UTC</div></div>
+            <a class="link" href="{{ activity_url }}">Full log</a>
+        </div>
+        {% if activity %}
+            <div style="overflow-x:auto"><table class="tbl">
+                <thead><tr><th>When</th><th>Who</th><th>What</th><th>Object</th></tr></thead>
+                <tbody>
+                    {% for at, who, text, color, obj in activity %}
+                        <tr><td class="mono tiny" style="white-space:nowrap">{{ at|date:"d M H:i" }}</td><td>{{ who }}</td>
+                            <td><span class="pill pill-{{ color }}">{{ text }}</span></td><td class="tiny">{{ obj }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        {% else %}
+            <p class="empty">Nothing logged for this company yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endif %}

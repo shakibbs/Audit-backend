@@ -34,6 +34,9 @@ INSTALLED_APPS = [
     'apps.clients',
     'apps.accounts',
     'apps.connections',
+    'apps.onboarding',
+    'apps.billing',
+    'apps.documents',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +53,9 @@ ROOT_URLCONF = 'config.urls'
 
 # CiV staff accounts (admin panel). Client users live in a separate table.
 AUTH_USER_MODEL = 'staff.StaffUser'
+# Signing in on the admin login page directly lands on the dashboard.
+LOGIN_URL = '/civ-admin/login/'
+LOGIN_REDIRECT_URL = '/civ-admin/'
 
 TEMPLATES = [
     {
@@ -123,6 +129,9 @@ USE_TZ = True
 FORMAT_MODULE_PATH = ['config.formats']  # portal-style dates
 
 STATIC_URL = 'static/'
+# Client documents: private files on disk, opened only through a staff-only view (no public URL).
+MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # filled by collectstatic
 if not DEBUG:  # production: WhiteNoise serves the admin panel's styles (runserver does it locally)
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')

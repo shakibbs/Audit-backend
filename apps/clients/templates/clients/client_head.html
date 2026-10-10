@@ -1,0 +1,20 @@
+{% comment %}Top of a client company's page: name, plain summary tiles, quick links.{% endcomment %}
+<div class="civ" data-civ-tabs-after>
+    <header class="page-head civ-page-head">
+        <div>
+            <div class="ph-eyebrow">Client companies</div>
+            <h1>{% if add %}New client company{% else %}{{ original }} <span style="vertical-align: middle; font-size: 14px;">{{ status_pill }}</span>{% endif %}</h1>
+            <p class="ph-sub">{% if add %}Fill in the company, then add its tools on the Connections tab. One Save keeps both. Add its people on the Users tab after saving.{% else %}{{ original.industry|default:"" }}{% if original.industry %} · {% endif %}{{ original.get_plan_display }} plan · started {{ original.start_date|date:"j M Y" }}{% if contract.price_text %} · {{ contract.price_text }}{% endif %}{% if contract.renewal_date %} · {% if contract.auto_renew %}renews{% else %}ends{% endif %} {{ contract.renewal_date|date:"j M Y" }}{% if contract.renews_soon %} <span class="pill pill-amber">within notice period</span>{% endif %}{% endif %}{% endif %}</p>
+        </div>
+        {% if not add %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="civ-btn civ-btn-ghost" href="{{ activity_url }}">Full access log</a></div>{% endif %}
+    </header>
+    {% if summary %}
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
+            {% for tag, value, foot in summary %}
+                <div class="card kpi"><span class="kpi-tag">{{ tag }}</span><span class="kpi-val">{{ value }}</span><span class="kpi-foot">{{ foot }}</span></div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if onboarding %}{% include "onboarding/checklist.html" %}{% endif %}
+    <div class="tiny" style="margin: 0 0 12px;">{{ key_guide }}</div>
+</div>

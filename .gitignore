@@ -9,3 +9,4 @@ staticfiles/
 .vscode/
 .idea/
 deploy/.env.production
+media/

@@ -44,6 +44,10 @@ class AccessEntryAdmin(CivModelAdmin):
     def company(self, entry):
         return getattr(self, 'company_names', {}).get(entry.client_id, '')
 
+    # Lets a client page link to its own entries: ?client_id__exact=<id>
+    def lookup_allowed(self, lookup, value, request=None):
+        return lookup == 'client_id__exact' or super().lookup_allowed(lookup, value, request)
+
     def has_add_permission(self, request):
         return False
 
