@@ -123,4 +123,19 @@ USE_TZ = True
 FORMAT_MODULE_PATH = ['config.formats']  # portal-style dates
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # filled by collectstatic
+if not DEBUG:  # production: WhiteNoise serves the admin panel's styles (runserver does it locally)
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # Production: compressed files with version stamps (needs collectstatic). Local and tests: plain files.
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG
+                    else 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+
+# Behind Traefik (HTTPS ends there): trust its "this was HTTPS" header.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+if not DEBUG:
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '3600'))
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,0 +1,67 @@
+# CiV on a server that already runs Traefik (e.g. the n8n VPS). Starts portal + backend + database.
+# Run from this folder:  docker compose --env-file .env.production up -d --build
+# Expects the portal repo (AUDIT) cloned next to this repo: ../../AUDIT/frontend
+
+name: civ
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: civ
+      POSTGRES_USER: civ
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]  # never on the internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civ -d civ"]
+      interval: 10s
+      retries: 5
+
+  backend:
+    build: ..
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DB_HOST: db
+      DB_NAME: civ
+      DB_USER: civ
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      # Admin address: only the admin panel and its styles, never the client API.
+      - traefik.http.routers.civ-admin.rule=Host(`${ADMIN_DOMAIN}`) && (Path(`/`) || PathPrefix(`/civ-admin`) || PathPrefix(`/static`))
+      - traefik.http.routers.civ-admin.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.civ-admin.tls=true
+      - traefik.http.routers.civ-admin.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.civ-admin.loadbalancer.server.port=8000
+
+  portal:
+    build: ../../AUDIT/frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000  # inside Docker; the browser never talks to Django directly
+    depends_on: [backend]
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      - traefik.http.routers.civ-portal.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.civ-portal.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.civ-portal.tls=true
+      - traefik.http.routers.civ-portal.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.civ-portal.loadbalancer.server.port=3000
+
+volumes:
+  pgdata:
+
+networks:
+  internal: {}
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK}

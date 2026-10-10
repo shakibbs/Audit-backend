@@ -69,3 +69,36 @@ until their connector is built.
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
 While building, emails (reset and invite links) print in this terminal.
+
+## Deploy on a server that already runs Traefik (Docker)
+
+Used for the Hostinger VPS that also runs n8n. n8n is never touched: CiV's containers carry Traefik
+labels, and Traefik routes `app.…` to the portal and `admin.…` to the admin panel, with HTTPS.
+
+| Container | What | Reachable from |
+|---|---|---|
+| `portal` | Next.js portal (built from the AUDIT repo) | `https://APP_DOMAIN` |
+| `backend` | Django + Gunicorn | `https://ADMIN_DOMAIN` (admin panel only) and the portal, inside Docker |
+| `db` | PostgreSQL 17, data in the `civ_pgdata` volume | the backend only |
+
+```bash
+# once: both repos side by side
+mkdir -p /opt/civ && cd /opt/civ
+git clone https://github.com/shakibbs/Audit-backend.git
+git clone https://github.com/shakibbs/AUDIT.git
+cd Audit-backend/deploy
+cp .env.production.example .env.production   # fill it in (comments inside)
+docker compose --env-file .env.production up -d --build
+docker compose --env-file .env.production exec backend python manage.py createsuperuser
+
+# update later
+cd /opt/civ/AUDIT && git pull && cd /opt/civ/Audit-backend && git pull
+cd deploy && docker compose --env-file .env.production up -d --build
+
+# look
+docker compose --env-file .env.production ps
+docker compose --env-file .env.production logs -f backend
+```
+
+Files: `Dockerfile`, `deploy/entrypoint.sh` (migrate, then Gunicorn), `deploy/docker-compose.yml`,
+`deploy/.env.production.example`. In production, WhiteNoise serves the admin panel's styles.
