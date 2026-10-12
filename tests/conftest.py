@@ -59,3 +59,16 @@ def signed_in(api):
         assert response.status_code == 200, response.json()
         return api
     return sign_in
+
+
+@pytest.fixture(autouse=True)
+def _see_all_clients(request):
+    """Tests check results across clients, so they look with the "all clients" scope.
+    The code under test still sets its own scope; tests/tenancy checks the lock itself."""
+    if request.node.get_closest_marker('django_db') is None:
+        yield
+        return
+    from apps.tenancy.scope import all_clients
+    request.getfixturevalue('django_db_setup')
+    with all_clients():
+        yield

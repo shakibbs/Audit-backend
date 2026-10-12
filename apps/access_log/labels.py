@@ -13,6 +13,7 @@ ACTION_LABEL = {
     'connection_added': ('Connection added', 'teal'), 'connection_changed': ('Connection changed', 'gray'),
     'connection_key_changed': ('Key replaced', 'amber'), 'connection_tested': ('Connection tested', 'gray'),
     'connection_removed': ('Connection removed', 'amber'), 'connect_link_sent': ('Connect link sent', 'teal'),
+    'client_key_created': ('Phone-code key made', 'teal'), 'client_key_destroyed': ('Phone-code key destroyed', 'red'),
 }
 
 

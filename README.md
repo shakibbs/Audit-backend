@@ -45,6 +45,11 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/accounts` | Client users, invites, and the login API (sign-in, sign-out, session, reset, invites, users) |
 | `apps/connections` | Each client's tools (dialer, texting, certificates, lead feed, CRM): keys locked with Fernet, test, connect links, access level |
 | `apps/admin_panel` | Admin panel look (Unfold theme styled like the portal), menu, dashboard, light/dark toggle |
+| `apps/keyring` | Phone codes: each client's secret key (locked with `CIV_SECRETS_KEYS`), number cleaning to E.164, `Tokenizer`, `destroy_key` |
+| `apps/ledger` | Fingerprint record (`fingerprint`) and `purge_log`; `ledger_job()` for every job that reads client records |
+| `apps/anchoring` | Daily seal: Merkle root per client per day, RFC 3161 + OpenTimestamps stamps, `verify()` |
+| `apps/tenancy` | Tenancy lock: Postgres row-level security on client-data tables, `tenant()` / `all_clients()` scopes, `create_app_role` |
+| `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
 ## Client API
@@ -86,6 +91,75 @@ Admin panel → **Client companies** → click a company. One page holds everyth
   `MEDIA_ROOT` (Docker volume `civ_media`) and opened only by CiV staff; opening is logged.
   Never the client's customer records.
 
+## Background workers (Module 1, step 1)
+
+Jobs that run by themselves (reading tools, the nightly seal, …) use **Celery**, with **Redis** as the to-do list.
+Each app keeps its jobs in `tasks.py`; the timetable is `CELERY_BEAT_SCHEDULE` in `config/settings.py`.
+
+- **Locally:** leave `REDIS_URL` empty and a job runs at once, in the same process. No Redis needed.
+  To run real workers: set `REDIS_URL=redis://127.0.0.1:6379/0`, then `uv run celery -A config worker -l info`
+  and `uv run celery -A config beat -l info`.
+- **Server:** containers `redis` (keeps nothing on disk), `worker` and `beat` (the clock) start with the rest.
+- **Check:** the `job_heartbeat` row's time updates every minute when the clock and workers run.
+
+## Phone codes (Module 1, step 2)
+
+CiV never saves a phone number. Inside a job, a number becomes a **phone code** (`phone_token`):
+HMAC-SHA256 of the cleaned number (E.164) with the client's own secret key.
+
+- Same number, same client → same code (so contacts can still be counted). Same number, two clients → different codes.
+- Each client's key is made on first use, kept **locked** with `CIV_SECRETS_KEYS` (decision D19 = A: CiV holds it),
+  and opened only in memory. Its ID (`kid`, e.g. `k1`) is saved next to every code.
+- `destroy_key(client)` at contract end wipes the key: codes already saved can never be linked to a number again.
+  Logged in the access log.
+- Use: `codes = Tokenizer(client)` once per job, then `codes.token('(916) 555-4471')`.
+
+## Fingerprint record (Module 1, step 3)
+
+CiV proves what it read without keeping it. Every record a job reads gets one `fingerprint` row: client, SHA-256 of
+the **exact bytes received**, tool, the record's ID there, kind, source grade (A–D, spec §4) and fetch time. Never the
+content, a phone number or a name.
+
+```python
+with ledger_job(client, 'twilio sync') as job:
+    job.record(source_system='twilio', source_record_id=sid, raw=response_bytes,
+               content_kind=ContentKind.TEXT, source_grade=SourceGrade.C)
+```
+
+If the job fails, every row it wrote is removed and one `purge_log` line says how many and the error's type (never its
+message, which could quote a record).
+
+## Daily seal (Module 1, step 4)
+
+Every night at 00:30 UTC (`seal_nightly`), each client's fingerprints from each finished day are joined into one
+**Merkle root** (`merkle_anchor`). Each fingerprint keeps its `merkle_path`, so it can be checked alone.
+
+- The root is stamped by two outside services: an **RFC 3161** time-stamp authority (`ANCHOR_TSA_URLS`, default
+  FreeTSA, then SSL.com) and **OpenTimestamps** (`ANCHOR_OTS_CALENDARS`, Bitcoin-backed; the proof is pending until
+  a block confirms it). The signed answers are kept whole.
+- A service that is down does not stop the seal: the root is kept and `stamp_missing` retries every hour.
+- `verify(fingerprint)` → `matches`, `changed` (the row, including its read time, was altered after sealing) or
+  `not_sealed` (read today).
+
+## Tenancy lock (Module 1, step 5)
+
+The **database itself** keeps clients apart (decision: shared tables + row-level security). Every table of client
+data is locked with `apps.tenancy.sql.lock_table` in its migration (ENABLE + FORCE row-level security, policy on
+`client_id`). A locked table shows **nothing** until the work says whose rows it may see:
+
+```python
+with tenant(client): ...      # one client's rows (jobs; later, portal requests)
+with all_clients(): ...       # every client (CiV's own nightly jobs)
+```
+
+- Locked now: `client_key`, `fingerprint`, `purge_log`, `merkle_anchor`. A test fails if a new table with
+  `client_id` is not locked. CiV's business tables (companies, users, contracts, documents, access log) are read by
+  the admin panel across clients and are not locked.
+- Superusers skip every lock, so on the server the app runs as a **limited user** (`DB_APP_USER` /
+  `DB_APP_PASSWORD` in `.env.production`): no superuser, no BYPASSRLS. When `DB_APP_USER` is set, the backend,
+  worker and clock log in as it (`config/settings.py`). `entrypoint.sh` applies database changes as the owner
+  (`DB_AS_OWNER=1`), then runs `create_app_role` (creates or refreshes the limited user and its rights) on every start.
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
@@ -100,6 +174,8 @@ labels, and Traefik routes `app.…` to the portal and `admin.…` to the admin 
 |---|---|---|
 | `portal` | Next.js portal (built from the AUDIT repo) | `https://APP_DOMAIN` |
 | `backend` | Django + Gunicorn | `https://ADMIN_DOMAIN` (admin panel only) and the portal, inside Docker |
+| `redis` | The workers' to-do list (Redis 7, nothing on disk) | backend, worker and beat only |
+| `worker` · `beat` | Background jobs and their clock (same code as the backend) | nothing outside Docker |
 | `db` | PostgreSQL 17, data in the `civ_pgdata` volume | the backend only |
 
 ```bash
@@ -120,7 +196,7 @@ docker compose --env-file .env.production ps
 docker compose --env-file .env.production logs -f backend
 ```
 
-Files: `Dockerfile`, `deploy/entrypoint.sh` (migrate, then Gunicorn), `deploy/docker-compose.yml`,
+Files: `Dockerfile`, `deploy/entrypoint.sh` (migrate and refresh the limited user as the owner, then Gunicorn), `deploy/docker-compose.yml`,
 `deploy/.env.production.example`. In production, WhiteNoise serves the admin panel's styles.
 
 ## Automatic updates (GitHub Actions)

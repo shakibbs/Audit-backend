@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 from apps.admin_panel.theme import unfold_config
@@ -37,6 +38,11 @@ INSTALLED_APPS = [
     'apps.onboarding',
     'apps.billing',
     'apps.documents',
+    'apps.jobs',
+    'apps.keyring',
+    'apps.ledger',
+    'apps.anchoring',
+    'apps.tenancy',
 ]
 
 MIDDLEWARE = [
@@ -74,12 +80,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Day to day the app logs in as the limited user (DB_APP_USER) when one is set, so the tenancy lock applies.
+# Database changes run as the owner (DB_USER): entrypoint.sh sets DB_AS_OWNER=1 for them.
+_AS_OWNER = os.environ.get('DB_AS_OWNER') == '1' or not os.environ.get('DB_APP_USER')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'civ'),
-        'USER': os.environ.get('DB_USER', ''),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'USER': os.environ.get('DB_USER', '') if _AS_OWNER else os.environ['DB_APP_USER'],
+        'PASSWORD': os.environ.get('DB_PASSWORD', '') if _AS_OWNER else os.environ.get('DB_APP_PASSWORD', ''),
         'HOST': os.environ.get('DB_HOST', ''),
         'PORT': os.environ.get('DB_PORT', ''),
     }
@@ -119,6 +128,25 @@ MAILERS = {'default': {'BACKEND': os.environ.get('EMAIL_BACKEND', 'django.core.m
 PORTAL_URL = os.environ.get('PORTAL_URL', 'http://localhost:3000')
 # Admin panel look and menu.
 UNFOLD = unfold_config(PORTAL_URL)
+
+# Background workers (apps.jobs). Without REDIS_URL (local, tests) a job runs at once, in the same process.
+REDIS_URL = os.environ.get('REDIS_URL', '')
+CELERY_BROKER_URL = REDIS_URL or 'memory://'
+CELERY_TASK_ALWAYS_EAGER = not REDIS_URL
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_ACKS_LATE = True  # a job is done only when it finishes; a crashed worker's job runs again
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULE = {
+    'heartbeat': {'task': 'apps.jobs.tasks.heartbeat', 'schedule': 60.0},
+    'seal-nightly': {'task': 'apps.anchoring.tasks.seal_nightly', 'schedule': crontab(minute=30, hour=0)},  # 00:30 UTC
+    'stamp-missing': {'task': 'apps.anchoring.tasks.stamp_missing', 'schedule': crontab(minute=15)},  # hourly retry
+}
+# Outside stamps for the daily seal (apps.anchoring), tried in order.
+ANCHOR_TSA_URLS = env_list('ANCHOR_TSA_URLS', 'https://freetsa.org/tsr,http://ts.ssl.com')
+ANCHOR_OTS_CALENDARS = env_list('ANCHOR_OTS_CALENDARS', 'https://a.pool.opentimestamps.org,https://b.pool.opentimestamps.org')
 
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'CiV <no-reply@complyiv.com>')
 

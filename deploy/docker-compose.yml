@@ -1,4 +1,5 @@
-# CiV on a server that already runs Traefik (e.g. the n8n VPS). Starts portal + backend + database.
+# CiV on a server that already runs Traefik (e.g. the n8n VPS). Starts portal + backend + database,
+# plus Redis, the background worker and its clock.
 # Run from this folder:  docker compose --env-file .env.production up -d --build
 # Expects the portal repo (AUDIT) cloned next to this repo: ../../AUDIT/frontend
 
@@ -24,14 +25,16 @@ services:
     build: ..
     restart: unless-stopped
     env_file: .env.production
-    environment:
+    environment: &backend_env
       DB_HOST: db
       DB_NAME: civ
-      DB_USER: civ
+      DB_USER: civ  # the owner; day to day the app switches to DB_APP_USER when set (config/settings.py)
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - media:/app/media  # client documents; private, kept across updates
     depends_on:
       db: {condition: service_healthy}
+      redis: {condition: service_healthy}
     networks: [internal, traefik]
     labels:
       - traefik.enable=true
@@ -42,6 +45,40 @@ services:
       - traefik.http.routers.civ-admin.tls=true
       - traefik.http.routers.civ-admin.tls.certresolver=${TRAEFIK_CERTRESOLVER}
       - traefik.http.services.civ-admin.loadbalancer.server.port=8000
+
+  # The workers' to-do list. Holds job names and IDs only, never client records, and keeps nothing on disk.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+  # Background worker: runs the jobs (reading tools, the nightly seal, …). Same code as the backend.
+  worker:
+    build: ..
+    restart: unless-stopped
+    env_file: .env.production
+    environment: *backend_env
+    entrypoint: ["celery", "-A", "config", "worker", "--loglevel", "info", "--concurrency", "2"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [internal]
+
+  # The clock: puts jobs on the to-do list on a timetable (heartbeat every minute, nightly jobs).
+  beat:
+    build: ..
+    restart: unless-stopped
+    env_file: .env.production
+    environment: *backend_env
+    entrypoint: ["celery", "-A", "config", "beat", "--loglevel", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    depends_on:
+      redis: {condition: service_healthy}
+    networks: [internal]
 
   portal:
     build: ../../AUDIT/frontend
