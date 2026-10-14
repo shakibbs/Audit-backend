@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'apps.ledger',
     'apps.anchoring',
     'apps.tenancy',
+    'apps.rulebook',
 ]
 
 MIDDLEWARE = [

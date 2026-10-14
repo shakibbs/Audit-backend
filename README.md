@@ -49,6 +49,7 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/ledger` | Fingerprint record (`fingerprint`) and `purge_log`; `ledger_job()` for every job that reads client records |
 | `apps/anchoring` | Daily seal: Merkle root per client per day, RFC 3161 + OpenTimestamps stamps, `verify()` |
 | `apps/tenancy` | Tenancy lock: Postgres row-level security on client-data tables, `tenant()` / `all_clients()` scopes, `create_app_role` |
+| `apps/rulebook` | Rulebook: versions and rule values (federal, state, forum; effective-dated), loaded from `rulebook/*.yaml` |
 | `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
@@ -159,6 +160,38 @@ with all_clients(): ...       # every client (CiV's own nightly jobs)
   `DB_APP_PASSWORD` in `.env.production`): no superuser, no BYPASSRLS. When `DB_APP_USER` is set, the backend,
   worker and clock log in as it (`config/settings.py`). `entrypoint.sh` applies database changes as the owner
   (`DB_AS_OWNER=1`), then runs `create_app_role` (creates or refreshes the limited user and its rights) on every start.
+
+## Rulebook (Module 2, step 1)
+
+Every legal setting and parameter the engine uses lives in **`rulebook/v3.0.yaml`** (from the spec
+`02-rulebook-parameters.md` v3.0): 146 rules, plus state rows (calling hours FL, OK, MD, CT, TX; frequency limits
+FL, OK, MD) and the Fifth Circuit forum row. Each rule has its meaning, owner, status, counsel item, whether it can
+change a result, its value (or, for TBD, a provisional value / strict and lenient variants for draft runs only)
+and the plain words shown in the portal.
+
+- **Status:** `set` decided · `proposed` runs, results provisional · `tbd` never runs in a scored run (RULE_PENDING).
+- **Change a rule:** edit the file, push; `load_rulebook` runs on every start and reloads a changed draft or
+  provisional version. An **approved** version never changes: add a new version file instead.
+- **The loader refuses** (spec §2): a missing or unknown key, a key listed twice, `vs_rate_weights` not adding up
+  to 1, `dedupe_window_seconds` below `clock_skew_seconds`, a Set or Proposed rule without a value, and in an
+  approved version any TBD key or a result-changing key without counsel approval.
+- v3.0 is **provisional**: 70 set, 55 proposed, 21 TBD. Before any approved version, counsel must also approve
+  5 result-changing keys not yet marked counsel-approved (cert expiry hours ×2, conv_review ×3).
+
+### Looking a rule up (Module 2, step 2)
+
+```python
+rules = RuleSet()                                   # one per run: the whole rulebook in memory, no more queries
+hours = rules.get('calling_hours', on=contact_date, state='FL')
+hours.value        # {'start': '08:00', 'end': '20:00'}, or None while pending
+hours.provisional  # True: Proposed (or TBD) → the result is marked provisional
+hours.pending      # True: TBD → the check returns not_run, RULE_PENDING
+```
+
+- **Place:** the state (or court `forum=`) first, then federal. A place's own rule wins even while it is TBD.
+- **Date:** the row in force on that day (`effective_from` / `effective_to`).
+- **Mode:** `client` = approved rulebooks only · `internal` (default) = approved or provisional · `draft` = also
+  TBD test values and `variant='strict' | 'lenient'` (tests and the impact view).
 
 ## Use it with the portal
 

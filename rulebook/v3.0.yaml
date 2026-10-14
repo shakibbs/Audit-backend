@@ -1,0 +1,1609 @@
+# CiV Rulebook v3.0: every legal setting and parameter the engine uses (spec 02-rulebook-parameters.md).
+# Change a value here, push, and it loads on deploy. Status: set = decided; proposed = runs, results provisional;
+# tbd = never runs in a scored run (RULE_PENDING); `provisional` / `variants` are for draft runs and tests only.
+# `jurisdictions` overrides the federal value for a state (or a court forum). Keys never say "scrub" or "screen".
+version: '3.0'
+status: provisional
+effective_from: '2026-10-07'
+source: docs/specs/02-rulebook-parameters.md v3.0 (2026-10-07)
+rules:
+- key: count_unanswered_calls
+  section: General and time
+  meaning: Unanswered call attempts count as contacts
+  owner: Counsel
+  status: proposed
+  counsel_item: B9
+  affects_status: true
+  counsel_approved: false
+  shown: 'true'
+  value: true
+- key: count_undelivered_sms
+  section: General and time
+  meaning: Texts the carrier rejected count as contacts
+  owner: Counsel
+  status: proposed
+  counsel_item: B9
+  affects_status: true
+  counsel_approved: false
+  shown: 'false'
+  value: false
+- key: metric_window_days
+  section: General and time
+  meaning: Default rolling metric window
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: lookback_years
+  section: General and time
+  meaning: Lawsuit lookback
+  owner: Counsel
+  status: proposed
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '4'
+  value: 4
+- key: location_conflict_rule
+  section: General and time
+  meaning: Address and number time zones disagree
+  owner: Counsel
+  status: proposed
+  counsel_item: B9
+  affects_status: true
+  counsel_approved: false
+  shown: strictest (check both, stricter counts)
+  value: strictest
+- key: location_uncertain_treatment
+  section: General and time
+  meaning: What to do with low-confidence locations
+  owner: Counsel
+  status: proposed
+  counsel_item: B9
+  affects_status: true
+  counsel_approved: false
+  shown: report_as_possible (check against area-code zone; report as "possible", never dropped)
+  value: report_as_possible
+- key: location_uncertain_levels
+  section: General and time
+  meaning: Confidence levels reported as "location uncertain"
+  owner: Counsel
+  status: proposed
+  counsel_item: B9
+  affects_status: true
+  counsel_approved: false
+  shown: low
+  value:
+  - low
+- key: clock_skew_seconds
+  section: General and time
+  meaning: Tolerance for unlinked timestamps
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '120'
+  value: 120
+- key: dedupe_window_seconds
+  section: General and time
+  meaning: Cross-system dedupe window, never below clock skew
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '120'
+  value: 120
+- key: source_freshness_hours
+  section: General and time
+  meaning: Source fresh if a change or heartbeat arrived within this
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '2'
+  value: 2
+- key: catchup_interval_minutes
+  section: General and time
+  meaning: How often the catch-up sweep asks each tool for changes since its cursor
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '60'
+  value: 60
+- key: poll_interval_minutes
+  section: General and time
+  meaning: Polling interval for tools with no change notifications
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '5'
+  value: 5
+- key: full_sweep_interval_days
+  section: General and time
+  meaning: How often a full listing looks for deleted or silently changed records
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '7'
+  value: 7
+- key: score_refresh_minutes
+  section: General and time
+  meaning: How often scores and metrics are recomputed from live results
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '60'
+  value: 60
+- key: urgent_alert_max_minutes
+  section: General and time
+  meaning: Longest delay from a change to an urgent alert (contact after opt-out, opted-out re-added, unknown caller ID)
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '15'
+  value: 15
+- key: live_gap_alert_share
+  section: General and time
+  meaning: Daily share of changes found by catch-up instead of the live feed that raises a connector-reliability alert
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 1%
+  value: 0.01
+- key: ai_min_confidence
+  section: General and time
+  meaning: Minimum AI confidence per item
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '0.85'
+  value: 0.85
+- key: provider_retry_hours
+  section: General and time
+  meaning: Retry window during provider outages
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '24'
+  value: 24
+- key: expected_sources
+  section: General and time
+  meaning: 'Per client: the sources a full score needs (denominator for "provisional")'
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: set at onboarding
+  value: per_client
+- key: business_day_calendar
+  section: General and time
+  meaning: How business days are counted
+  owner: Counsel
+  status: proposed
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: Mon–Fri except US federal holidays, in the recipient time zone
+  value:
+    weekdays:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    except: us_federal_holidays
+    time_zone: recipient
+- key: business_day_tz_fallback
+  section: General and time
+  meaning: Time zone for business-day counting when recipient location is uncertain
+  owner: Counsel
+  status: proposed
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: recipient ZIP tz → area-code tz → America/New_York (earliest deadline)
+  value:
+  - recipient_zip
+  - area_code
+  - America/New_York
+- key: written_consent_types
+  section: Consent
+  meaning: Proof types that count as written consent
+  owner: Counsel
+  status: proposed
+  counsel_item: B1
+  affects_status: true
+  counsel_approved: false
+  shown: web_cert, signed_form, IVR or keypress with required disclosures
+  value:
+  - web_cert
+  - signed_form
+  - ivr_keypress_with_disclosures
+- key: signed_written_consent_types
+  section: Consent
+  meaning: Proof types that satisfy the DNC "signed written agreement" exemption
+  owner: Counsel
+  status: proposed
+  counsel_item: B3
+  affects_status: true
+  counsel_approved: false
+  shown: web_cert (with e-signature elements), signed_form
+  value:
+  - web_cert_with_esignature
+  - signed_form
+- key: prior_express_evidence_types
+  section: Consent
+  meaning: Records accepted as prior express (non-written) consent for informational robocalls
+  owner: Counsel
+  status: tbd
+  counsel_item: A19
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional:
+  - crm_purchase_or_intake_record
+- key: autodialed_modes
+  section: Consent
+  meaning: Dialer modes treated as autodialed
+  owner: Counsel
+  status: tbd
+  counsel_item: A12
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  variants:
+    strict: every_mode_except_manual
+    lenient: none
+- key: sms_treated_as_autodialed
+  section: Consent
+  meaning: Marketing texts treated as autodialed
+  owner: Counsel
+  status: proposed
+  counsel_item: A17
+  affects_status: true
+  counsel_approved: false
+  shown: 'true'
+  value: true
+  variants:
+    strict: true
+    lenient: false
+- key: state_consent_rule
+  section: Consent
+  meaning: 'Per state: channels, contact types, autodialer definition, consent type required, PRA, effective dates'
+  owner: Counsel
+  status: tbd
+  counsel_item: A18
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+- key: ebr_purchase_months
+  section: Consent
+  meaning: Existing-customer relationship lapse
+  owner: Counsel
+  status: proposed
+  counsel_item: A9
+  affects_status: true
+  counsel_approved: false
+  shown: '18'
+  value: 18
+- key: ebr_inquiry_months
+  section: Consent
+  meaning: Existing-customer relationship lapse
+  owner: Counsel
+  status: proposed
+  counsel_item: A9
+  affects_status: true
+  counsel_approved: false
+  shown: '3'
+  value: 3
+- key: ebr_allowed_contact_types
+  section: Consent
+  meaning: What a relationship can cover. Also the only contacts the EBR_ONLY label covers (proof is a purchase or inquiry
+    within its window); never autodialed or prerecorded calls to cell phones
+  owner: Counsel
+  status: proposed
+  counsel_item: A9
+  affects_status: true
+  counsel_approved: false
+  shown: live, manually dialed calls
+  value:
+  - live_manual_call
+- key: consent_checklist
+  section: Consent
+  meaning: Items, required or optional, and each item's effect
+  owner: Counsel
+  status: tbd
+  counsel_item: A10
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: lead_inspector_cc_table
+- key: seller_absent_effect
+  section: Consent
+  meaning: Status when no seller name is found in the consent block. Applies only when seller_named_required = true
+  owner: Counsel
+  status: tbd
+  counsel_item: B7
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  variants:
+    strict: NO_PROOF
+    lenient: WEAK
+- key: seller_match_threshold
+  section: Consent
+  meaning: Token similarity for the rule-based brand / DBA match
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: 0.92 (Jaro-Winkler)
+  value: 0.92
+- key: max_numbers_per_cert
+  section: Consent
+  meaning: Numbers one certificate may cover
+  owner: Product
+  status: set
+  counsel_item: B8
+  affects_status: true
+  counsel_approved: true
+  shown: '1'
+  value: 1
+- key: cert_unretained_expiry_hours
+  section: Consent
+  meaning: Vendor deletion windows
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: '72'
+  value: 72
+- key: cert_confirmed_expiry_hours
+  section: Consent
+  meaning: Vendor deletion windows
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: 2,160
+  value: 2160
+- key: cert_expiry_warning_days
+  section: Consent
+  meaning: WEAK when expiring within this of evaluation_as_of
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '30'
+  value: 30
+- key: page_capture_interval_hours
+  section: Consent
+  meaning: Re-capture interval for consent pages
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '24'
+  value: 24
+- key: page_normalize_rules
+  section: Consent
+  meaning: Page parts ignored when hashing
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: timestamps, session IDs, ads
+  value:
+  - timestamps
+  - session_ids
+  - ads
+- key: page_snapshot_max_gap_days
+  section: Consent
+  meaning: Max gap for comparing CiV capture with certificate snapshot
+  owner: Product
+  status: proposed
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '1'
+  value: 1
+- key: page_similarity_method
+  section: Consent
+  meaning: How ca_page_match_threshold is measured
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: consent_block_text (normalized text similarity of the consent block; whole-page visual hash reported for information)
+  value: consent_block_text
+- key: ca_page_match_threshold
+  section: Consent
+  meaning: Minimum page similarity
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '0.90'
+  value: 0.9
+- key: cc_viewports
+  section: Consent
+  meaning: Viewport sizes pages are rendered at
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 390 × 844, 1440 × 900
+  value:
+  - - 390
+    - 844
+  - - 1440
+    - 900
+- key: cc_min_contrast_ratio
+  section: Consent
+  meaning: Minimum text contrast
+  owner: Product
+  status: set
+  counsel_item: B8
+  affects_status: true
+  counsel_approved: true
+  shown: '4.5 : 1 (3 : 1 large text)'
+  value:
+    normal: 4.5
+    large: 3.0
+- key: cc_min_font_px
+  section: Consent
+  meaning: Minimum consent text size
+  owner: Counsel
+  status: tbd
+  counsel_item: A15a
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: 10
+- key: cc_max_sellers_named
+  section: Consent
+  meaning: Most sellers one consent may name (CiV policy)
+  owner: Counsel
+  status: tbd
+  counsel_item: A15a
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: 5
+- key: cc_consent_above_button
+  section: Consent
+  meaning: Consent text must sit above the button
+  owner: Counsel
+  status: proposed
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: 'true'
+  value: true
+- key: seller_named_required
+  section: Consent
+  meaning: The consent must name this seller. When false, CF_SELLER_MISMATCH does not run and seller findings are information
+    only. The FCC one-to-one rule was vacated by the Eleventh Circuit in January 2025
+  owner: Counsel
+  status: proposed
+  counsel_item: B10
+  affects_status: true
+  counsel_approved: false
+  shown: 'false'
+  value: false
+- key: written_consent_required_by_forum
+  section: Consent
+  meaning: 'Per litigation_forum: whether marketing robocalls need written consent or prior express consent is enough (Fifth
+    Circuit, February 2026, *Bradford v. Sovereign Pest Control*)'
+  owner: Counsel
+  status: proposed
+  counsel_item: B11
+  affects_status: true
+  counsel_approved: false
+  shown: true in every forum (the v1.1 behavior); the Fifth Circuit row is for counsel to set
+  value: true
+  jurisdictions:
+  - jurisdiction: 5th_circuit
+    status: tbd
+    provisional: true
+- key: inbound_contact_scope
+  section: Consent
+  meaning: Which outbound contacts an inbound call or text from the consumer covers (subject, days). Used by the inbound_call
+    / inbound_sms evidence types
+  owner: Counsel
+  status: tbd
+  counsel_item: B12
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+- key: optout_keywords
+  section: Stopping
+  meaning: Replies treated as automatic opt-outs
+  owner: Counsel
+  status: proposed
+  counsel_item: A3
+  affects_status: true
+  counsel_approved: false
+  shown: STOP, QUIT, END, REVOKE, OPT OUT, OPTOUT, CANCEL, UNSUBSCRIBE
+  value:
+  - STOP
+  - QUIT
+  - END
+  - REVOKE
+  - OPT OUT
+  - OPTOUT
+  - CANCEL
+  - UNSUBSCRIBE
+- key: optout_deadline_business_days
+  section: Stopping
+  meaning: Deadline to honor an opt-out
+  owner: Counsel
+  status: proposed
+  counsel_item: A1
+  affects_status: true
+  counsel_approved: false
+  shown: '10'
+  value: 10
+- key: optout_grace_business_days
+  section: Stopping
+  meaning: Delay before a later contact counts, in business days
+  owner: Counsel
+  status: tbd
+  counsel_item: A4
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  variants:
+    strict: 0
+    lenient: 10
+- key: confirmation_window_minutes
+  section: Stopping
+  meaning: One confirmation text allowed, no marketing
+  owner: Counsel
+  status: proposed
+  counsel_item: A2
+  affects_status: true
+  counsel_approved: false
+  shown: '5'
+  value: 5
+- key: optout_scope_rules
+  section: Stopping
+  meaning: Which messages an opt-out stops, by channel and message category, effective-dated
+  owner: Counsel
+  status: tbd
+  counsel_item: A5
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: any_optout_stops_everything
+- key: optout_observation_days
+  section: Stopping
+  meaning: How long a test opt-out is watched before NEVER
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: min_tests_per_cell
+  section: Stopping
+  meaning: Tests before a matrix cell or M09 result is a finding
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '3'
+  value: 3
+- key: retest_interval_days
+  section: Stopping
+  meaning: Revocation re-test interval for retainer clients
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: revocation_window_days
+  section: Stopping
+  meaning: Period for M08 / M09 (tests completed in the last N days)
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '90'
+  value: 90
+- key: test_rotation_days
+  section: Stopping
+  meaning: Test numbers rotate this often; never shown in any portal role. The Annex C signer authorizes rotation
+  owner: Product
+  status: proposed
+  counsel_item: C11
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: seed_contact_window_days
+  section: Stopping
+  meaning: A seeded test with no contact within this many days is "not reached", never "passed"; its campaign counts as "untested"
+    in test coverage
+  owner: Product
+  status: proposed
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '14'
+  value: 14
+- key: rnd_check_rule
+  section: Who you contact
+  meaning: What counts as a proper reassigned-number check
+  owner: Counsel
+  status: proposed
+  counsel_item: A13
+  affects_status: true
+  counsel_approved: false
+  shown: After the latest monthly update, about the consent date, answer No
+  value:
+    after: latest_monthly_update
+    about: consent_date
+    answer: 'no'
+- key: rnd_required_after_days
+  section: Who you contact
+  meaning: Check required for robocalls this long after consent
+  owner: Counsel
+  status: tbd
+  counsel_item: A20
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: 30
+- key: rnd_query_budget_per_number
+  section: Who you contact
+  meaning: Paid CiV RND queries per number needing an epoch search
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '12'
+  value: 12
+- key: rnd_update_calendar
+  section: Who you contact
+  meaning: Somos monthly update dates (reference table)
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: maintained by Engineering
+  value: reference_table
+- key: rnd_sample_size
+  section: Who you contact
+  meaning: Contacted numbers CiV samples per period for M35 (reassigned exposure). CiV RND queries, after contact only, never
+    before a dial (D20)
+  owner: Product
+  status: proposed
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '400'
+  value: 400
+- key: dnc_check_max_age_days
+  section: Who you contact
+  meaning: Oldest client DNC check record allowed at contact. Feeds M13, which is Info only
+  owner: Counsel
+  status: proposed
+  counsel_item: A14
+  affects_status: true
+  counsel_approved: false
+  shown: '31'
+  value: 31
+- key: nanp_non_us_area_codes
+  section: Who you contact
+  meaning: +1 area codes outside the US
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: reference data
+  value: reference_table
+- key: calling_hours
+  section: How you contact
+  meaning: Federal and state windows by weekday, with each state's scope, effective-dated
+  owner: Counsel
+  status: tbd
+  counsel_item: A6
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional:
+    start: 08:00
+    end: '21:00'
+  jurisdictions:
+  - jurisdiction: FL
+    provisional:
+      start: 08:00
+      end: '20:00'
+  - jurisdiction: OK
+    provisional:
+      start: 08:00
+      end: '20:00'
+  - jurisdiction: MD
+    provisional:
+      start: 08:00
+      end: '20:00'
+  - jurisdiction: CT
+    provisional:
+      start: 09:00
+      end: '20:00'
+  - jurisdiction: TX
+    provisional:
+      start: 08:00
+      end: '21:00'
+      sunday_start: '12:00'
+- key: quiet_hours_apply_to_sms
+  section: How you contact
+  meaning: Calling hours apply to texts, per forum
+  owner: Counsel
+  status: tbd
+  counsel_item: B4
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  variants:
+    strict: true
+    lenient: false
+- key: frequency_limits
+  section: How you contact
+  meaning: 'Per state: maximum, window, counting unit, scope'
+  owner: Counsel
+  status: tbd
+  counsel_item: A7
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  jurisdictions:
+  - jurisdiction: FL
+    provisional:
+      max: 3
+      window_hours: 24
+      per: person
+      scope: subject
+      applies_to: solicitations
+  - jurisdiction: OK
+    provisional:
+      max: 3
+      window_hours: 24
+      per: person
+      scope: subject
+      applies_to: solicitations
+  - jurisdiction: MD
+    provisional:
+      max: 3
+      window_hours: 24
+      per: person
+      scope: subject
+      applies_to: solicitations
+- key: frequency_per_campaign
+  section: How you contact
+  meaning: Count per campaign instead of per client
+  owner: Counsel
+  status: proposed
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: 'false'
+  value: false
+- key: state_holiday_restrictions
+  section: How you contact
+  meaning: Restricted dates by state
+  owner: Counsel
+  status: tbd
+  counsel_item: A8
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+- key: required_disclosures
+  section: How you contact
+  meaning: Words calls and texts must contain
+  owner: Counsel
+  status: tbd
+  counsel_item: A11
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+- key: abandoned_call_max_rate
+  section: How you contact
+  meaning: Abandoned-call limit per campaign per period
+  owner: Counsel
+  status: proposed
+  counsel_item: A11
+  affects_status: true
+  counsel_approved: false
+  shown: 3 %
+  value: 0.03
+- key: abandon_connect_seconds
+  section: How you contact
+  meaning: Seconds after greeting within which a live agent must connect
+  owner: Counsel
+  status: proposed
+  counsel_item: A11
+  affects_status: true
+  counsel_approved: false
+  shown: '2'
+  value: 2
+- key: abandon_period_days
+  section: How you contact
+  meaning: Period over which the abandoned-call rate is measured
+  owner: Counsel
+  status: proposed
+  counsel_item: A11
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: disclosure_sample_size
+  section: How you contact
+  meaning: Recorded calls reviewed per campaign per period
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '50'
+  value: 50
+- key: record_retention_years
+  section: Records
+  meaning: Retention required for call, consent, EBR and DNC records
+  owner: Counsel
+  status: proposed
+  counsel_item: A16
+  affects_status: false
+  counsel_approved: false
+  shown: '5'
+  value: 5
+- key: civ_default_retention_years
+  section: Records
+  meaning: CiV artifact retention when the client contract is silent. CiV keeps no client records; this now applies to CiV's
+    fingerprints and analyzed data (CHANGELOG-v3 §2)
+  owner: Counsel
+  status: proposed
+  counsel_item: C7
+  affects_status: false
+  counsel_approved: false
+  shown: max(record_retention_years, lookback_years) + 1 = 6
+  value: 6
+- key: legal_hold
+  section: Records
+  meaning: 'Per client (or per artifact): blocks every deletion including key destruction. A hold is also an instruction to
+    the client to retain the named source records, with an optional encrypted snapshot to a bucket the client owns; release
+    needs a Legal-role user and a reason'
+  owner: Counsel
+  status: set
+  counsel_item: C7
+  affects_status: false
+  counsel_approved: false
+  shown: 'false'
+  value: false
+- key: vendor_required_clauses
+  section: Records
+  meaning: Clauses each vendor contract must contain
+  owner: Counsel
+  status: tbd
+  counsel_item: A15b
+  affects_status: false
+  counsel_approved: false
+  shown: Not set yet
+- key: vendor_active_days
+  section: Records
+  meaning: Vendor active if it sent a lead within
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '90'
+  value: 90
+- key: require_sub_id
+  section: Records
+  meaning: Affiliate networks must supply a sub-ID
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 'true'
+  value: true
+- key: acquired_list_sample_size
+  section: Records
+  meaning: Acquired list sampling
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '100'
+  value: 100
+- key: acquired_list_max_failures
+  section: Records
+  meaning: Acquired list sampling
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '2'
+  value: 2
+- key: training_valid_days
+  section: Records
+  meaning: Training record stays current
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '365'
+  value: 365
+- key: default_dispute_window_days
+  section: Records
+  meaning: Dispute window when a vendor has no contract on file
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 0 (no dispute candidates; shown as "no contract on file")
+  value: 0
+- key: warn_credit
+  section: Scoring and gates
+  meaning: Credit for a warn result
+  owner: Product
+  status: proposed
+  counsel_item: D8
+  affects_status: false
+  counsel_approved: false
+  shown: '0.5'
+  value: 0.5
+- key: domain_weights
+  section: Scoring and gates
+  meaning: Weights of domains in the overall score
+  owner: Product
+  status: proposed
+  counsel_item: D8
+  affects_status: false
+  counsel_approved: false
+  shown: equal
+  value: equal
+- key: grade_bands
+  section: Scoring and gates
+  meaning: Cut-offs for A, B, C, D
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 90 / 80 / 70 / 60
+  value:
+    A: 90
+    B: 80
+    C: 70
+    D: 60
+- key: hard_cap_share
+  section: Scoring and gates
+  meaning: Cap trigger and capped grade
+  owner: Product
+  status: tbd
+  counsel_item: D8
+  affects_status: false
+  counsel_approved: false
+  shown: Not set yet
+  provisional: 0.05
+- key: hard_cap_grade
+  section: Scoring and gates
+  meaning: Cap trigger and capped grade
+  owner: Product
+  status: tbd
+  counsel_item: D8
+  affects_status: false
+  counsel_approved: false
+  shown: Not set yet
+  provisional: C
+- key: direct_violation_grade
+  section: Scoring and gates
+  meaning: 'Second cap: any contact after an internal-list entry (IDN) or after an in-scope opt-out (REV) holds that domain''s
+    grade at or below this'
+  owner: Product
+  status: proposed
+  counsel_item: D23
+  affects_status: false
+  counsel_approved: false
+  shown: D
+  value: D
+- key: coverage_cap_floor
+  section: Scoring and gates
+  meaning: 'Third cap: evidence coverage (M36) below the floor holds the overall grade at or below this grade'
+  owner: Product
+  status: proposed
+  counsel_item: D23
+  affects_status: false
+  counsel_approved: false
+  shown: '0.60'
+  value: 0.6
+- key: coverage_cap_grade
+  section: Scoring and gates
+  meaning: 'Third cap: evidence coverage (M36) below the floor holds the overall grade at or below this grade'
+  owner: Product
+  status: proposed
+  counsel_item: D23
+  affects_status: false
+  counsel_approved: false
+  shown: C
+  value: C
+- key: provisional_completeness
+  section: Scoring and gates
+  meaning: Below this share of expected_sources, a score is provisional
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 80 %
+  value: 0.8
+- key: checkpoint_aggregation_default
+  section: Scoring and gates
+  meaning: Default {unit, pass_max_share, warn_max_share} where a checkpoint has none
+  owner: Product
+  status: proposed
+  counsel_item: D4
+  affects_status: true
+  counsel_approved: true
+  shown: '{contact, 0 %, 1 %}'
+  value:
+    unit: contact
+    pass_max_share: 0.0
+    warn_max_share: 0.01
+- key: gate_sample_size
+  section: Scoring and gates
+  meaning: Gate 0 / Gate 2 hand-check sample
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '200'
+  value: 200
+- key: gate_min_per_reason_code
+  section: Scoring and gates
+  meaning: Gate 0 / Gate 2 hand-check sample
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '5'
+  value: 5
+- key: ai_accuracy_min_items
+  section: Scoring and gates
+  meaning: AI feature gate
+  owner: Product
+  status: proposed
+  counsel_item: D9
+  affects_status: false
+  counsel_approved: false
+  shown: '300'
+  value: 300
+- key: ai_accuracy_pass_mark
+  section: Scoring and gates
+  meaning: AI feature gate
+  owner: Product
+  status: proposed
+  counsel_item: D9
+  affects_status: false
+  counsel_approved: false
+  shown: 95 %
+  value: 0.95
+- key: li_min_form_seconds
+  section: Lead Inspector
+  meaning: Fast fill / instant fill
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '8'
+  value: 8
+- key: li_hard_signal_form_seconds
+  section: Lead Inspector
+  meaning: Fast fill / instant fill
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: 2 s
+  value: 2
+- key: li_device_burst_count
+  section: Lead Inspector
+  meaning: Device burst, per client
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '5'
+  value: 5
+- key: li_device_burst_window_minutes
+  section: Lead Inspector
+  meaning: Device burst, per client
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '60'
+  value: 60
+- key: li_line_status_max_age_days
+  section: Lead Inspector
+  meaning: Line status used only this close to the lead date
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '30'
+  value: 30
+- key: li_suspect_line_types
+  section: Lead Inspector
+  meaning: Line types that add points
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: non-fixed VoIP
+  value:
+  - non_fixed_voip
+- key: li_name_match_threshold
+  section: Lead Inspector
+  meaning: Minimum name similarity
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '0.6'
+  value: 0.6
+- key: li_min_domain_age_days
+  section: Lead Inspector
+  meaning: New-website signal
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '90'
+  value: 90
+- key: li_signal_points
+  section: Lead Inspector
+  meaning: Points per signal (moved here from the Lead Inspector tab)
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: fast_fill 25; pasted_fields 10; device_burst 25; location_mismatch 10; line_type 10; name_match 20; email 15; new_website
+    15
+  value:
+    fast_fill: 25
+    pasted_fields: 10
+    device_burst: 25
+    location_mismatch: 10
+    line_type: 10
+    name_match: 20
+    email: 15
+    new_website: 15
+- key: li_hard_signals
+  section: Lead Inspector
+  meaning: Signals that set "High risk signals" alone
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: instant_fill, line_out_of_service, certificate_after_delivery
+  value:
+  - instant_fill
+  - line_out_of_service
+  - certificate_after_delivery
+- key: li_some_risk_threshold
+  section: Lead Inspector
+  meaning: Result thresholds (inclusive)
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '40'
+  value: 40
+- key: li_high_risk_threshold
+  section: Lead Inspector
+  meaning: Result thresholds (inclusive)
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: '70'
+  value: 70
+- key: li_hypothetical_contact
+  section: Lead Inspector
+  meaning: The contact Check 2 evaluates against
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: true
+  shown: strictest — an autodialed marketing contact on every channel the lead covers
+  value: strictest
+- key: li_carrier_lookup_enabled
+  section: Lead Inspector
+  meaning: 'Per client: run carrier lookups (pass-through cost)'
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: false until the client opts in
+  value: false
+- key: vs_window_days
+  section: Lead Inspector
+  meaning: Vendor score period
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '90'
+  value: 90
+- key: vs_rate_weights
+  section: Lead Inspector
+  meaning: Rate weights; must sum to 1
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 0.35 / 0.30 / 0.15 / 0.10 / 0.05 / 0.05
+  value:
+  - 0.35
+  - 0.3
+  - 0.15
+  - 0.1
+  - 0.05
+  - 0.05
+- key: vs_some_weight
+  section: Lead Inspector
+  meaning: Weight of a "Some" lead against "High"
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '0.5'
+  value: 0.5
+- key: vs_max_delivery_hours
+  section: Lead Inspector
+  meaning: Late delivery threshold
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '24'
+  value: 24
+- key: vs_stop_window_days
+  section: Lead Inspector
+  meaning: Stop and complaint window
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: vs_grade_bands
+  section: Lead Inspector
+  meaning: Grades, minimum leads, alert drop
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 90/80/70/60
+  value:
+    A: 90
+    B: 80
+    C: 70
+    D: 60
+- key: vs_min_leads_for_score
+  section: Lead Inspector
+  meaning: Grades, minimum leads, alert drop
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '100'
+  value: 100
+- key: vs_alert_drop_points
+  section: Lead Inspector
+  meaning: Grades, minimum leads, alert drop
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '10'
+  value: 10
+- key: lg_response_timeout_ms
+  section: Lead Inspector
+  meaning: Live mode (post-pilot)
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 3,000
+  value: 3000
+- key: lg_webhook_retry_count
+  section: Lead Inspector
+  meaning: Live mode (post-pilot)
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '5'
+  value: 5
+- key: import_gap_seconds
+  section: Provenance and manual imports
+  meaning: A gap longer than this between one user's created (or updated) records starts a new import batch
+  owner: Engineering
+  status: proposed
+  counsel_item: D21
+  affects_status: false
+  counsel_approved: false
+  shown: '120'
+  value: 120
+- key: import_min_batch
+  section: Provenance and manual imports
+  meaning: Batch size at or above which a batch is bulk_import (n = 1 → hand_entered; otherwise small_batch)
+  owner: Engineering
+  status: proposed
+  counsel_item: D21
+  affects_status: false
+  counsel_approved: false
+  shown: '20'
+  value: 20
+- key: proof_request_sample
+  section: Provenance and manual imports
+  meaning: Numbers with no evidence sampled per batch for a proof request
+  owner: Product
+  status: proposed
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 50; 100 when the batch has more than 10,000 numbers
+  value:
+    default: 50
+    large_batch: 100
+    large_batch_over_numbers: 10000
+- key: worst_case_value.consent_proof_rate
+  section: Data integrity
+  meaning: Consent proof rate when unverified
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 60 % (the loss model's worst band)
+  value: 0.6
+- key: worst_case_value.purchased_lead_share
+  section: Data integrity
+  meaning: Purchased-lead share
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 60 %
+  value: 0.6
+- key: worst_case_value.prerecorded_ai_share
+  section: Data integrity
+  meaning: Prerecorded / AI voice share
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 20 %
+  value: 0.2
+- key: worst_case_value.optouts_not_honored_share
+  section: Data integrity
+  meaning: Opt-outs not honored by the deadline
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 10 %
+  value: 0.1
+- key: worst_case_value.internal_list_contacts
+  section: Data integrity
+  meaning: Internal-list contacts (M12)
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 1 (any)
+  value: 1
+- key: worst_case_value.litigator_contacts
+  section: Data integrity
+  meaning: Litigator-list contacts (M14)
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: 1 (any)
+  value: 1
+- key: worst_case_value.reassigned_check
+  section: Data integrity
+  meaning: Reassigned check before calling (M11)
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: '"not checked"'
+  value: not_checked
+- key: worst_case_value.prior_matters
+  section: Data integrity
+  meaning: Prior TCPA matters
+  owner: Product
+  status: proposed
+  counsel_item: D22
+  affects_status: true
+  counsel_approved: true
+  shown: max(stated, court docket count)
+  value: max_of_stated_and_docket_count
+- key: completeness_floor
+  section: Data integrity
+  meaning: Reconciliation ratio (records ÷ independent total) below which the calls, texts, vendor_leads and days_present
+    measures flag the period as "incomplete data"; the missing share takes worst-case values
+  owner: Product
+  status: proposed
+  counsel_item: D23
+  affects_status: false
+  counsel_approved: false
+  shown: '0.9'
+  value: 0.9
+- key: calls_per_agent_day
+  section: Data integrity
+  meaning: Low and high calls per seat per working day for the seat_capacity check; outbound calls outside seats × range ×
+    working days flag the period
+  owner: Product
+  status: tbd
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: Not set yet
+- key: stop_check_min_texts
+  section: Data integrity
+  meaning: A period with more outbound texts than this and zero inbound STOP replies is flagged
+  owner: Product
+  status: proposed
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: 1,000
+  value: 1000
+- key: conv_review_enabled_channels
+  section: AI conversation review
+  meaning: Channels reviewed
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: call, text
+  value:
+  - call
+  - text
+- key: conv_review_min_confidence
+  section: AI conversation review
+  meaning: Below this the result is unclear and no opt-out is marked
+  owner: Product
+  status: proposed
+  counsel_item: C21
+  affects_status: true
+  counsel_approved: false
+  shown: '0.90'
+  value: 0.9
+- key: conv_review_accuracy_pass_mark
+  section: AI conversation review
+  meaning: Accuracy gate, measured separately for calls and texts
+  owner: Product
+  status: proposed
+  counsel_item: C21
+  affects_status: true
+  counsel_approved: false
+  shown: 95%
+  value: 0.95
+- key: conv_review_thread_days
+  section: AI conversation review
+  meaning: How far back a text thread is read for context
+  owner: Product
+  status: set
+  counsel_item: null
+  affects_status: true
+  counsel_approved: false
+  shown: '30'
+  value: 30
+- key: conv_review_text_quiet_minutes
+  section: AI conversation review
+  meaning: A text conversation counts as ended after this long with no new message
+  owner: Engineering
+  status: set
+  counsel_item: null
+  affects_status: false
+  counsel_approved: false
+  shown: '10'
+  value: 10
+- key: conv_review_partial_requests
+  section: AI conversation review
+  meaning: Whether a partial request (time window, channel) limits contact
+  owner: Counsel
+  status: tbd
+  counsel_item: C21
+  affects_status: true
+  counsel_approved: false
+  shown: Not set yet
+  provisional: not_applied
