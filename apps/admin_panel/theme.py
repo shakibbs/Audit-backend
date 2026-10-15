@@ -45,6 +45,11 @@ def unfold_config(portal_url: str) -> dict:
                 {'title': 'Clients', 'separator': True, 'items': [
                     link('Client companies', 'apartment', 'admin:clients_client_changelist'),
                 ]},
+                {'title': 'Rules', 'separator': True, 'items': [
+                    link('Rulebook', 'menu_book', 'admin:rulebook_rulevalue_changelist'),
+                    link('Regulatory changes', 'gavel', 'admin:regulatory_regchange_changelist'),
+                    link('Client suggestions', 'lightbulb', 'admin:regulatory_clientsuggestion_changelist'),
+                ]},
                 {'title': 'CiV team', 'separator': True, 'items': [
                     link('CiV staff', 'badge', 'admin:staff_staffuser_changelist'),
                     link('Permission groups', 'admin_panel_settings', 'admin:auth_group_changelist'),

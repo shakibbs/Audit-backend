@@ -67,8 +67,8 @@ def current_version(mode: str = 'internal') -> RulebookVersion:
 
 
 @lru_cache(maxsize=8)
-def _rows(version_id: int, file_sha256: str) -> dict[str, list[RuleValue]]:
-    """Every row of a version, by key, read once per process (the file hash makes a reloaded version read again)."""
+def _rows(version_id: int, file_sha256: str, revision: int) -> dict[str, list[RuleValue]]:
+    """Every row of a version, by key, read once per process (a reloaded file or an approved update reads them again)."""
     by_key: dict[str, list[RuleValue]] = {}
     for row in RuleValue.objects.filter(version_id=version_id):
         by_key.setdefault(row.key, []).append(row)
@@ -81,7 +81,7 @@ class RuleSet:
     def __init__(self, mode: str = 'internal', version: RulebookVersion | None = None):
         self.mode = mode
         self.version = version or current_version(mode)
-        self._by_key = _rows(self.version.pk, self.version.file_sha256)
+        self._by_key = _rows(self.version.pk, self.version.file_sha256, self.version.revision)
 
     def get(self, key: str, *, on: date, state: str | None = None, forum: str | None = None, variant: str | None = None) -> Rule:
         rows = self._by_key.get(key)

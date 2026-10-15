@@ -10,4 +10,6 @@ urlpatterns = [
     path('civ-admin/', admin.site.urls),
     path('api/health', health),
     path('api/', include('apps.accounts.urls')),
+    path('api/', include('apps.rulebook.urls')),
+    path('api/', include('apps.regulatory.urls')),
 ]

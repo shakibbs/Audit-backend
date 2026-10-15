@@ -13,6 +13,11 @@ ACTION_LABEL = {
     'connection_added': ('Connection added', 'teal'), 'connection_changed': ('Connection changed', 'gray'),
     'connection_key_changed': ('Key replaced', 'amber'), 'connection_tested': ('Connection tested', 'gray'),
     'connection_removed': ('Connection removed', 'amber'), 'connect_link_sent': ('Connect link sent', 'teal'),
+    'reg_change_added': ('Law change added', 'teal'), 'reg_change_changed': ('Law change edited', 'gray'),
+    'reg_change_removed': ('Law change removed', 'amber'),
+    'reg_change_read': ('Law change read', 'gray'), 'rule_update_reviewed': ('Lawyer reviewed a rule', 'teal'),
+    'law_change_suggested': ('Law change suggested', 'teal'),
+    'rule_update_approved': ('Rule updated', 'green'), 'rule_update_rejected': ('Rule update rejected', 'gray'),
     'client_key_created': ('Phone-code key made', 'teal'), 'client_key_destroyed': ('Phone-code key destroyed', 'red'),
 }
 

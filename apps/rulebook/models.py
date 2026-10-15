@@ -13,6 +13,7 @@ class RulebookVersion(models.Model):
     effective_from = models.DateField()
     source = models.CharField(max_length=200)  # where the values came from (spec, counsel memo, …)
     file_sha256 = models.CharField(max_length=64)  # the loaded file; a changed file reloads a draft or provisional version
+    revision = models.PositiveIntegerField(default=0)  # +1 for each approved update, so lookups read the rules again
     loaded_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -62,6 +63,8 @@ class RuleValue(models.Model):
         constraints = [models.UniqueConstraint(fields=['version', 'key', 'jurisdiction', 'effective_from'], name='rule_value_unique',
                                                nulls_distinct=False)]
         indexes = [models.Index(fields=['key', 'jurisdiction'])]
+        verbose_name = 'rule'
+        verbose_name_plural = 'Rulebook'
 
     def __str__(self) -> str:
         return f'{self.key} [{self.jurisdiction}] = {self.shown} ({self.status})'

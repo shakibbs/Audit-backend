@@ -50,6 +50,7 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/anchoring` | Daily seal: Merkle root per client per day, RFC 3161 + OpenTimestamps stamps, `verify()` |
 | `apps/tenancy` | Tenancy lock: Postgres row-level security on client-data tables, `tenant()` / `all_clients()` scopes, `create_app_role` |
 | `apps/rulebook` | Rulebook: versions and rule values (federal, state, forum; effective-dated), loaded from `rulebook/*.yaml` |
+| `apps/regulatory` | Regulatory changes (laws, orders, court rulings) and the Rulebook rules each touches; admin page |
 | `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
@@ -193,9 +194,60 @@ hours.pending      # True: TBD → the check returns not_run, RULE_PENDING
 - **Mode:** `client` = approved rulebooks only · `internal` (default) = approved or provisional · `draft` = also
   TBD test values and `variant='strict' | 'lenient'` (tests and the impact view).
 
+### Business days (Module 2, step 3)
+
+`apps/rulebook/business_days.py` counts business days as the Rulebook says (`business_day_calendar`: Mon–Fri except
+observed US federal holidays, on the **recipient's** own date).
+
+```python
+deadline = optout_deadline(stop_received_at, time_zone='America/New_York')
+deadline.date         # STOP on Fri 20 Nov 2026 → Mon 7 Dec 2026 (Thanksgiving skipped)
+deadline.provisional  # True while optout_deadline_business_days is Proposed
+BusinessCalendar().between(start, end)   # e.g. business days a request took to reach the list (M42)
+```
+
+- Day 1 is the first business day **after** the opt-out day. Weekend holidays are skipped on the observed day.
+- Time zone order (`business_day_tz_fallback`): ZIP, then area code, then America/New_York (the earliest deadline);
+  `pick_time_zone()` applies it. The ZIP and area-code tables come with Module 4 (normalizer).
+
+### Regulatory changes and the admin Rules pages (Module 2, step 5)
+
+Admin panel → **Rules**:
+- **Rulebook**: every rule by place, read only, with search and filters (status, owner, section, place, "changes
+  results"). Rules still change only in `rulebook/*.yaml`; edit and approve screens come in Module 13.
+- **Regulatory changes**: CiV staff add, edit and remove law changes (status, dates, plain-words summary, rules it
+  touches picked from the Rulebook, metrics, source, counsel check). Unknown rule keys, bad metric codes and banned
+  words are refused; every add, edit and removal is logged.
+- **Rule updates tab** on a law change (Module 2, step 5b): one line per rule value the law brings. **Modifies rule**
+  = pick the existing rule; leave it **blank for a brand-new rule** and give its name and meaning. Each line stays a
+  **Draft** until an admin with "Can approve rule updates" clicks **Approve** on that page: the old value then ends
+  the day before the start date and the new one starts, so there is always one value per rule, place and day
+  (overlaps refused). **Reject** keeps the line on record, unused. Both are logged. Approved updates are re-applied
+  whenever the Rulebook file is reloaded.
+- Starting items: the four from the portal's sample data, marked "to check" for counsel.
+
+### Portal pages and lawyers' reviews (Module 2, step 6)
+
+| Method + path | Who | What |
+|---|---|---|
+| `GET /api/rulebook` | signed in | Rules in force today (federal + state rows), counts, and a note while the version is not lawyer-confirmed |
+| `GET /api/rulebook/calendar?year=` | signed in | Calendar & hours: holidays, next holiday, calling hours and limits by state, opt-out timing, time-zone order |
+| `GET /api/reg-changes` | signed in | Law changes with their draft / approved rule values and this company's own review and "read" mark |
+| `POST /api/reg-changes/<id>/confirm` | signed in | "I've read this", for the whole company |
+| `POST /api/rule-updates/<id>/review` | the company's lawyer | Agree / disagree + comment on a **draft**; can be changed until CiV decides |
+| `POST /api/reg-changes/suggest` | the company's lawyer | Tell CiV about a law change; only CiV sees it (admin → Rules → Client suggestions) |
+
+- Reviews are advice: the admin page shows "N agree · N disagree" with comments next to each draft; **CiV alone
+  approves**. Reviews, read marks and suggestions are client data: locked per client (row-level security).
+- `apps.tenancy.middleware.TenantScopeMiddleware` opens the rows for each request: CiV staff in the admin panel see
+  every client; a signed-in client user sees only its own company; anyone else sees no client data.
+- Spec key names containing banned words are shown under a plain name (`direct_violation_grade` →
+  `direct_contact_cap_grade`).
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
+The portal then sends sign-in, users, invites, Rulebook and Regulatory Changes to Django; other pages use sample data.
 While building, emails (reset and invite links) print in this terminal.
 
 ## Deploy on a server that already runs Traefik (Docker)

@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 from django.db import transaction
 
+from .apply import apply_update
 from .models import RulebookVersion, RuleValue
 
 RULEBOOK_DIR = Path(__file__).resolve().parents[2] / 'rulebook'
@@ -83,4 +84,12 @@ def load(path: Path) -> tuple[RulebookVersion, str]:
         version, _ = RulebookVersion.objects.update_or_create(version=doc['version'], defaults={
             'status': doc['status'], 'effective_from': doc['effective_from'], 'source': doc['source'], 'file_sha256': digest})
         RuleValue.objects.bulk_create([row for rule in doc['rules'] for row in _rows(version, rule)])
+        reapply_approved(version)
     return version, 'reloaded' if existing else 'loaded'
+
+
+def reapply_approved(version: RulebookVersion) -> None:
+    """Updates approved in the admin panel survive a reload of the file: they are applied again, oldest first."""
+    from apps.regulatory.models import RuleUpdate
+    for update in RuleUpdate.objects.filter(state=RuleUpdate.State.APPROVED).order_by('approved_at', 'pk'):
+        apply_update(version, update.as_update())

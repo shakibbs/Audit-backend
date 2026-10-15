@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.anchoring',
     'apps.tenancy',
     'apps.rulebook',
+    'apps.regulatory',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.tenancy.middleware.TenantScopeMiddleware',  # which client's rows this request may see
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
