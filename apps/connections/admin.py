@@ -67,12 +67,17 @@ class ConnectionInline(StackedInline):
     show_change_link = False
     verbose_name = 'connection'
     verbose_name_plural = 'Connections'
-    fields = ('provider', 'label', 'account', 'key', 'secret', 'status_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
-    readonly_fields = ('status_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
+    fields = ('provider', 'label', 'account', 'key', 'secret', 'status_shown', 'sync_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
+    readonly_fields = ('status_shown', 'sync_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
 
     @admin.display(description='Status')
     def status_shown(self, connection):
         return status_pill(connection) if connection.pk else 'Saved when you click Save'
+
+    @admin.display(description='Sync')
+    def sync_shown(self, connection):
+        """What the sync engine knows: Live / Catching up / Stale / Never read, last read, records read, last problem."""
+        return sync_summary(connection)
 
     @admin.display(description='Saved key')
     def key_saved(self, connection):
@@ -99,3 +104,29 @@ def key_guide_html() -> str:
     guide = format_html_join('', '<li>{}</li>', ((line,) for line in key_guide()))
     return format_html('<details><summary style="cursor:pointer;font-weight:600">Which fields each tool needs</summary>'
                        '<ul style="margin:6px 0 0 18px;list-style:disc">{}</ul></details>', guide)
+
+
+SYNC_PILL = {'live': ('green', 'Live'), 'catching_up': ('amber', 'Catching up'), 'stale': ('red', 'Stale'), 'never': ('gray', 'Never read')}
+
+
+def sync_summary(connection):
+    from django.utils.timesince import timesince
+
+    from apps.sync.connector import CONNECTORS
+    from apps.sync.health import state
+    from apps.sync.models import SyncCursor
+    if not connection.pk:
+        return '-'
+    if connection.provider not in CONNECTORS:
+        return format_html('<span class="civ"><span class="pill pill-gray">{}</span> <span class="tiny">{}</span></span>',
+                           'Not read yet', 'its adapter comes when a client needs it')
+    cursor = SyncCursor.objects.filter(connection=connection).first()
+    color, label = SYNC_PILL[state(cursor)]
+    if cursor is None:
+        detail = 'waiting for the client to click Allow' if connection.tool.auth == 'oauth' else 'read once the connection works'
+    else:
+        last = f'last read {timesince(cursor.last_heartbeat_at)} ago' if cursor.last_heartbeat_at else 'not read yet'
+        detail = f'{last} · {cursor.records_delivered:,} records read'
+        if cursor.last_error:
+            detail += f' · problem: {cursor.last_error} ({cursor.failures_in_row}× in a row)'
+    return format_html('<span class="civ"><span class="pill pill-{}">{}</span> <span class="tiny">{}</span></span>', color, label, detail)

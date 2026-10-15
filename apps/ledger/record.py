@@ -15,11 +15,13 @@ class LedgerJob:
         self.client = client
         self.name = name
         self.id = uuid.uuid4()
+        self.written = 0  # rows this job wrote; counted here because a database rollback may remove them first
 
     def record(self, *, source_system: str, source_record_id: str, raw: bytes, content_kind: str, source_grade: str) -> Fingerprint:
         """Fingerprint one record as it arrived. `raw` is the response bytes, never a re-built copy; it is not kept."""
         if not isinstance(raw, bytes):
             raise TypeError('Fingerprint the raw bytes as received, not a re-built copy.')
+        self.written += 1
         return Fingerprint.objects.create(
             client=self.client, job_id=self.id, source_system=source_system, source_record_id=str(source_record_id),
             content_kind=content_kind, source_grade=source_grade,
@@ -35,6 +37,6 @@ def ledger_job(client, name: str):
         try:
             yield job
         except BaseException as error:
-            removed, _ = Fingerprint.objects.filter(job_id=job.id).delete()
-            PurgeLog.objects.create(client=client, job_id=job.id, job_name=name, rows_removed=removed, reason=type(error).__name__)
+            Fingerprint.objects.filter(job_id=job.id).delete()
+            PurgeLog.objects.create(client=client, job_id=job.id, job_name=name, rows_removed=job.written, reason=type(error).__name__)
             raise

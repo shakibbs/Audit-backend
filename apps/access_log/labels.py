@@ -15,6 +15,8 @@ ACTION_LABEL = {
     'connection_removed': ('Connection removed', 'amber'), 'connect_link_sent': ('Connect link sent', 'teal'),
     'reg_change_added': ('Law change added', 'teal'), 'reg_change_changed': ('Law change edited', 'gray'),
     'reg_change_removed': ('Law change removed', 'amber'),
+    'certificate_lost': ('Certificate lost', 'red'), 'certificate_deadline_close': ('Certificate deadline close', 'amber'),
+    'source_stale': ('Source stale', 'amber'), 'source_recovered': ('Source back', 'green'),
     'reg_change_read': ('Law change read', 'gray'), 'rule_update_reviewed': ('Lawyer reviewed a rule', 'teal'),
     'law_change_suggested': ('Law change suggested', 'teal'),
     'rule_update_approved': ('Rule updated', 'green'), 'rule_update_rejected': ('Rule update rejected', 'gray'),

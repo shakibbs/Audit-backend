@@ -44,6 +44,7 @@ services:
       - traefik.http.routers.civ-admin.entrypoints=${TRAEFIK_ENTRYPOINT}
       - traefik.http.routers.civ-admin.tls=true
       - traefik.http.routers.civ-admin.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.routers.civ-admin.service=civ-admin
       - traefik.http.services.civ-admin.loadbalancer.server.port=8000
 
   # The workers' to-do list. Holds job names and IDs only, never client records, and keeps nothing on disk.

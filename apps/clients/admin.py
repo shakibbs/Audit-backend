@@ -120,6 +120,7 @@ class ClientAdmin(CivModelAdmin):
                         ('Connections', connections.filter(status=Status.CONNECTED).count(), f'connected of {connections.count()}'),
                         ('Users', client.users.filter(is_active=True).count(), 'active'),
                         ('Open invites', client.invites.filter(used_at__isnull=True).count(), 'waiting'),
+                        certificates_tile(client),
                     ],
                     'onboarding': checklist(client),
                     'status_pill': stages.status_pill(client),
@@ -146,3 +147,13 @@ class ClientAdmin(CivModelAdmin):
                  name='clients_client_user_password_link'),
             *super().get_urls(),
         ]
+
+
+def certificates_tile(client) -> tuple:
+    """Consent certificates claimed for this client, and any waiting, without a key, or lost (Module 3)."""
+    from django.db.models import Count
+
+    from apps.certificates.models import CertificateClaim
+    counts = dict(CertificateClaim.objects.filter(client=client).values_list('state').annotate(n=Count('id')))
+    foot = f"{counts.get('waiting', 0)} waiting · {counts.get('no_key', 0)} no key · {counts.get('lost', 0)} lost"
+    return ('Certificates', counts.get('claimed', 0), f'claimed · {foot}')

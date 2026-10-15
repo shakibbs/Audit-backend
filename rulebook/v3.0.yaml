@@ -126,8 +126,8 @@ rules:
   counsel_item: null
   affects_status: false
   counsel_approved: false
-  shown: '5'
-  value: 5
+  shown: '2'
+  value: 2
 - key: full_sweep_interval_days
   section: General and time
   meaning: How often a full listing looks for deleted or silently changed records

@@ -51,6 +51,8 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/tenancy` | Tenancy lock: Postgres row-level security on client-data tables, `tenant()` / `all_clients()` scopes, `create_app_role` |
 | `apps/rulebook` | Rulebook: versions and rule values (federal, state, forum; effective-dated), loaded from `rulebook/*.yaml` |
 | `apps/regulatory` | Regulatory changes (laws, orders, court rulings) and the Rulebook rules each touches; admin page |
+| `apps/sync` | Live sync engine: adapter shape, bookmarks (`sync_cursor`), gaps (`sync_gap`), timetable, health, `/hooks/<id>` |
+| `apps/certificates` | Consent certificates (TrustedForm, Jornaya): found in synced records, claimed within 72 hours, facts kept |
 | `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
@@ -244,10 +246,115 @@ Admin panel → **Rules**:
 - Spec key names containing banned words are shown under a plain name (`direct_violation_grade` →
   `direct_contact_cap_grade`).
 
+## Live sync engine (Module 3, step 1)
+
+Every client tool is read by one engine (`apps/sync`); each tool is a small adapter (`Connector`) answering:
+*what changed since this bookmark?* · *list everything* (weekly check) · *what is in this live notice?* (signature
+checked). Adapters are registered in `apps.sync.connector.CONNECTORS`; until a tool's adapter exists, it is not read.
+
+- **Timetable** (Celery beat): poll every 2 min · catch-up every hour · full check
+  weekly · health every 10 min. Each run reads `SYNC_BATCH_SIZE` (500) records and queues the next turn at the back
+  of the line, so a big client never holds up a small one.
+- **Each record:** fingerprinted (exact bytes), phone numbers turned into phone codes, handed to
+  `apps.sync.handoff` (Module 4 plugs in there; until then only counted), then dropped. A record seen before with
+  the same content is skipped; a changed one is processed again.
+- **Bookmarks** (`sync_cursor`) move only after a batch is fully processed (one transaction), so a crash never skips
+  or doubles a record; a failed batch leaves no rows and one `purge_log` line. The weekly check keeps its own bookmark.
+- **Gaps** (`sync_gap`): a change on a live tool found by the catch-up or full check instead of a live notice.
+- **Live notices are OFF** (owner decision 2026-10-16): there is no public door; CiV asks each tool every **2 minutes**,
+  which meets the 15-minute urgent-alert goal. The door's code (`apps/sync/views.py`, adapter signature checks) stays
+  and is tested; it answers at `/hooks/<connection id>` only if `SYNC_HOOKS_ENABLED=true` and a server route is added.
+- **Health:** Live · Catching up · Stale (quiet longer than the Rulebook's `source_freshness_hours`, 2). Going stale
+  or coming back is logged and the data access level is recalculated. Paused or ended clients are not read.
+- Bookmarks and gaps are client data (tenancy lock).
+
+### Twilio (Module 3, step 2)
+
+`apps/sync/connectors/twilio.py`, built from Twilio's API docs (not yet tried on a real account). Uses the
+Connection's Account SID (`account`) and auth token (`key`). Reads **texts and calls**.
+- **Polled every 2 minutes:** `Messages.json` by `DateSent` and `Calls.json` by `StartTime`, one day at a time, all
+  pages, read oldest first; texts get half of each batch, calls the rest. Each has its own bookmark
+  `<time>#<how many at exactly that time are done>` (stored together as JSON). The newest 2 minutes wait for the next
+  run. Starts at the client's start date. A row whose status changed is read again.
+- **Live notices (off):** the adapter can check Twilio's `X-Twilio-Signature` (verified against Twilio's official
+  library), ready if the door is ever opened.
+
+### Convoso (Module 3, step 3)
+
+`apps/sync/connectors/convoso.py`, built from Convoso's API docs (not yet tried on a real account). The Connection
+holds the auth token (`key`) and the **account time zone** (`secret`, e.g. `America/New_York`): Convoso gives call
+times in that zone and CiV turns them into UTC, so a wrong zone would shift every calling-hours check.
+- Polled every 2 minutes: `POST /v1/log/retrieve` (token in the body, not the URL) by time range, one hour at a time,
+  all pages (`limit` + `offset`), oldest first; bookmark `<time>#<n>`. Each call's number, number dialed and caller
+  ID become phone codes. A changed result code is read again (weekly full check).
+- **Test connection** checks the time zone and reads one call from the last hour.
+
+### Five9 (Module 3, step 3)
+
+`apps/sync/connectors/five9.py`, built from Five9's Configuration Web Services docs (SOAP; not yet tried on a real
+account). The Connection holds a reports-only user (`account`), its password (`key`) and the **report time zone**
+(`secret`).
+- Five9 gives call logs as reports: `runReport` (folder "Call Log Reports", report "Call Log") for one hour →
+  `isReportRunning` until done (about 2 minutes at most, else retried next turn) → `getReportResultCsv`. The whole
+  hour is processed at once (one report per window); bookmark = the window's end. The newest 5 minutes wait.
+- Read **every 10 minutes at most** (`min_poll_minutes`; any adapter can set its own gap). Columns matched loosely
+  (CALL ID, TIMESTAMP or DATE + TIME, ANI, DNIS); report folder, name and columns to confirm on a real account.
+- **Test connection** checks the time zone and runs the report for the last minute.
+
+### Vicidial (Module 3, step 3)
+
+`apps/sync/connectors/vicidial.py`. Each call center runs its own Vicidial, so CiV reads the call log tables through
+a **read-only database account on the client's server** (CiV connects out; nothing opens on CiV's side). The
+Connection holds `host:port/database` (`account`, database usually `asterisk`), the user (`key`) and password
+(`secret`). Uses PyMySQL. Built from Vicidial's table layout; not yet tried on a real server.
+- Polled every 2 minutes: `vicidial_log` (outbound) and `vicidial_closer_log` (inbound), half a batch each, oldest
+  first by `start_epoch` (universal time: no time-zone setting) then row ID; bookmark per table `<epoch>|<id>`.
+  Only `SELECT` of the needed columns is ever sent. The newest 2 minutes wait.
+- **Test connection** reads one row from each table and says whether the login, the network or the SELECT right
+  is the problem.
+
+### Consent certificates (Module 3, step 4)
+
+`apps/certificates`. Every synced record (dialer, CRM…) is scanned for a **TrustedForm** certificate link
+(`cert.trustedform.com/<40 hex>`) or a **Jornaya LeadiD** token (a UUID in a field named for LeadiD/Jornaya). Each is
+queued once per client with a deadline = lead time + `cert_unretained_expiry_hours` (72).
+- **Claim queue every minute, nearest deadline first:** TrustedForm is claimed (Retain + Insights, api-version 4.0)
+  with the client's key; Jornaya is looked up (request format **to confirm** on a real account). Vendor down → retried
+  each minute until the deadline. Not found or past the deadline → **lost** (logged). No certificate account
+  connected → waits as "no key" (a key added before the deadline still works). Still unclaimed 12 hours before the
+  deadline → logged once.
+- Kept: created / expires dates and the form's host + path only (no query string). The vendor's answer is
+  fingerprinted (source grade B) and dropped. Consent itself is judged in Modules 6 and 7.
+- **Test connection** asks about a made-up certificate: "not found" = key works, "refused" = bad key.
+
+### CRMs: Salesforce and HubSpot (Module 3, step 5)
+
+Adapters only (`apps/sync/connectors/salesforce.py`, `hubspot.py`), built from the vendors' REST docs; not yet tried
+on real accounts. They use the client's access pass from "Allow" (stored locked on the Connection) and renew it with
+CiV's app registration (`SALESFORCE_CLIENT_ID/SECRET`, `HUBSPOT_CLIENT_ID/SECRET` in `.env`; `apps/sync/connectors/oauth.py`).
+A refused renewal = **Disconnected** (the client must click Allow again). **Not built yet:** the "Allow" flow and the
+portal's Connect button, and registering CiV's developer apps.
+- **Salesforce:** Leads, Contacts and call Tasks changed since the bookmark, `FIELDS(ALL)` 200 at a time, oldest first
+  by `SystemModstamp` then `Id`; bookmark per object `<stamp>|<id>`.
+- **HubSpot:** contacts and calls through the search API by `hs_lastmodifieddate` (ascending, 100 a page); bookmark per
+  object `<ms>#<n>`. Asks for the needed properties plus any TrustedForm / LeadiD / Jornaya property.
+- Certificate links in any CRM field reach the 72-hour claim queue.
+
+### Sync made visible (Module 3, step 6)
+
+- **Admin → client page → Connections tab:** a read-only **Sync** column per tool: Live · Catching up · Stale · Never
+  read, last read, records read, last problem (e.g. "Five9Error, 4× in a row"); "waiting for the client to click
+  Allow" for CRMs; "Not read yet" for tools whose adapter is not built.
+- **Admin → client page:** a **Certificates** tile (claimed · waiting · no key · lost).
+- **Portal API:** `GET /api/sources` (the client's real tools with Live/Stale/Not supplied, plus the same five upload
+  types the Upload centre offers) and `GET /api/data-health` (access level, tools live/stale/not connected, last
+  change; records completeness and conversation review are `null` = not yet measured, until Modules 5 and 9).
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
-The portal then sends sign-in, users, invites, Rulebook and Regulatory Changes to Django; other pages use sample data.
+The portal then sends sign-in, users, invites, Rulebook, Regulatory Changes, Source Registry and the Overview's Data
+health card to Django; other pages use sample data.
 While building, emails (reset and invite links) print in this terminal.
 
 ## Deploy on a server that already runs Traefik (Docker)

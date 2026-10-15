@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'apps.tenancy',
     'apps.rulebook',
     'apps.regulatory',
+    'apps.sync',
+    'apps.certificates',
 ]
 
 MIDDLEWARE = [
@@ -146,7 +148,24 @@ CELERY_BEAT_SCHEDULE = {
     'heartbeat': {'task': 'apps.jobs.tasks.heartbeat', 'schedule': 60.0},
     'seal-nightly': {'task': 'apps.anchoring.tasks.seal_nightly', 'schedule': crontab(minute=30, hour=0)},  # 00:30 UTC
     'stamp-missing': {'task': 'apps.anchoring.tasks.stamp_missing', 'schedule': crontab(minute=15)},  # hourly retry
+    # Live sync (apps.sync): Rulebook poll_interval_minutes 2, catchup_interval_minutes 60, full_sweep_interval_days 7.
+    'sync-poll': {'task': 'apps.sync.tasks.poll_due', 'schedule': 2 * 60.0},
+    'sync-catchup': {'task': 'apps.sync.tasks.catchup_all', 'schedule': crontab(minute=40)},
+    'sync-full-sweep': {'task': 'apps.sync.tasks.full_sweep_due', 'schedule': crontab(minute=10, hour=3)},
+    'sync-health': {'task': 'apps.sync.tasks.check_health', 'schedule': 10 * 60.0},
+    # Consent certificates must be claimed within 72 hours: the queue runs every minute.
+    'claim-certificates': {'task': 'apps.certificates.tasks.claim_certificates', 'schedule': 60.0},
 }
+# Live notices ("hooks") from clients' tools are OFF (owner decision 2026-10-16): CiV only asks each tool, every
+# 2 minutes, so there is no public door. The /hooks/ code stays for later; it answers only when this is true.
+SYNC_HOOKS_ENABLED = os.environ.get('SYNC_HOOKS_ENABLED', 'false').lower() == 'true'
+# CiV's own app registrations with OAuth CRMs, used only to renew a client's access pass (never in GitHub).
+SALESFORCE_CLIENT_ID = os.environ.get('SALESFORCE_CLIENT_ID', '')
+SALESFORCE_CLIENT_SECRET = os.environ.get('SALESFORCE_CLIENT_SECRET', '')
+HUBSPOT_CLIENT_ID = os.environ.get('HUBSPOT_CLIENT_ID', '')
+HUBSPOT_CLIENT_SECRET = os.environ.get('HUBSPOT_CLIENT_SECRET', '')
+# Records read per turn: small, so a big client never holds up the others.
+SYNC_BATCH_SIZE = int(os.environ.get('SYNC_BATCH_SIZE', '500'))
 # Outside stamps for the daily seal (apps.anchoring), tried in order.
 ANCHOR_TSA_URLS = env_list('ANCHOR_TSA_URLS', 'https://freetsa.org/tsr,http://ts.ssl.com')
 ANCHOR_OTS_CALENDARS = env_list('ANCHOR_OTS_CALENDARS', 'https://a.pool.opentimestamps.org,https://b.pool.opentimestamps.org')

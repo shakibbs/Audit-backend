@@ -9,7 +9,7 @@
         {% if not add %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="civ-btn civ-btn-ghost" href="{{ activity_url }}">Full access log</a></div>{% endif %}
     </header>
     {% if summary %}
-        <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 20px;">
             {% for tag, value, foot in summary %}
                 <div class="card kpi"><span class="kpi-tag">{{ tag }}</span><span class="kpi-val">{{ value }}</span><span class="kpi-foot">{{ foot }}</span></div>
             {% endfor %}

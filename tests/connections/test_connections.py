@@ -86,7 +86,7 @@ def test_editing_with_empty_key_keeps_the_saved_one(staff_client, company):
 
 @pytest.mark.django_db
 def test_tool_without_a_tester_is_saved_not_tested(staff_client, company):
-    save_page(staff_client, company, [connection_row(0, provider='convoso', key='abc')])
+    save_page(staff_client, company, [connection_row(0, provider='pipedrive', key='abc')])
     assert Connection.objects.get().status == Status.UNTESTED
     company.refresh_from_db()
     assert company.access_level == 0
@@ -94,7 +94,7 @@ def test_tool_without_a_tester_is_saved_not_tested(staff_client, company):
 
 @pytest.mark.django_db
 def test_removing_a_connection_on_the_page(staff_client, company):
-    save_page(staff_client, company, [connection_row(0, provider='convoso', key='abc')])
+    save_page(staff_client, company, [connection_row(0, provider='pipedrive', key='abc')])
     saved = Connection.objects.get()
     save_page(staff_client, company, [{**connection_row(0, saved, provider='convoso'), 'connections-0-DELETE': 'on'}], initial=1)
     assert not Connection.objects.exists()

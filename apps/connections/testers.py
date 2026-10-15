@@ -2,6 +2,7 @@
 import base64
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from apps.connections.models import Connection, Status
@@ -27,7 +28,103 @@ def test_twilio(creds: dict) -> tuple[str, str]:
     return Status.CONNECTED, f'Read access works for account "{account.get("friendly_name", sid)}".'
 
 
-TESTERS = {'twilio': test_twilio}
+def test_convoso(creds: dict) -> tuple[str, str]:
+    """Reads one call from the last hour; also checks the account time zone, which every call time depends on."""
+    from datetime import UTC, datetime, timedelta
+
+    from apps.sync.connectors.convoso import WHEN, ConvosoError, zone
+    try:
+        tz = zone(creds.get('secret', ''))
+    except ConvosoError:
+        return Status.FAILED, 'Enter the Convoso account time zone in "API secret", e.g. America/New_York.'
+    now = datetime.now(UTC).astimezone(tz)
+    body = {'auth_token': creds.get('key', ''), 'start_time': (now - timedelta(hours=1)).strftime(WHEN), 'end_time': now.strftime(WHEN), 'limit': 1}
+    try:
+        request = urllib.request.Request('https://api.convoso.com/v1/log/retrieve', data=urllib.parse.urlencode(body).encode(), headers={'Accept': 'application/json'})
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
+            answer = json.loads(reply.read())
+    except (urllib.error.URLError, TimeoutError):
+        return Status.FAILED, 'Could not reach Convoso. Try again in a minute.'
+    if not answer.get('success'):
+        return Status.FAILED, 'Convoso refused the auth token: check it in Convoso → Admin → API.'
+    return Status.CONNECTED, f'Read access works (call log, times in {tz.key}).'
+
+
+def test_five9(creds: dict) -> tuple[str, str]:
+    """Runs the Call Log report for the last minute: proves the login works and the user may run reports."""
+    from datetime import UTC, datetime, timedelta
+
+    from apps.sync.connectors.five9 import Five9, Five9Error, zone
+    try:
+        zone(creds.get('secret', ''))
+    except Five9Error:
+        return Status.FAILED, 'Enter the Five9 report time zone in "API secret", e.g. America/New_York.'
+
+    class Probe:  # just enough of a connection for the adapter
+        def get_credentials(self):
+            return creds
+    try:
+        adapter = Five9(Probe())
+        now = datetime.now(UTC)
+        adapter.report_csv(now - timedelta(minutes=1), now)
+    except Five9Error as error:
+        return Status.FAILED, f'Five9 said: {error}. Check the username, password and that the user may run the Call Log report.'
+    except (urllib.error.URLError, TimeoutError):
+        return Status.FAILED, 'Could not reach Five9, or the report took too long. Try again in a minute.'
+    return Status.CONNECTED, 'Read access works (Call Log report).'
+
+
+def test_vicidial(creds: dict) -> tuple[str, str]:
+    """Connects to the client's Vicidial database and reads one row from each call log table (read-only)."""
+    import pymysql
+
+    from apps.sync.connectors.vicidial import TABLES, Vicidial
+
+    class Probe:
+        def get_credentials(self):
+            return creds
+    adapter = Vicidial(Probe())
+    try:
+        for table in TABLES:
+            adapter.query(f'SELECT {table.id_column} FROM {table.table} LIMIT 1', ())
+    except pymysql.err.OperationalError as error:
+        code = error.args[0] if error.args else 0
+        if code == 1045:
+            return Status.FAILED, 'Vicidial refused the database user or password.'
+        return Status.FAILED, 'Could not reach the Vicidial database: check the server address, port and that it accepts CiV.'
+    except pymysql.err.ProgrammingError:
+        return Status.FAILED, 'Connected, but the call log tables could not be read: give the user SELECT on vicidial_log and vicidial_closer_log.'
+    return Status.CONNECTED, 'Read access works (outbound and inbound call logs).'
+
+
+def _certificate_probe(ask) -> tuple[str, str]:
+    """Asks about a made-up certificate: "not found" proves the key works; "refused" means it does not."""
+    from apps.certificates import vendors
+    try:
+        ask()
+    except vendors.NotFound:
+        return Status.CONNECTED, 'The key works (asked about a test certificate; nothing was claimed).'
+    except vendors.Refused:
+        return Status.FAILED, 'The key was refused: check it in the vendor account.'
+    except (urllib.error.URLError, TimeoutError):
+        return Status.FAILED, 'Could not reach the vendor. Try again in a minute.'
+    return Status.CONNECTED, 'The key works.'
+
+
+def test_trustedform(creds: dict) -> tuple[str, str]:
+    from apps.certificates import vendors
+    return _certificate_probe(lambda: vendors.claim_trustedform('0' * 40, creds.get('key', ''), 'civ-key-test'))
+
+
+def test_jornaya(creds: dict) -> tuple[str, str]:
+    from apps.certificates import vendors
+    if not creds.get('account'):
+        return Status.FAILED, 'Enter the Jornaya account code (LAC) in "Account ID".'
+    return _certificate_probe(lambda: vendors.read_jornaya('00000000-0000-0000-0000-000000000000', creds['account'], creds.get('key', '')))
+
+
+TESTERS = {'twilio': test_twilio, 'convoso': test_convoso, 'five9': test_five9, 'vicidial': test_vicidial,
+           'trustedform': test_trustedform, 'jornaya': test_jornaya}
 
 
 def run_test(connection: Connection) -> tuple[str, str]:

@@ -13,6 +13,7 @@ dependencies = [
     "gunicorn>=26.2.0",
     "phonenumbers>=9.0.41",
     "psycopg[binary]>=3.3.6",
+    "pymysql>=1.2.3",
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
     "rfc3161-client>=1.0.9",
