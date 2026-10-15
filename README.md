@@ -53,6 +53,7 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/regulatory` | Regulatory changes (laws, orders, court rulings) and the Rulebook rules each touches; admin page |
 | `apps/sync` | Live sync engine: adapter shape, bookmarks (`sync_cursor`), gaps (`sync_gap`), timetable, health, `/hooks/<id>` |
 | `apps/certificates` | Consent certificates (TrustedForm, Jornaya): found in synced records, claimed within 72 hours, facts kept |
+| `apps/contacts` | Normalizer: every synced call or text → one `contact_event` row, same shape for every tool |
 | `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
@@ -350,11 +351,70 @@ portal's Connect button, and registering CiV's developer apps.
   types the Upload centre offers) and `GET /api/data-health` (access level, tools live/stale/not connected, last
   change; records completeness and conversation review are `null` = not yet measured, until Modules 5 and 9).
 
+## Contacts: one shape for every tool (Module 4, step 1)
+
+`apps/contacts` is a sync hand-off receiver: each synced call or text becomes one **`contact_event`** row (spec
+§contact_event), whatever the tool. `translators.py` holds one small translator per tool (Twilio texts + calls,
+Convoso, Five9, Vicidial, HubSpot calls); CRM leads and people are not contacts (they serve consent and lead source
+later); Salesforce call Tasks carry no number, so the dialer's copy of the call is used.
+- Fields: the person as a **phone code**, caller ID shown as a phone code, channel, direction, time (UTC), end, length,
+  answered, the tool's own result code **kept as is** (the AI judges stop requests, Module 9), SMS status, campaign,
+  agent, the tool's lead ID, tool + record ID, source grade. Dial mode, prerecorded/AI and STIR stay empty
+  (= unknown, never worst case) until a tool provides them.
+- A changed record updates its contact (one row per tool record). Never the number, a name or the message text.
+  Locked per client.
+
+### Where the person is (Module 4, step 2)
+
+`apps/contacts/location.py`: while the number is in memory, each contact gets the person's probable **state**,
+possible **time zones**, **country**, whether it is **outside the US** (US territories such as Puerto Rico are not),
+and a **confidence**: `medium` = area code with one zone; `low` = several possible zones or unknown (the Rulebook's
+`location_uncertain_levels`: reported as "possible", never dropped; checks use the strictest zone); `high` is kept
+for a ZIP code, added when lead data is joined (Modules 6/8). Built on the phonenumbers library's offline data plus
+corrections for US area codes that span two zones and the other +1 countries' zones — **corrections to verify
+against NANPA / tz data**. `ContactEvent.local_times()` gives the contact's time in each possible zone.
+Only state / zones / country are kept, never the number. Contacts saved before this step have no location.
+
+### Same call from two tools (Module 4, step 3)
+
+`apps/contacts/dedupe.py`: the same call or text recorded by two tools is counted once. Same person (phone code),
+same channel, same direction (or one unknown), **different tools**, and **calling times** (when it happened, not when
+CiV read it) within `dedupe_window_seconds` (120, never below `clock_skew_seconds`). A group never holds two records
+from one tool (one tool does not record one call twice), so a copy joins the nearest call only. Nothing is deleted:
+copies share `dedupe_group`; the main record (`is_primary`, the one counted) is the tool that made the contact before
+a CRM, then the earliest. A corrected time re-groups. Count contacts with `is_primary=True`.
+
+### Phone epochs: who had the number when (Module 4, step 4)
+
+`apps/contacts/epochs.py`: numbers get recycled, and one owner's consent never covers the next. Each number (phone
+code) has a timeline of **epochs** (`phone_epoch`: number, start, end, reason, signal source); every contact is
+attached to the epoch it happened in. `split(client, token, at, reason, source)` starts a new owner from `at`: the
+earlier epoch ends there and later contacts move; nothing is deleted; an earlier change learned later is placed in
+time order.
+- **Signal now:** a number that **moved** between CRM customer records (`crm_phone_holder`, record IDs only): every
+  earlier record let go of it and a different record has it. A number on two records at once is a duplicate or a
+  household, not a new owner.
+- **Later signals** call `split()`: "wrong number" replies (Module 9), the client's reassigned-number results, a new
+  consent from someone else (Module 6). Until then most numbers have one epoch. Locked per client.
+
+### Contact Ledger, number page, "Can I call now?" (Module 4, step 5)
+
+- Each contact keeps a **masked label** only (owner decision D31): area code + last 4, e.g. `(916) •••-0001`; the
+  middle digits are never kept.
+- `GET /api/contacts` (status, q, channel, direction): counted contacts newest first (copies from a second tool shown
+  once, flagged "seen in N tools"), where the person probably is, the tool's result code, consent **"Not checked
+  yet"** (Module 6). `q` = a full number (turned into a phone code with the client's key, never stored) or its last 4.
+- `GET /api/evidence/p-<24 hex>`: a number's page by its portal address (part of its phone code, never the number):
+  contacts, owners (epochs), and the **calling window** now (allowed hours in the person's own time for each
+  possible zone, the stricter decides; draft hours said to be draft; state holidays "not set yet").
+- `POST /api/can-call {number}`: where the person probably is and whether now is inside their hours. Not stored.
+  Advice only: CiV never blocks a call.
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
 The portal then sends sign-in, users, invites, Rulebook, Regulatory Changes, Source Registry and the Overview's Data
-health card to Django; other pages use sample data.
+health card, Contact Ledger, number pages and "Can I call now?" to Django; other pages use sample data.
 While building, emails (reset and invite links) print in this terminal.
 
 ## Deploy on a server that already runs Traefik (Docker)

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.regulatory',
     'apps.sync',
     'apps.certificates',
+    'apps.contacts',
 ]
 
 MIDDLEWARE = [
