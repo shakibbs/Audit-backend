@@ -54,6 +54,9 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `apps/sync` | Live sync engine: adapter shape, bookmarks (`sync_cursor`), gaps (`sync_gap`), timetable, health, `/hooks/<id>` |
 | `apps/certificates` | Consent certificates (TrustedForm, Jornaya): found in synced records, claimed within 72 hours, facts kept |
 | `apps/contacts` | Normalizer: every synced call or text → one `contact_event` row, same shape for every tool |
+| `apps/imports` | Uploaded lists: CRM records' creation facts grouped into import batches (bulk / small / by hand / feed) |
+| `apps/optouts` | The STOP list (`opt_out_event`) and opted-out numbers re-added in uploads (M34) |
+| `apps/reconcile` | Records completeness (M37): what CiV read vs the bill, days present, STOP replies, monthly volume |
 | `apps/jobs` | Background workers (Celery + Redis): heartbeat every minute (proves the clock and workers are alive) |
 | `tests/` | One folder per app |
 
@@ -409,6 +412,44 @@ time order.
   possible zone, the stricter decides; draft hours said to be draft; state holidays "not set yet").
 - `POST /api/can-call {number}`: where the person probably is and whether now is inside their hours. Not stored.
   Advice only: CiV never blocks a call.
+
+## Uploaded lists (Module 5, step 1)
+
+`apps/imports` (spec §5a, creation bursts). Every synced CRM person or lead notes **when, by whom (the CRM's user ID)
+and how** it was created (`crm_creation`; Salesforce CreatedDate / CreatedById; HubSpot createdate /
+hs_created_by_user_id / hs_object_source). Every 15 minutes each user's records are regrouped into **batches**
+(`import_batch`): a gap over `import_gap_seconds` (120) starts a new one; n ≥ `import_min_batch` (20) = **bulk import**,
+1 = typed by hand, else small batch. HubSpot's own **IMPORT** label makes a bulk import at any size.
+- **Feeds are not uploads**, recognised without per-client settings: the tool says INTEGRATION / API, or the user
+  creates records on ≥ 5 days and ≥ 10 hours of the day within 2 weeks (a steady stream, not a burst).
+- `origin(client, phone_token, at)` = the batch the number came from (for M32 and the provenance ladder later).
+- Only user IDs and times are kept, never names or file names. Dialer-side list imports come later. Locked per client.
+  Batches are rebuilt from scratch each run (fine at pilot scale).
+
+## The STOP list and re-added numbers (Module 5, step 2)
+
+`apps/optouts`: the STOP list (`opt_out_event`, phone codes only) is filled as records arrive:
+- an inbound text whose **whole message** is one of the Rulebook's `optout_keywords` ("STOP", "Stop!", "unsubscribe";
+  not "Stop by tomorrow?"), read in memory, text never stored;
+- a Salesforce **Do Not Call** box ticked on a lead or contact.
+The tool's own result codes are not used here; Module 9 (AI) adds plain-word opt-outs to the same list.
+After each batch rebuild, every upload (bulk or small batch) is checked: a number that opted out **before** the record
+that brought it back is a **re-added** number (`optout_readded`, M34, double weight in F3). The batch shows the count,
+and each find is logged once.
+
+## Records completeness (Module 5, step 3)
+
+`apps/reconcile` (spec §5b, M37), every night for this month and last. Per measure (`reconciliation`):
+- **texts / calls:** outbound records CiV read from a tool ÷ what that tool **billed** (Twilio Usage Records, daily,
+  `sms-outbound` / `calls-outbound`). Under `completeness_floor` (0.9) = flagged; above 100% = listed for review.
+- **vendor leads**, and calls through dialers: no billing API yet → **not available**, left out of M37, never failed.
+- **days_present:** days with at least one contact ÷ working days (business-day calendar); flags under 0.9.
+- **stop_replies:** zero STOP replies while more than `stop_check_min_texts` (1,000) texts were sent: flagged.
+`period_integrity` per month: **M37** = the lowest available ratio of calls / texts / vendor leads; under the floor =
+**"incomplete data"** (the missing share takes worst-case values in Module 10, the client's missing data, not CiV's
+work); every measure that flagged; and the counted contacts (the Exposure's Volume input). Locked per client.
+`GET /api/data-health` now carries the latest month's **records completeness** for the Overview box:
+`completenessStatus` (complete / incomplete / not_available / not_measured) and a one-line `completenessNote`.
 
 ## Use it with the portal
 

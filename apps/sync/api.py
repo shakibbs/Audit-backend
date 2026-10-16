@@ -75,5 +75,26 @@ class DataHealthView(APIView):
             'lastChangeAt': last,  # None until something has been read
             'sources': {'live': sum(r['status'] == 'current' for r in rows), 'stale': sum(r['status'] == 'stale' for r in rows),
                         'notSupplied': sum(r['status'] == 'not_supplied' for r in rows), 'total': len(rows)},
-            'recordsCompleteness': None, 'completenessFloor': 0.9, 'conversationReview': None,
+            **records_completeness(client), 'conversationReview': None,
         })
+
+
+def records_completeness(client) -> dict:
+    """The Overview's Records completeness box (M37, Module 5): the latest month checked, with a one-line reason."""
+    from apps.reconcile.models import PeriodIntegrity, Reconciliation
+    month = PeriodIntegrity.objects.filter(client=client).order_by('-period').first()
+    if month is None:
+        return {'recordsCompleteness': None, 'completenessFloor': 0.9, 'completenessStatus': 'not_measured', 'completenessNote': None}
+    label = month.period.strftime('%B %Y')
+    if month.completeness is None:
+        return {'recordsCompleteness': None, 'completenessFloor': month.floor, 'completenessStatus': 'not_available',
+                'completenessNote': f'No billing source connected by API to compare with · {label}'}
+    lowest = (Reconciliation.objects.filter(client=client, period=month.period, measure__in=['calls', 'texts', 'vendor_leads'],
+                                            available=True, ratio__isnull=False).order_by('ratio').first())
+    what = f"{lowest.get_measure_display().lower()} {lowest.source_system.title()} billed" if lowest else 'records billed'
+    if month.incomplete:
+        note = f'CiV received only {round(month.completeness * 100)}% of the {what} · {label}'
+    else:
+        note = f'Your logs compared with what {lowest.source_system.title() if lowest else "your tools"} billed · {label}'
+    return {'recordsCompleteness': month.completeness, 'completenessFloor': month.floor,
+            'completenessStatus': 'incomplete' if month.incomplete else 'complete', 'completenessNote': note}

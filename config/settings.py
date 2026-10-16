@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     'apps.sync',
     'apps.certificates',
     'apps.contacts',
+    'apps.imports',
+    'apps.optouts',
+    'apps.reconcile',
 ]
 
 MIDDLEWARE = [
@@ -156,6 +159,10 @@ CELERY_BEAT_SCHEDULE = {
     'sync-health': {'task': 'apps.sync.tasks.check_health', 'schedule': 10 * 60.0},
     # Consent certificates must be claimed within 72 hours: the queue runs every minute.
     'claim-certificates': {'task': 'apps.certificates.tasks.claim_certificates', 'schedule': 60.0},
+    # Uploaded lists (apps.imports): CRM records regrouped into batches every 15 minutes.
+    'import-batches': {'task': 'apps.imports.tasks.rebuild_batches', 'schedule': 15 * 60.0},
+    # Records completeness (apps.reconcile): this month and last, every night.
+    'records-completeness': {'task': 'apps.reconcile.tasks.check_completeness', 'schedule': crontab(minute=30, hour=2)},
 }
 # Live notices ("hooks") from clients' tools are OFF (owner decision 2026-10-16): CiV only asks each tool, every
 # 2 minutes, so there is no public door. The /hooks/ code stays for later; it answers only when this is true.

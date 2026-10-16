@@ -32,7 +32,8 @@ class HObject:
 OBJECTS = (
     HObject('contacts', 'contacts', 'crm_record',
             ('phone', 'mobilephone', 'hs_lastmodifieddate', 'createdate', 'lifecyclestage', 'hs_lead_status',
-             'hs_analytics_source', 'hs_latest_source', 'hs_email_optout'), ('phone', 'mobilephone')),
+             'hs_analytics_source', 'hs_latest_source', 'hs_email_optout',
+             'hs_object_source', 'hs_created_by_user_id'), ('phone', 'mobilephone')),  # how and by whom it was created (imports)
     HObject('calls', 'calls', 'crm_record',
             ('hs_lastmodifieddate', 'hs_timestamp', 'hs_call_direction', 'hs_call_disposition', 'hs_call_status',
              'hs_call_to_number', 'hs_call_from_number', 'hs_call_duration'), ('hs_call_to_number', 'hs_call_from_number')),

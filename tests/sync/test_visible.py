@@ -64,3 +64,22 @@ def test_data_health_is_real_and_honest_about_what_is_not_measured(company, tool
     assert data['recordsCompleteness'] is None and data['conversationReview'] is None and data['lastChangeAt']
     other = browser_for(other_admin).get('/api/data-health').json()  # another company sees only its own (nothing)
     assert other['sources']['total'] == 0 and other['lastChangeAt'] is None
+
+
+def test_records_completeness_box(company, member_user):
+    from datetime import date
+
+    from apps.reconcile.models import PeriodIntegrity, Reconciliation
+    api = browser_for(member_user)
+    assert api.get('/api/data-health').json()['completenessStatus'] == 'not_measured'
+    month = PeriodIntegrity.objects.create(client=company, period=date(2026, 9, 1), completeness=None)
+    data = api.get('/api/data-health').json()
+    assert data['completenessStatus'] == 'not_available' and 'No billing source' in data['completenessNote']
+    Reconciliation.objects.create(client=company, period=date(2026, 9, 1), measure='texts', source_system='twilio', records=700,
+                                  independent_total=1000, ratio=0.7, flagged=True)
+    PeriodIntegrity.objects.filter(pk=month.pk).update(completeness=0.7, incomplete=True)
+    data = api.get('/api/data-health').json()
+    assert (data['recordsCompleteness'], data['completenessStatus']) == (0.7, 'incomplete')
+    assert data['completenessNote'] == 'CiV received only 70% of the texts Twilio billed · September 2026'
+    PeriodIntegrity.objects.filter(pk=month.pk).update(completeness=0.912, incomplete=False)
+    assert api.get('/api/data-health').json()['completenessNote'] == 'Your logs compared with what Twilio billed · September 2026'
