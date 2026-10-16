@@ -55,6 +55,7 @@ class PurgeLog(models.Model):
     class Meta:
         db_table = 'purge_log'
         ordering = ['-failed_at']
+        verbose_name = 'failed-job cleanup'
 
     def __str__(self) -> str:
         return f'{self.job_name} · {self.rows_removed} removed · {self.reason}'

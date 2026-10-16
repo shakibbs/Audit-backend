@@ -83,6 +83,17 @@ class ContactsView(APIView):
         return Response([ledger_row(c, copies.get(c.dedupe_group, 1)) for c in rows])
 
 
+def seal_of(client, contacts) -> dict:
+    """The nightly seal over this number's records: sealed when every record's fingerprint is in a sealed day."""
+    from apps.ledger.models import Fingerprint
+    prints = Fingerprint.objects.filter(client=client, source_record_id__in=[c.source_record_id for c in contacts]).select_related('anchor')
+    sealed = [fp for fp in prints if fp.anchor_id]
+    latest = max(sealed, key=lambda fp: fp.anchor.day).anchor if sealed else None
+    return {'date': latest.day.isoformat() if latest else '', 'root': latest.root if latest else '',
+            'anchored': bool(prints) and len(sealed) == len(prints), 'sealedCount': len(sealed), 'recordCount': len(prints),
+            'stamped': bool(latest and latest.tsa_response)}
+
+
 class NumberView(APIView):
     """A number's page (the portal's evidence file), by its portal address."""
     permission_classes = [IsClientUser]
@@ -108,7 +119,7 @@ class NumberView(APIView):
                           'labels': [c.direction, *([f'owner {c.epoch.number}'] if c.epoch_id else []), *([] if c.is_primary else ['copy from another tool'])]}
                          for c in contacts],
             'proofElements': [], 'optOuts': [], 'listChecks': [],
-            'anchor': {'date': '', 'root': '', 'anchored': False}, 'onHold': False,
+            'anchor': seal_of(client, contacts), 'onHold': False,
             'where': where(last), 'locationConfidence': last.location_confidence,
             'callingWindow': window(last.recipient_state, last.time_zones, last.is_non_us),
             'epochs': [{'number': e.number, 'from': e.started_at, 'to': e.ended_at, 'reason': e.get_reason_display()} for e in epochs],

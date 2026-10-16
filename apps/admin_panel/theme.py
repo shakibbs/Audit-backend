@@ -56,6 +56,8 @@ def unfold_config(portal_url: str) -> dict:
                 ]},
                 {'title': 'Records', 'separator': True, 'items': [
                     link('Access log', 'history', 'admin:access_log_accessentry_changelist'),
+                    link('Failed-job cleanups', 'cleaning_services', 'admin:ledger_purgelog_changelist'),
+                    link('Missed records', 'sync_problem', 'admin:sync_syncgap_changelist'),
                 ]},
             ],
         },

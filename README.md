@@ -451,11 +451,22 @@ work); every measure that flagged; and the counted contacts (the Exposure's Volu
 `GET /api/data-health` now carries the latest month's **records completeness** for the Overview box:
 `completenessStatus` (complete / incomplete / not_available / not_measured) and a one-line `completenessNote`.
 
+## Made visible after Module 5
+
+- **Number page seal:** `GET /api/evidence/…` `anchor` is real: sealed when every record of the number is in a sealed
+  day, the latest seal date and root, `sealedCount` / `recordCount`, and whether the outside time stamp arrived.
+- **Opt-outs card:** `GET /api/optouts`: the STOP list, one row per number (its latest opt-out), newest first, with
+  the masked label, how (e.g. "Text · keyword"), the deadline in business days in the person's time zone (provisional
+  while the 10 days are Proposed), business days left, counted contacts after the opt-out (before / after the
+  deadline), and `dialerMarked: null` (= not checked yet, Module 9).
+- **Admin → Records:** read-only **Failed-job cleanups** (`purge_log`) and **Missed records** (`sync_gap`, empty while
+  every tool is polled).
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
 The portal then sends sign-in, users, invites, Rulebook, Regulatory Changes, Source Registry and the Overview's Data
-health card, Contact Ledger, number pages and "Can I call now?" to Django; other pages use sample data.
+health card, Contact Ledger, number pages, "Can I call now?" and the Opt-outs card to Django; other pages use sample data.
 While building, emails (reset and invite links) print in this terminal.
 
 ## Deploy on a server that already runs Traefik (Docker)

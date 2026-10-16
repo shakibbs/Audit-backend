@@ -48,3 +48,4 @@ class SyncGap(models.Model):
     class Meta:
         db_table = 'sync_gap'
         ordering = ['-found_at']
+        verbose_name = 'missed record'
