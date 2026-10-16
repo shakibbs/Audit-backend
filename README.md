@@ -462,6 +462,37 @@ work); every measure that flagged; and the counted contacts (the Exposure's Volu
 - **Admin → Records:** read-only **Failed-job cleanups** (`purge_log`) and **Missed records** (`sync_gap`, empty while
   every tool is polled).
 
+## Proofs of permission (Module 6, step 1)
+
+`apps/consent` (spec §5): a hand-off receiver (`proofs.proofs_seen`, after the certificate queue) files each proof
+in `consent_proof`, one row per number (phone code) and owner (epoch). Facts only, never a certificate's content.
+
+- **Certificate:** a TrustedForm / Jornaya link in a lead, CRM or dialer record, tied to its claim. Until the claim
+  is read the record's time stands in (`date_known = false`); every 5 minutes `refresh_proof_dates` gives it the
+  certificate's real creation time and the right owner.
+- **Self-asserted:** a CRM field named for consent (not opt-out / revoked) set to yes. Never enough alone.
+- **Existing customer:** HubSpot's "became a customer" date (`hs_lifecyclestage_customer_date`) → purchase.
+- **Owner:** a proof belongs to the owner of the number on the consent date; owner 1's proof never covers owner 2.
+- **Evidence folder:** `evidence_folder(client, token, epoch)` = the owner's proofs plus the uploaded list the number
+  came from; `manual_import_no_evidence` when it came from a list and nothing but a CRM box backs it.
+- Locked per client like the other client tables.
+
+### What proof a contact needs (Module 6, step 2)
+
+`apps/consent/needs.py` (spec §5 "before the checks"), every minute for new contacts, with the rules in force on the
+contact's date. One `consent_need` row per contact and variant (strict and lenient while rules are undecided; the
+portal shows strict). Rulebook lookups now accept `variant=` outside draft runs for keys that are not yet Set.
+
+- Every campaign counts as marketing (label `category_unknown`): same for every client, strictest.
+- Robocall: autodialed mode, unknown mode (`dial_mode_unknown`; lenient: only prerecorded/AI counts), prerecorded or
+  AI voice, or a marketing text (`sms_treated_as_autodialed`).
+- Bases and what each needs: `robocall_marketing` → written consent types · `dnc_listed` (on the STOP list before the
+  contact) → signed written or a current customer · `dnc_unknown` (no do-not-call list supplied, label
+  `dnc_list_not_supplied`) → any accepted proof · `state_law` when a state rule is set · `civ_policy` otherwise.
+- `meets()`: a CRM box never meets a need; an existing customer counts only within 18 months (purchase) / 3 months
+  (inquiry), only for live hand-dialed calls, never robocalls or texts.
+- Inbound contacts and CiV test numbers need nothing.
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.

@@ -101,6 +101,8 @@ class RuleSet:
                 value = row.variants[variant]
             elif row.status == 'tbd':
                 value = row.provisional
+        elif variant and row.variants and variant in row.variants and row.status != 'set':
+            value = row.variants[variant]  # an undecided key runs both ways (strict and lenient); both results are kept
         elif row.status == 'tbd':
             value = None
         return Rule(row.key, row.jurisdiction, value, row.status, row.counsel_item, row.shown, self.version.version, row.effective_from)
