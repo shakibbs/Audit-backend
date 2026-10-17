@@ -55,6 +55,7 @@ class Five9(Connector):
     mode = 'poll'
     source_grade = 'C'
     min_poll_minutes = 10
+    counts = ('calls',)
 
     def __init__(self, connection):
         super().__init__(connection)
@@ -114,6 +115,10 @@ class Five9(Connector):
         phones = [p for p in (column(row, 'DNIS'), column(row, 'ANI'), column(row, 'NUMBER', 'NUMBER1')) if p]
         return Record(source_record_id=call_id, raw=raw, content_kind='call', changed_at=self.called_at(row),
                       phones=list(dict.fromkeys(phones)))
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """Five9's own count: the Call Log report for the whole range, rows counted."""
+        return sum(1 for r in csv.DictReader(io.StringIO(self.report_csv(start, end))) if any((v or '').strip() for v in r.values()))
 
     def changes_since(self, cursor: str, limit: int) -> Page:
         """One window per report, all of it at once: running the same report again for each small batch would be slow."""

@@ -82,19 +82,21 @@ class DataHealthView(APIView):
 def records_completeness(client) -> dict:
     """The Overview's Records completeness box (M37, Module 5): the latest month checked, with a one-line reason."""
     from apps.reconcile.models import PeriodIntegrity, Reconciliation
+    from apps.reconcile.summary import tool_name
     month = PeriodIntegrity.objects.filter(client=client).order_by('-period').first()
     if month is None:
         return {'recordsCompleteness': None, 'completenessFloor': 0.9, 'completenessStatus': 'not_measured', 'completenessNote': None}
     label = month.period.strftime('%B %Y')
     if month.completeness is None:
         return {'recordsCompleteness': None, 'completenessFloor': month.floor, 'completenessStatus': 'not_available',
-                'completenessNote': f'No billing source connected by API to compare with · {label}'}
-    lowest = (Reconciliation.objects.filter(client=client, period=month.period, measure__in=['calls', 'texts', 'vendor_leads'],
+                'completenessNote': f'No tool gave a bill or a total to compare with yet · {label}'}
+    lowest = (Reconciliation.objects.filter(client=client, period=month.period, measure__in=['calls', 'texts', 'vendor_leads', 'crm_records'],
                                             available=True, ratio__isnull=False).order_by('ratio').first())
-    what = f"{lowest.get_measure_display().lower()} {lowest.source_system.title()} billed" if lowest else 'records billed'
-    if month.incomplete:
-        note = f'CiV received only {round(month.completeness * 100)}% of the {what} · {label}'
+    if month.incomplete and lowest:
+        tool = tool_name(lowest.source_system)
+        against = {'bill': f'what {tool} billed', 'tool_total': f'what {tool} itself counted'}.get(lowest.method, f'the working days ({tool})')
+        note = f'CiV received only {round(month.completeness * 100)}% of the {lowest.get_measure_display().lower()} compared with {against} · {label}'
     else:
-        note = f'Your logs compared with what {lowest.source_system.title() if lowest else "your tools"} billed · {label}'
+        note = f"Every connected tool compared with its bill, its own count or its working days · {label}"
     return {'recordsCompleteness': month.completeness, 'completenessFloor': month.floor,
             'completenessStatus': 'incomplete' if month.incomplete else 'complete', 'completenessNote': note}

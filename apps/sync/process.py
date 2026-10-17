@@ -8,6 +8,7 @@ from apps.ledger.models import Fingerprint
 from apps.ledger.record import LedgerJob
 
 from .connector import Record
+from . import handoff
 from .handoff import deliver
 from .models import SyncCursor, SyncGap
 
@@ -16,6 +17,9 @@ def process(job: LedgerJob, cursor: SyncCursor, records: list[Record], found_by:
     """Returns how many were new. A record already seen with the same content is skipped (no double counting).
     Found by the catch-up or full check on a live tool = a gap: the live feed missed it."""
     client, connection = cursor.client, cursor.connection
+    if found_by == 'full_sweep':
+        for receiver in handoff.SEEN:
+            receiver(client, connection, [r.source_record_id for r in records])
     seen = set(Fingerprint.objects.filter(client=client, source_system=cursor.source_system,
                                           source_record_id__in=[r.source_record_id for r in records]).values_list('source_record_id', 'sha256'))
     # A gap is a record never seen at all: a live notice and the API may describe the same record in different bytes.

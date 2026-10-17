@@ -24,6 +24,8 @@ from apps.connections.admin import ConnectionInline, key_guide_html, save_connec
 from apps.connections.models import Connection, Status
 from apps.onboarding import views as onboarding_views
 from apps.onboarding.progress import checklist
+from apps.reconcile.summary import completeness_tile
+from apps.reconcile.views import completeness_page
 
 
 @admin.register(Client)
@@ -121,6 +123,7 @@ class ClientAdmin(CivModelAdmin):
                         ('Users', client.users.filter(is_active=True).count(), 'active'),
                         ('Open invites', client.invites.filter(used_at__isnull=True).count(), 'waiting'),
                         certificates_tile(client),
+                        completeness_tile(client, reverse('admin:clients_client_completeness', args=[client.pk])),
                     ],
                     'onboarding': checklist(client),
                     'status_pill': stages.status_pill(client),
@@ -143,6 +146,7 @@ class ClientAdmin(CivModelAdmin):
                  name='clients_client_document_open'),
             path('<int:client_id>/onboarding/<str:step>/', site.admin_view(onboarding_views.toggle_step),
                  name='clients_client_onboarding_toggle'),
+            path('<int:client_id>/completeness/', site.admin_view(completeness_page), name='clients_client_completeness'),
             path('<int:client_id>/users/<int:user_id>/password-link/', site.admin_view(user_views.password_link),
                  name='clients_client_user_password_link'),
             *super().get_urls(),

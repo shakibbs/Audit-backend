@@ -450,6 +450,16 @@ and each find is logged once.
 work); every measure that flagged; and the counted contacts (the Exposure's Volume input). Locked per client.
 `GET /api/data-health` now carries the latest month's **records completeness** for the Overview box:
 `completenessStatus` (complete / incomplete / not_available / not_measured) and a one-line `completenessNote`.
+**Every tool is checked, the best way it allows** (`apps/reconcile/check.py`, field `method`): 1 **bill** (Twilio) ·
+2 **tool's own total**, one request per tool and month (`Connector.counts` + `count_between`: Convoso `total_found`,
+Five9 Call Log report rows, Vicidial `COUNT(*)` on both call tables, Salesforce `COUNT()` of leads + contacts created,
+HubSpot search `total` of contacts created and calls) · 3 **volume pattern** when neither exists or the total could
+not be read: working days with records from that tool, plus a sudden drop (last 7 days under a quarter of the 4 weeks
+before). M37 = the lowest available ratio over all tools; a tool CiV cannot read yet is "not available".
+**Admin → client page:** a **Records completeness** tile beside Users and Certificates (`apps/reconcile/summary.py`):
+the latest month's overall %, Complete / Incomplete, how many tools, and the lowest one. **Clicking it opens**
+`/civ-admin/clients/client/<id>/completeness/`: this month and last, one table each, one line per tool (how measured,
+numbers, %, status), with the extra checks (days with any records, STOP replies) as rows marked "not in %".
 
 ## Made visible after Module 5
 
@@ -492,6 +502,57 @@ portal shows strict). Rulebook lookups now accept `variant=` outside draft runs 
 - `meets()`: a CRM box never meets a need; an existing customer counts only within 18 months (purchase) / 3 months
   (inquiry), only for live hand-dialed calls, never robocalls or texts.
 - Inbound contacts and CiV test numbers need nothing.
+- **STOP list** (`opt_out_in_force`): a STOP counts only while in force: not for the one confirmation text within
+  `confirmation_window_minutes`, not before the grace days end (lenient 10, strict 0), and no longer once the person
+  gives a new consent (certificate) after it. A purchase or CRM box never lifts it.
+
+### The five checks (Module 6, step 3)
+
+`apps/consent/checks.py` (spec §5), right after "what is needed", for every new contact; one `consent_result` row per
+contact and variant: status **verified / weak / pending / conflicting / no_proof** (or not_needed for inbound and
+test numbers), the primary code and every code of the deciding step, each basis's status and winning proof, labels,
+`evaluation_as_of` and the Rulebook version. Locked per client.
+
+1. **A fitting proof** for the owner (epoch): NP_NONE, NP_SELF_ASSERTED, NP_NO_EVIDENCE_FOUND (uploaded list),
+   NP_BEFORE_CONSENT (linked by lead ID: no tolerance; unlinked: `clock_skew_seconds`), NP_AFTER_OPT_OUT,
+   NP_RELATIONSHIP_LAPSED, NP_WRONG_TYPE.
+2. **Opens at its source:** a lost claim → CF_EXPIRED (`pre_engagement` label if before the client started), the
+   provider does not have it → CF_NOT_FOUND; not read yet → **pending** (PD_NOT_READ_YET / PD_NO_CERT_ACCOUNT).
+3. **Consent wording, pre-ticked box:** not measured yet (Module 7).
+4. **Sources agree:** certificate made after the lead was delivered (CRM creation time) → CF_CERT_AFTER_DELIVERY
+   (within the clock tolerance → weak). Phone and page match: not measured yet (Module 7).
+5. **Complete:** WK_TIMING_UNCERTAIN, WK_RETENTION (expires within `cert_expiry_warning_days`).
+All pass → VF_OK; an existing customer alone → label `EBR_ONLY`. Best proof per basis (ties: newest), worst basis
+wins. Checks not measured yet are listed as `not_measured:*` labels and never change a result.
+
+### Keeping results up to date (Module 6, step 4)
+
+`apps/consent/keeping.py`. Results follow new information but are never silently rewritten:
+- **Rechecks** (`consent_recheck`, every minute, 1,000 contacts a turn, resumable): a new proof or a proof's date
+  changing (`new_proof` / `certificate_read`), a late STOP (`late_opt_out`, from its time), a new owner
+  (`owner_changed`, from the split; proofs move to the owner of their date), an approved rule update or a changed
+  Rulebook file (`rule_changed`, signal `apps.rulebook.signals.rules_changed`, from its start date). Pending results
+  whose certificate was read are checked again every minute; certificates expiring within the warning days, nightly
+  at 03:00 (`time_passed`). Each result keeps `reeval_reason`.
+- **History** (`consent_result_change`, locked): every change of status or code, and every freeze, with its reason.
+- **Freezing:** a checked call whose record comes back with different facts (time, number, channel, direction, dial
+  mode, lead ID) → `FZ_INPUTS_CHANGED`; a proof whose record no longer gives it, or gives another date → withdrawn and
+  results that used it frozen; the weekly full check (`SyncCursor.sweep_started_at`, `handoff.SEEN` /
+  `handoff.SWEEP_DONE`) not finding a call or proof record → `FZ_SOURCE_DELETED`. Frozen results are never checked
+  again and are left out of totals; withdrawn proofs are never used again.
+
+### Consent results in the portal (Module 6, step 5)
+
+Strict results only. `GET /api/contacts` gives each row's status, primary code, reason in words, the five checks
+(`pass` / `fails` / `gap` / `not_reached` / `not_measured`), bases and proof; `?status=` filters by result
+(`NOT_CHECKED` = no result yet). `GET /api/evidence/<ref>` adds the number's standing (worst counted contact; pending,
+frozen and not needed left out), counts, real opt-outs and a `consent` block (`apps/consent/panel.py`: the current
+owner's proofs, what the latest contact needed, the last 20 changes, frozen and pending counts, not-measured checks,
+draft rules). `GET /api/consent` (`apps/consent/api.py`): this month's mix, top reasons, legal basis share, DNC list
+not supplied share, certificate validity, before-engagement expiries, four-month trend, certificates expiring within
+7 / 30 / 90 days, and pending / frozen / not needed apart. `GET /api/certificates`: the client's certificate claims
+(first 8 characters of the ID only), state, dates, page, and how many contacts' results used each. Words in
+`apps/consent/words.py`.
 
 ## Use it with the portal
 

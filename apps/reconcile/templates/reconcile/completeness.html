@@ -1,0 +1,50 @@
+{% extends 'admin/base.html' %}
+{% comment %}One client's records completeness: every tool, how it was checked, CiV's count against the other number.{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">Client companies · {{ client.name }}</div>
+            <h1>Records completeness</h1>
+            <p class="ph-sub">Is CiV seeing every call, text and CRM record? Each tool is checked the best way it allows, every night, for this month and last. The month's result is the lowest tool, so one weak tool is never hidden.</p>
+        </div>
+        <div><a class="civ-btn civ-btn-ghost" href="{{ back_url }}">Back to {{ client.name }}</a></div>
+    </header>
+
+    {% for month in months %}
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-h">
+                <div><h3>{{ month.period|date:"F Y" }}</h3>
+                    <div class="card-sub">Below {{ month.floor }} the month is marked incomplete · last checked {{ month.checked_at|date:"j M Y · H:i" }} UTC</div></div>
+                <div><strong style="font-size: 18px;">{{ month.pct|default:"-" }}</strong> <span class="pill pill-{{ month.color }}">{{ month.state }}</span></div>
+            </div>
+            {% if month.lines %}
+                <div style="overflow-x:auto"><table class="tbl">
+                    <thead><tr><th>Tool</th><th>What</th><th>How measured</th><th>Numbers</th><th>%</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for line in month.lines %}
+                            <tr><td><strong>{{ line.tool }}</strong></td><td>{{ line.what }}</td>
+                                <td title="{{ line.how_long }}">{{ line.how }}</td>
+                                <td>{{ line.numbers|default:"-" }}{% if line.note %}<div class="tiny">{{ line.note }}</div>{% endif %}</td>
+                                <td><strong>{{ line.pct|default:"-" }}</strong></td>
+                                <td><span class="pill pill-{{ line.color }}">{{ line.state }}</span></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table></div>
+            {% else %}
+                <p class="empty">No connected tools this month.</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="card"><p class="empty">Not yet measured. The first check runs the night after a tool is connected.</p></div>
+    {% endfor %}
+
+</div>
+{% endblock %}

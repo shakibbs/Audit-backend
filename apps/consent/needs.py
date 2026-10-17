@@ -3,13 +3,15 @@
 - Every campaign is marketing (no campaign map: same for every client, strictest) and labelled category_unknown.
 - Robocall: a dial mode in autodialed_modes, unknown dial mode (labelled), prerecorded or AI voice, or a marketing text
   when sms_treated_as_autodialed.
-- Bases: robocall_marketing · dnc_listed (on the client's STOP list before the contact) · dnc_unknown (no national
+- Bases: robocall_marketing · dnc_listed (a STOP still in force: see opt_out_in_force) · dnc_unknown (no national
   do-not-call list supplied) · state_law (a state_consent_rule row matches) · civ_policy (none of the others).
 - Inbound contacts and CiV's test numbers need nothing.
 """
 import calendar
+from datetime import timedelta
 
 from apps.optouts.models import OptOutEvent
+from apps.rulebook.business_days import BusinessCalendar, local_date
 from apps.rulebook.lookup import RuleSet
 
 from .models import ConsentNeed, ConsentProof
@@ -22,6 +24,32 @@ LEGAL = {'robocall_marketing', 'robocall_informational', 'dnc_listed', 'state_la
 def _value(rules, key, contact, variant, default=None):
     found = rules.get(key, on=contact.occurred_at.date(), state=contact.recipient_state or None, variant=variant).value
     return default if found is None else found
+
+
+def opt_out_in_force(contact, rules, variant, newer_consent_lifts=True):
+    """The latest opt-out before the contact that still applies, or None. Not in force for the one confirmation text
+    inside confirmation_window_minutes, before the grace days end, or (for the STOP list) once the person gave a new
+    consent after it; a later purchase or a CRM box never lifts it."""
+    optout = (OptOutEvent.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, at__lt=contact.occurred_at)
+              .order_by('-at').first())
+    if optout is None:
+        return None
+    window = timedelta(minutes=int(_value(rules, 'confirmation_window_minutes', contact, variant, 5)))
+    if contact.channel == 'text' and contact.occurred_at <= optout.at + window:
+        first = (type(contact).objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, channel='text',
+                                              direction='outbound', occurred_at__gt=optout.at).order_by('occurred_at').first())
+        if first is None or first.pk == contact.pk:
+            return None  # one confirmation message is never cut off
+    grace = int(_value(rules, 'optout_grace_business_days', contact, variant, 0))
+    if grace:
+        zone = (contact.time_zones or ['America/New_York'])[0]
+        if local_date(contact.occurred_at, zone) < BusinessCalendar(rules).add(local_date(optout.at, zone), grace):
+            return None
+    if newer_consent_lifts and ConsentProof.objects.filter(
+            client_id=contact.client_id, phone_token=contact.phone_token, kind=ConsentProof.Kind.CERTIFICATE,
+            captured_at__gt=optout.at, captured_at__lt=contact.occurred_at).exists():
+        return None
+    return optout
 
 
 def is_robocall(contact, rules, variant) -> tuple[bool, list[str]]:
@@ -54,7 +82,7 @@ def profile(contact, rules: RuleSet, variant: str) -> dict:
         written = _value(rules, 'written_consent_required_by_forum', contact, variant, True)
         needs = _value(rules, 'written_consent_types', contact, variant) if written else _value(rules, 'prior_express_evidence_types', contact, variant)
         bases.append({'basis': 'robocall_marketing', 'needs': list(needs or [])})
-    if OptOutEvent.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, at__lt=contact.occurred_at).exists():
+    if opt_out_in_force(contact, rules, variant):
         bases.append({'basis': 'dnc_listed', 'needs': [*(_value(rules, 'signed_written_consent_types', contact, variant) or []), EBR_ACTIVE]})
     else:
         bases.append({'basis': 'dnc_unknown', 'needs': [ANY]})
@@ -110,12 +138,14 @@ def work_out(contact, rules: RuleSet | None = None) -> list[ConsentNeed]:
 
 
 def work_out_new(limit: int = 2000) -> int:
-    """Contacts without a 'what is needed' yet (newest synced first in later runs; oldest first here)."""
+    """New contacts: what proof each needs, then its result."""
     from apps.contacts.models import ContactEvent
     rules = RuleSet()
-    contacts = ContactEvent.objects.filter(consent_needs__isnull=True, is_primary=True).order_by('occurred_at')[:limit]
+    from .checks import check_contact
+    contacts = ContactEvent.objects.filter(consent_needs__isnull=True, is_primary=True).select_related('client', 'epoch').order_by('occurred_at')[:limit]
     count = 0
     for contact in contacts:
         work_out(contact, rules)
+        check_contact(contact, rules)  # the five checks right away: every call's result within minutes
         count += 1
     return count

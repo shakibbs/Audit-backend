@@ -37,7 +37,7 @@ def test_ledger_rows_are_real_masked_and_not_yet_checked(calls):
     rows = calls.get('/api/contacts').json()
     assert [r['phoneDisplay'] for r in rows] == ['(416) •••-0003', '(850) •••-0002', '(916) •••-0001']  # newest first
     first = rows[2]
-    assert first['status'] == 'NOT_CHECKED' and 'not checked yet' in first['reasonText'] and first['where'] == 'CA · Los Angeles'
+    assert first['status'] == 'NOT_CHECKED' and 'not checked yet' in first['reasonText'].lower() and first['where'] == 'CA · Los Angeles'
     assert 'location unsure' in rows[1]['flags'] and 'outside the US' in rows[0]['flags']
     assert all('555' not in r['phoneDisplay'] and not r['phoneE164'].startswith('+') for r in rows)
     assert calls.get('/api/contacts?status=VERIFIED').json() == []

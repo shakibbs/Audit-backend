@@ -25,6 +25,7 @@ class Connector:
     mode = 'poll'
     source_grade = 'C'  # from the client's systems by API (spec §4)
     min_poll_minutes = 0  # a tool that dislikes frequent reads (e.g. Five9 reports) is polled no more often than this
+    counts: tuple = ()  # what the tool can total by itself for records completeness: calls, texts, crm_records
 
     def __init__(self, connection):
         self.connection = connection
@@ -37,6 +38,10 @@ class Connector:
         """Every record, for the weekly full check, continuing from its own bookmark ('' = from the beginning).
         Defaults to reading all changes from the beginning."""
         return self.changes_since(cursor, limit)
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """The tool's own total of `measure` from start up to (not including) end, asked in one request."""
+        raise NotImplementedError
 
     def parse_event(self, body: bytes, headers: dict) -> list[Record]:
         """A live notice from the tool. Must check the tool's signature and raise BadSignature if wrong."""

@@ -45,6 +45,7 @@ def server(address: str) -> dict:
 class Vicidial(Connector):
     mode = 'poll'
     source_grade = 'C'
+    counts = ('calls',)
 
     def __init__(self, connection):
         super().__init__(connection)
@@ -67,6 +68,11 @@ class Vicidial(Connector):
                f'WHERE (start_epoch > %s OR (start_epoch = %s AND {table.id_column} > %s)) AND start_epoch <= %s '
                f'ORDER BY start_epoch, {table.id_column} LIMIT %s')
         return self.query(sql, (epoch, epoch, last_id, until, limit))
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """Vicidial's own count: rows in both call log tables in the range."""
+        return sum(int(self.query(f'SELECT COUNT(*) AS n FROM {t.table} WHERE start_epoch >= %s AND start_epoch < %s',
+                                  (int(start.timestamp()), int(end.timestamp())))[0]['n']) for t in TABLES)
 
     def record(self, row: dict, table: Table) -> Record:
         clean = {k: (v.isoformat() if hasattr(v, 'isoformat') else v) for k, v in row.items()}

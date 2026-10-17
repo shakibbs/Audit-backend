@@ -72,12 +72,73 @@ def test_lowest_of_calls_and_texts_is_m37(company, monkeypatch):
     assert check_month(company, SEP).completeness == pytest.approx(0.8)
 
 
-def test_without_a_billing_source_it_is_not_available(company):
+def test_a_dialer_without_a_bill_is_checked_by_its_own_total(company, monkeypatch):
+    from apps.sync.connectors.convoso import Convoso
+    monkeypatch.setattr(Convoso, 'count_between', lambda self, measure, start, end: 50)
     Connection.objects.create(client=company, provider='convoso', status=Status.CONNECTED)
-    texts(company, 50, source='convoso', channel='call')
+    texts(company, 48, source='convoso', channel='call')
     month = check_month(company, SEP)
-    assert month.completeness is None and not month.incomplete
-    assert row(company, 'calls').available is False and 'No billing source' in row(company, 'calls').note
+    calls = Reconciliation.objects.get(client=company, period=SEP, measure='calls', source_system='convoso')
+    assert (calls.method, calls.records, calls.independent_total) == ('tool_total', 48, 50)
+    assert month.completeness == pytest.approx(0.96) and not month.incomplete
+
+
+def test_when_the_total_cannot_be_read_the_volume_pattern_stands_in(company, monkeypatch):
+    from apps.sync.connectors.convoso import Convoso
+
+    def broken(self, measure, start, end):
+        raise TimeoutError
+    monkeypatch.setattr(Convoso, 'count_between', broken)
+    Connection.objects.create(client=company, provider='convoso', status=Status.CONNECTED)
+    texts(company, 50, days=WORKING_DAYS_SEP[:15], source='convoso', channel='call')  # 15 of 21 working days
+    month = check_month(company, SEP)
+    calls = Reconciliation.objects.get(client=company, period=SEP, measure='calls', source_system='convoso')
+    assert (calls.method, calls.records, calls.independent_total) == ('volume', 15, 21) and 'TimeoutError' in calls.note
+    assert calls.flagged and month.incomplete and month.completeness == pytest.approx(15 / 21)
+
+
+def test_a_sudden_drop_is_flagged(company, monkeypatch):
+    from apps.sync.connectors.convoso import Convoso
+
+    def broken(self, measure, start, end):
+        raise TimeoutError
+    monkeypatch.setattr(Convoso, 'count_between', broken)
+    Connection.objects.create(client=company, provider='convoso', status=Status.CONNECTED)
+    texts(company, 2000, days=[d for d in WORKING_DAYS_SEP if d.day <= 22], source='convoso', channel='call')
+    for i, day in enumerate(d for d in WORKING_DAYS_SEP if d.day > 23):  # then almost nothing
+        ContactEvent.objects.create(client=company, phone_token=f'late{i}', phone_token_kid='k1', source_system='convoso', source_record_id=f'late{i}',
+                                    source_grade='C', channel='call', direction='outbound', occurred_at=datetime(day.year, day.month, day.day, 15, tzinfo=UTC))
+    check_month(company, SEP)
+    calls = Reconciliation.objects.get(client=company, period=SEP, measure='calls', source_system='convoso')
+    assert calls.flagged
+
+
+def test_every_tool_counts_and_the_lowest_wins(company, monkeypatch):
+    from apps.imports.models import CrmCreation
+    from apps.sync.connectors.convoso import Convoso
+    from apps.sync.connectors.salesforce import Salesforce
+    monkeypatch.setattr(Convoso, 'count_between', lambda self, measure, start, end: 100)
+    monkeypatch.setattr(Salesforce, 'count_between', lambda self, measure, start, end: 10)
+    billed(monkeypatch, 100)
+    twilio(company)
+    texts(company, 99)
+    Connection.objects.create(client=company, provider='convoso', status=Status.CONNECTED)
+    texts(company, 100, source='convoso', channel='call')
+    Connection.objects.create(client=company, provider='salesforce', status=Status.CONNECTED)
+    for n in range(8):
+        CrmCreation.objects.create(client=company, source_system='salesforce', record_id=f'leads:{n}', created_at=datetime(2026, 9, 10, tzinfo=UTC))
+    month = check_month(company, SEP)
+    methods = dict(Reconciliation.objects.filter(client=company, period=SEP, measure__in=['texts', 'calls', 'crm_records'],
+                                                 available=True).values_list('source_system', 'method'))
+    assert methods == {'twilio': 'bill', 'convoso': 'tool_total', 'salesforce': 'tool_total'}
+    assert month.completeness == pytest.approx(0.8) and month.incomplete and 'crm_records' in month.flagged_by
+
+
+def test_a_tool_civ_cannot_read_yet_is_not_available_never_failed(company):
+    Connection.objects.create(client=company, provider='aircall', status=Status.CONNECTED)
+    month = check_month(company, SEP)
+    calls = Reconciliation.objects.get(client=company, period=SEP, measure='calls', source_system='aircall')
+    assert not calls.available and 'cannot read' in calls.note and month.completeness is None
 
 
 def test_missing_days_are_flagged_but_not_part_of_m37(company, monkeypatch):

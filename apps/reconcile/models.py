@@ -7,15 +7,23 @@ class Reconciliation(models.Model):
         CALLS = 'calls', 'Calls'
         TEXTS = 'texts', 'Texts'
         VENDOR_LEADS = 'vendor_leads', 'Vendor leads'
+        CRM_RECORDS = 'crm_records', 'CRM records'
         DAYS_PRESENT = 'days_present', 'Days present'
         STOP_REPLIES = 'stop_replies', 'STOP replies'
+
+    class Method(models.TextChoices):
+        BILL = 'bill', 'Bill'  # strongest: CiV saw everything the client paid for
+        TOOL_TOTAL = 'tool_total', "Tool's own total"  # CiV read everything the tool has
+        VOLUME = 'volume', 'Volume pattern'  # nothing suddenly disappeared: days with records, no sudden drop
+        NONE = 'none', 'Not checked'
 
     client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='reconciliations')
     period = models.DateField()  # first day of the month
     measure = models.CharField(max_length=14, choices=Measure.choices)
-    source_system = models.CharField(max_length=30, blank=True)  # which tool's bill (texts, calls)
+    source_system = models.CharField(max_length=30, blank=True)  # which tool
+    method = models.CharField(max_length=10, choices=Method.choices, default=Method.NONE)  # how the second number was found
     records = models.PositiveIntegerField(null=True, blank=True)  # what CiV read
-    independent_total = models.PositiveIntegerField(null=True, blank=True)  # the bill (or working days)
+    independent_total = models.PositiveIntegerField(null=True, blank=True)  # the bill, the tool's own total, or working days
     ratio = models.FloatField(null=True, blank=True)
     available = models.BooleanField(default=True)  # False = no independent total: left out of M37, never failed
     flagged = models.BooleanField(default=False)

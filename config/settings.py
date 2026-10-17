@@ -160,7 +160,9 @@ CELERY_BEAT_SCHEDULE = {
     'sync-health': {'task': 'apps.sync.tasks.check_health', 'schedule': 10 * 60.0},
     # Consent certificates must be claimed within 72 hours: the queue runs every minute.
     'claim-certificates': {'task': 'apps.certificates.tasks.claim_certificates', 'schedule': 60.0},
-    'consent-needs': {'task': 'apps.consent.tasks.work_out_needs', 'schedule': 60.0},  # what proof each new contact needs
+    'consent-needs': {'task': 'apps.consent.tasks.work_out_needs', 'schedule': 60.0},  # each new contact: what it needs, its result
+    'consent-recheck': {'task': 'apps.consent.tasks.keep_results_up_to_date', 'schedule': 60.0},  # queued rechecks, read certificates
+    'consent-nightly': {'task': 'apps.consent.tasks.recheck_time_passed', 'schedule': crontab(minute=0, hour=3)},  # expiring certificates
     'proof-dates': {'task': 'apps.consent.tasks.refresh_proof_dates', 'schedule': 5 * 60.0},  # claimed certificates date their proofs
     # Uploaded lists (apps.imports): CRM records regrouped into batches every 15 minutes.
     'import-batches': {'task': 'apps.imports.tasks.rebuild_batches', 'schedule': 15 * 60.0},

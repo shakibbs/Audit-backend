@@ -21,6 +21,8 @@ class ConsentProof(models.Model):
     source_system = models.CharField(max_length=30)
     source_record_id = models.CharField(max_length=200)
     lead_id = models.CharField(max_length=120, blank=True)  # links the proof to contacts carrying the same lead (timing rule)
+    source_seen_at = models.DateTimeField(null=True, blank=True)  # last weekly full check that found its record
+    withdrawn_at = models.DateTimeField(null=True, blank=True)  # its record changed or was deleted: no longer used for new checks
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,3 +63,74 @@ class ConsentNeed(models.Model):
     class Meta:
         db_table = 'consent_need'
         constraints = [models.UniqueConstraint(fields=['contact', 'variant'], name='one_need_per_contact_variant')]
+
+
+class ConsentResult(models.Model):
+    """One call or text's consent result (spec §5): the five checks per basis, best proof per basis, worst basis wins.
+    One row per contact and variant; the portal shows strict."""
+    class Status(models.TextChoices):
+        VERIFIED = 'verified', 'Verified'
+        WEAK = 'weak', 'Weak'
+        PENDING = 'pending', 'Pending'  # a certificate not read yet (waiting, or no certificate account): left out of metrics
+        CONFLICTING = 'conflicting', 'Conflicting'
+        NO_PROOF = 'no_proof', 'No proof'
+        NOT_NEEDED = 'not_needed', 'Not needed'  # inbound, or CiV's test numbers
+
+    client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='consent_results')
+    contact = models.ForeignKey('contacts.ContactEvent', on_delete=models.CASCADE, related_name='consent_results')
+    variant = models.CharField(max_length=7, choices=ConsentNeed.Variant.choices)
+    status = models.CharField(max_length=11, choices=Status.choices)
+    primary_code = models.CharField(max_length=30, blank=True)  # e.g. NP_SELF_ASSERTED, CF_EXPIRED, VF_OK
+    codes = models.JSONField(default=list)  # every code that fired in the deciding step
+    bases = models.JSONField(default=list)  # [{basis, status, codes, proof}] one per basis
+    proof = models.ForeignKey(ConsentProof, on_delete=models.SET_NULL, null=True, blank=True, related_name='results')  # winning proof
+    labels = models.JSONField(default=list)  # EBR_ONLY, pre_engagement, not_measured:<check>
+    is_legal_basis = models.BooleanField(default=False)
+    evaluation_as_of = models.DateTimeField()  # time-dependent checks use this, never the clock
+    rulebook_version = models.CharField(max_length=20)
+    inputs = models.JSONField(default=dict)  # the contact's facts when checked: a change later freezes the result
+    reeval_reason = models.CharField(max_length=20, blank=True)  # why it was last checked again
+    frozen = models.BooleanField(default=False)  # never checked again; left out of totals and shown apart
+    frozen_reason = models.CharField(max_length=20, blank=True)  # FZ_SOURCE_DELETED · FZ_INPUTS_CHANGED
+    frozen_at = models.DateTimeField(null=True, blank=True)
+    source_seen_at = models.DateTimeField(null=True, blank=True)  # last weekly full check that found the contact's record
+    evaluated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'consent_result'
+        constraints = [models.UniqueConstraint(fields=['contact', 'variant'], name='one_result_per_contact_variant')]
+        indexes = [models.Index(fields=['client', 'variant', 'status'])]
+
+
+class ResultChange(models.Model):
+    """History: each time a result changes or is frozen, when and why ("Pending → Verified · certificate read")."""
+    client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='consent_result_changes')
+    contact = models.ForeignKey('contacts.ContactEvent', on_delete=models.CASCADE, related_name='consent_result_changes')
+    variant = models.CharField(max_length=7, choices=ConsentNeed.Variant.choices)
+    old_status = models.CharField(max_length=11, blank=True)  # blank = the first result
+    new_status = models.CharField(max_length=11)
+    old_code = models.CharField(max_length=30, blank=True)
+    new_code = models.CharField(max_length=30, blank=True)
+    reason = models.CharField(max_length=20)  # new_contact, certificate_read, new_proof, late_opt_out, owner_changed, rule_changed, time_passed, frozen
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'consent_result_change'
+        indexes = [models.Index(fields=['client', 'contact'])]
+        ordering = ['-at', '-pk']
+
+
+class Recheck(models.Model):
+    """A queued "check these contacts again": one number from a date, or every client's contacts in a date range after
+    a Rulebook change. Worked through in batches every minute; `after_contact` resumes a long one."""
+    client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, null=True, blank=True, related_name='consent_rechecks')  # empty = all
+    phone_token = models.CharField(max_length=64, blank=True)  # empty = every number
+    from_at = models.DateTimeField(null=True, blank=True)
+    to_at = models.DateTimeField(null=True, blank=True)
+    reason = models.CharField(max_length=20)
+    after_contact = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'consent_recheck'
+        ordering = ['created_at', 'pk']

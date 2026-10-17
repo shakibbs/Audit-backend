@@ -85,6 +85,9 @@ def load(path: Path) -> tuple[RulebookVersion, str]:
             'status': doc['status'], 'effective_from': doc['effective_from'], 'source': doc['source'], 'file_sha256': digest})
         RuleValue.objects.bulk_create([row for rule in doc['rules'] for row in _rows(version, rule)])
         reapply_approved(version)
+    if existing:
+        from .signals import rules_changed
+        rules_changed.send(sender=RulebookVersion, from_date=None)
     return version, 'reloaded' if existing else 'loaded'
 
 

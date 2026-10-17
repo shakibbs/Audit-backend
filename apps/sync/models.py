@@ -18,6 +18,7 @@ class SyncCursor(models.Model):
     last_heartbeat_at = models.DateTimeField(null=True, blank=True)  # last successful call to the tool
     last_catchup_at = models.DateTimeField(null=True, blank=True)
     last_full_sweep_at = models.DateTimeField(null=True, blank=True)
+    sweep_started_at = models.DateTimeField(null=True, blank=True)  # when the current full check began (deleted records)
     backlog = models.BooleanField(default=False)  # the tool still had more when the last run stopped
     records_delivered = models.PositiveBigIntegerField(default=0)
     failures_in_row = models.PositiveIntegerField(default=0)

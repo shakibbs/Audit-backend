@@ -9,6 +9,7 @@ from apps.keyring.tokens import Tokenizer
 from apps.ledger.record import ledger_job
 from apps.tenancy.scope import tenant
 
+from . import handoff
 from .connector import Record, connector_for
 from .models import SyncCursor
 from .process import process
@@ -32,6 +33,8 @@ def run(connection_id: int, kind: str) -> bool:
     with tenant(connection.client):
         cursor = cursor_for(connection)
         start = cursor.sweep_cursor if kind == 'full_sweep' else cursor.cursor
+        if kind == 'full_sweep' and not start:
+            cursor.sweep_started_at = timezone.now()  # a new full check begins
         try:
             page = getattr(tool, KINDS[kind])(start, settings.SYNC_BATCH_SIZE)
             with ledger_job(connection.client, f'{connection.provider} {kind}') as job, transaction.atomic():
@@ -48,6 +51,8 @@ def run(connection_id: int, kind: str) -> bool:
                     cursor.last_catchup_at = now
                 if kind == 'full_sweep' and not page.more:
                     cursor.last_full_sweep_at = now
+                    for receiver in handoff.SWEEP_DONE:  # every record was read: the rest are gone from the tool
+                        receiver(connection, cursor.sweep_started_at)
                 cursor.save()
         except Exception as error:  # the tool is down or answered wrongly: try again next turn
             cursor.failures_in_row += 1

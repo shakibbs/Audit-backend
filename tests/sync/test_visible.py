@@ -74,12 +74,12 @@ def test_records_completeness_box(company, member_user):
     assert api.get('/api/data-health').json()['completenessStatus'] == 'not_measured'
     month = PeriodIntegrity.objects.create(client=company, period=date(2026, 9, 1), completeness=None)
     data = api.get('/api/data-health').json()
-    assert data['completenessStatus'] == 'not_available' and 'No billing source' in data['completenessNote']
-    Reconciliation.objects.create(client=company, period=date(2026, 9, 1), measure='texts', source_system='twilio', records=700,
+    assert data['completenessStatus'] == 'not_available' and 'No tool gave a bill or a total' in data['completenessNote']
+    Reconciliation.objects.create(client=company, period=date(2026, 9, 1), measure='texts', source_system='twilio', method='bill', records=700,
                                   independent_total=1000, ratio=0.7, flagged=True)
     PeriodIntegrity.objects.filter(pk=month.pk).update(completeness=0.7, incomplete=True)
     data = api.get('/api/data-health').json()
     assert (data['recordsCompleteness'], data['completenessStatus']) == (0.7, 'incomplete')
-    assert data['completenessNote'] == 'CiV received only 70% of the texts Twilio billed · September 2026'
+    assert data['completenessNote'] == 'CiV received only 70% of the texts compared with what Twilio billed · September 2026'
     PeriodIntegrity.objects.filter(pk=month.pk).update(completeness=0.912, incomplete=False)
-    assert api.get('/api/data-health').json()['completenessNote'] == 'Your logs compared with what Twilio billed · September 2026'
+    assert api.get('/api/data-health').json()['completenessNote'] == 'Every connected tool compared with its bill, its own count or its working days · September 2026'

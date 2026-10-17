@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/', include('apps.sync.urls')),
     path('api/', include('apps.contacts.urls')),
     path('api/', include('apps.optouts.urls')),
+    path('api/', include('apps.consent.urls')),
 ]
 
 # Live notices from clients' tools: off unless SYNC_HOOKS_ENABLED (no public door; CiV asks every 2 minutes instead).

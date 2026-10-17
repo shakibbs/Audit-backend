@@ -34,6 +34,7 @@ def zone(name: str) -> ZoneInfo:
 class Convoso(Connector):
     mode = 'poll'
     source_grade = 'C'
+    counts = ('calls',)
 
     def __init__(self, connection):
         super().__init__(connection)
@@ -67,6 +68,12 @@ class Convoso(Connector):
             if len(chunk) < PAGE or offset >= int(data.get('total_found') or 0):
                 break
         return sorted((r for r in rows if start <= self.called_at(r) < end), key=lambda r: (self.called_at(r), str(r['id'])))
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """Convoso's own count of calls in the range (total_found of a one-row page)."""
+        data = self._get('log/retrieve', {'start_time': start.astimezone(self.tz).strftime(WHEN),
+                                          'end_time': (end - timedelta(seconds=1)).astimezone(self.tz).strftime(WHEN), 'limit': 1, 'offset': 0})
+        return int(data.get('total_found') or 0)
 
     def record(self, row: dict) -> Record:
         numbers = [row.get('phone_number'), row.get('number_dialed'), row.get('caller_id_displayed')]

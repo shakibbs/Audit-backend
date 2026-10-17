@@ -47,6 +47,7 @@ def sf_time(value: str) -> datetime:
 class Salesforce(OAuthTool, Connector):
     mode = 'poll'
     source_grade = 'C'
+    counts = ('crm_records',)
     token_url = 'https://login.salesforce.com/services/oauth2/token'
     client_id_setting, client_secret_setting = 'SALESFORCE_CLIENT_ID', 'SALESFORCE_CLIENT_SECRET'
 
@@ -58,6 +59,15 @@ class Salesforce(OAuthTool, Connector):
             answer = self.call(instance + answer['nextRecordsUrl'])
             rows.extend(answer.get('records', []))
         return rows
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """Salesforce's own count of leads and contacts created in the range (SOQL COUNT())."""
+        instance = self._creds().get('instance_url', '').rstrip('/')
+        total = 0
+        for sobject in ('Lead', 'Contact'):
+            soql = f'SELECT COUNT() FROM {sobject} WHERE CreatedDate >= {soql_time(start)} AND CreatedDate < {soql_time(end)}'
+            total += int(self.call(f'{instance}/services/data/{API_VERSION}/query?' + urllib.parse.urlencode({'q': soql})).get('totalSize') or 0)
+        return total
 
     def changed_after(self, obj: SObject, after: datetime, last_id: str, until: datetime, limit: int) -> list[dict]:
         since, stop = soql_time(after), soql_time(until)

@@ -53,6 +53,7 @@ def modified(row: dict) -> datetime:
 class HubSpot(OAuthTool, Connector):
     mode = 'poll'
     source_grade = 'C'
+    counts = ('crm_records', 'calls')
     token_url = f'{API}/oauth/v1/token'
     client_id_setting, client_secret_setting = 'HUBSPOT_CLIENT_ID', 'HUBSPOT_CLIENT_SECRET'
 
@@ -80,6 +81,13 @@ class HubSpot(OAuthTool, Connector):
         rows.sort(key=lambda r: (modified(r), r['id']))
         at_start = [r for r in rows if ms(modified(r)) == start_ms]
         return (at_start[skip:] + [r for r in rows if ms(modified(r)) > start_ms])[:want]
+
+    def count_between(self, measure: str, start: datetime, end: datetime) -> int:
+        """HubSpot's own count (the search answer's total): contacts created, or calls made, in the range."""
+        path, prop = ('contacts', 'createdate') if measure == 'crm_records' else ('calls', 'hs_timestamp')
+        body = {'filterGroups': [{'filters': [{'propertyName': prop, 'operator': 'GTE', 'value': str(ms(start))},
+                                              {'propertyName': prop, 'operator': 'LT', 'value': str(ms(end))}]}], 'limit': 1}
+        return int(self.call(f'{API}/crm/v3/objects/{path}/search', body).get('total') or 0)
 
     def record(self, row: dict, obj: HObject) -> Record:
         props = row.get('properties', {})

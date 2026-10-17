@@ -189,3 +189,14 @@ def test_sync_data_is_locked_per_client(company, other_company):
     drain(connect(other_company))
     with _scope('client', str(company.pk)):
         assert set(SyncCursor.objects.values_list('client_id', flat=True)) == {company.pk}
+
+
+def test_full_sweep_reports_every_record_it_read_and_when_it_finished(company, monkeypatch):
+    seen, done = [], []
+    monkeypatch.setattr(handoff, 'SEEN', [lambda client, conn, ids: seen.extend(ids)])
+    monkeypatch.setattr(handoff, 'SWEEP_DONE', [lambda conn, started: done.append(started)])
+    conn = connect(company)
+    drain(conn)
+    drain(conn, 'full_sweep')  # unchanged records are reported as seen too: only missing ones count as deleted
+    cursor = SyncCursor.objects.get(connection=conn)
+    assert sorted(seen) == [f'SM{n:04d}' for n in range(1, 8)] and done == [cursor.sweep_started_at] and done[0] is not None
