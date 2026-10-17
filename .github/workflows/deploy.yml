@@ -16,9 +16,9 @@ jobs:
     services:
       postgres:
         image: postgres:17-alpine
-        env: {POSTGRES_DB: civ, POSTGRES_USER: civ, POSTGRES_PASSWORD: civ}
+        env: {POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres}
         ports: ["5432:5432"]
-        options: --health-cmd "pg_isready -U civ" --health-interval 5s --health-retries 10
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
     env:
       DJANGO_SECRET_KEY: test-only-key
       DJANGO_DEBUG: "true"
@@ -30,6 +30,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - name: A normal database login, like the server (a superuser would skip the per-client lock)
+        env: {PGPASSWORD: postgres}
+        run: |
+          psql -h localhost -U postgres -c "CREATE ROLE civ LOGIN PASSWORD 'civ' CREATEDB NOSUPERUSER NOBYPASSRLS"
+          psql -h localhost -U postgres -c "CREATE DATABASE civ OWNER civ"
       - name: Throwaway lock key for the tests
         run: echo "CIV_SECRETS_KEYS=$(openssl rand 32 | base64 | tr '+/' '-_')" >> "$GITHUB_ENV"
       - run: uv sync --frozen

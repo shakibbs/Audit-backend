@@ -547,4 +547,6 @@ CiV's containers, check the backend and portal answer. Results: the repo's **Act
   `command="/opt/civ/deploy.sh",restrict`: it can run the update script and nothing else.
 - After changing `deploy/update.sh`, copy it again: `cp /opt/civ/Audit-backend/deploy/update.sh /opt/civ/deploy.sh`.
 - A commit message containing `[skip ci]` pushes without deploying.
+- The tests log in to the database as a **normal** user (not a superuser), like the server: a superuser skips the
+  per-client lock and the "locked per client" tests fail. Python is pinned to 3.14 (`.python-version`), like the server.
 
