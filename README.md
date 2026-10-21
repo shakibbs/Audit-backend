@@ -993,3 +993,56 @@ Rulebook's `grade_bands`; the **factor map** reads `exposure.inside` (F1–F6, p
 Overview and the Audit Scorecard: history and previous month from the saved months, the three caps (hard cap "rule
 pending" while TBD, contact-after-stop, coverage "not measured yet"), `partial` ("3 of 6 factors measured") and
 `draftBands`. The portal's Exposure leaves pending factors out and spreads their weight.
+
+## Findings, alerts and reports (Module 11)
+
+### Findings (step 1)
+
+`apps/findings`. Every night after the scores are saved, the latest saved month's metrics become **findings**
+(`finding`, locked; one row per client and problem). Owner decisions 2026-10-21: a finding for every measured metric
+scored below 100 and every worst case (missing client data), never for "not yet measured"; severity High (M10, M12,
+M48, M45, M34) · Medium (M16, M18, M01, M08, M09, M41, worst cases) · Low (the rest); M38 is never a second finding (same
+as M41). Titles are noun phrases of what CiV observed (`catalog.py`, no "violation" / "illegal"); up to five masked
+examples with number-page links; ordered severity first, then how many were affected. A finding is updated in place,
+**closes by itself** when a later night no longer finds it and **reopens** when it comes back. `GET /api/actions` feeds
+the Action Queue and the Overview's "Things to fix" (merged).
+
+### The client's decisions (step 2)
+
+`PATCH /api/actions/f-<id>` (Admins and the company's lawyer; Members read only): `assignee` (one of the company's
+active users, by name), `due` (overdue is counted from today), `status` (open / in progress / resolved — CiV's own
+close wins: a finding no longer found shows resolved), `decision` {choice accepted / declined / alternative, note} and
+`dispute` {note}. The decision note is kept in the client's workspace (owner decision 2026-10-21) and never sent to
+insurers; the access log gets each change with only the note's fingerprint. Each finding carries a **common response**
+(`catalog.RESPONSES`): a CiV draft labelled "Draft · for your lawyers to review", worded "Companies commonly…".
+
+### Alerts (step 3)
+
+`apps/alerts`, every 5 minutes (`alerts`), **portal only, no email**. High: a stop a tool never marked (Module 9),
+contacts after an opt-out (one alert per day, updated), opted-out numbers brought back by a list; Medium: consent
+wording changed, certificates expiring within 30 days, a tool stopped syncing, a month marked incomplete data. The same
+open problem updates its alert (count, time) instead of making a new one; lasting conditions (unmarked stop, expiring
+certificates, stale tool, incomplete month) **resolve by themselves**; events stay until reviewed; nothing is deleted.
+`GET /api/alerts`, `POST /api/alerts/al-<id>/review` (anyone who can see it; logged). Lawyer-only mode: alerts and
+findings reach only Admins and the company's lawyer (the API returns an empty list to others, as the portal locks it).
+
+### Projected score (step 4)
+
+`scoring/portal.projection`: the Audit Score again with the **top 5 open findings** fixed (their metrics at 100, so no
+domain is held down by them), shown as "Projected" (an estimate, not a measurement); still held at C while the hard
+cap holds unless consent proof (M01) is among them (`clearsCap`). Each finding's "Score impact" is the rise from fixing
+that one alone (`impact`, e.g. "+8.3"). `cap` carries the held hard-cap share. The Alerts page's email box now says
+"Off · Alerts are shown in the portal only" (owner OK 2026-10-21).
+
+### Monthly audit report (step 5)
+
+`apps/reports` (`client_report`, locked). The **period audit report** is a PDF made from the saved figures (score and
+grade, families, factors, Exposure, caps, every finding with its severity and the client's decision — never the note —,
+the month's alerts, what is not yet measured, the disclaimer). Its footer prints the **figures fingerprint**; the file's
+own SHA-256 is kept with the report and in the access log. Before release the text passes the **banned-word check**
+(`words.py`: violation, illegal, non-compliant, guaranteed, scrub, court-ready…); a hit **blocks** the report (shown as
+"Held for review", logged, listed in Admin → Records → Client reports). Made automatically on the **6th** for the month
+before (`monthly-reports`) and on "Generate"; kept **4 years**, then the file is deleted and its fingerprint kept.
+`GET /api/reports` (history), `POST /api/reports` {name, period} (period report and Rulebook snapshot are made; other
+types are recorded as "not available yet"; the **metric export** is a CSV of the month's saved metrics: value, shown,
+state, 0–100 score, note), `GET /api/reports/period?period=`, `GET /api/reports/rep-<id>/file`.

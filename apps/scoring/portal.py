@@ -43,8 +43,15 @@ def run_for(client, key: str | None) -> SnapshotRun | None:
     return SnapshotRun.objects.filter(client=client).order_by('-period', '-version').first()
 
 
-def domain_scores(run: SnapshotRun, bands: dict) -> dict:
-    by = {m.code: m for m in run.metrics.all()}
+class Fixed:
+    """A metric as if its finding were fixed (Module 11 step 4): perfect score, nothing left to hold a domain down."""
+    def __init__(self, code):
+        self.code, self.score, self.value, self.state = code, 100.0, 0, 'measured'
+
+
+def domain_scores(run: SnapshotRun, bands: dict, fixed: set[str] = frozenset()) -> dict:
+    by = {m.code: (Fixed(m.code) if m.code in fixed else m) for m in run.metrics.all()}
+    by.update({c: Fixed(c) for c in fixed if c not in by})
     out = {}
     for code, (family, codes) in DOMAINS.items():
         scored = [by[c] for c in codes if c in by and by[c].score is not None]
@@ -120,7 +127,39 @@ def score_page(client, key: str | None) -> dict:
     }
     if len(history) > 1:
         out['previous'] = history[-2]['score']
+    out.update(projection(client, run, bands, value, hard))
     return out
+
+
+TOP = 5  # owner decision 2026-10-21
+
+
+def projection(client, run: SnapshotRun, bands: dict, today: float, hard: dict) -> dict:
+    """The score if the top open findings were fixed (an estimate, not a measurement), and the hard-cap note."""
+    from apps.findings.build import ranked
+    top = [f for f in ranked(client) if f.status != 'resolved'][:TOP]
+    out = {'cap': {'share': round(100 * hard['share'], 1), 'limit': None} if hard.get('state') == 'held' else None}
+    if not top:
+        return out
+    fixed = {f.metric for f in top}
+    value = overall(domain_scores(run, bands, fixed)) or today
+    grade = grade_of(value, bands)
+    clears = hard.get('state') == 'held' and 'M01' in fixed
+    if hard.get('state') == 'held' and not clears and grade in 'AB':
+        grade = 'C'  # still held by the hard cap
+    out['projected'] = {'score': value, 'grade': grade, 'actions': len(top), 'clearsCap': clears}
+    return out
+
+
+def impact(client, metric: str) -> float | None:
+    """How much the Audit Score would rise if this one finding were fixed."""
+    run = run_for(client, None)
+    if run is None:
+        return None
+    bands = cutoffs(run.period)
+    now = overall(domain_scores(run, bands))
+    after = overall(domain_scores(run, bands, {metric}))
+    return round(after - now, 1) if now is not None and after is not None else None
 
 
 def exposure_reading(client) -> dict | None:
