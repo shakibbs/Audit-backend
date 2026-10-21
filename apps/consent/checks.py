@@ -65,8 +65,20 @@ def _delivered_at(proof):
     return found.created_at if found else None
 
 
-def judge(proof, contact, uncertain, as_of, skew, warning_days, client_start) -> tuple[str, list[str], list[str]]:
-    """Checks 2–5 for one proof that passed check 1: (status, codes, labels)."""
+def wording_for(proof, contact, rules, variant):
+    """The consent checklist for a certificate proof, from CiV's own capture of its page (Module 7)."""
+    from apps.captures.checklist import for_certificate
+    if not proof.certificate_id:
+        return None
+    return for_certificate(proof.certificate, proof.when(), contact.client.name,
+                           gap_days=float(_value(rules, 'page_snapshot_max_gap_days', contact, variant, 1)),
+                           min_font=float(_value(rules, 'cc_min_font_px', contact, variant, 10)),  # draft 10 px (counsel item A15a)
+                           min_contrast=_value(rules, 'cc_min_contrast_ratio', contact, variant, {'normal': 4.5, 'large': 3.0}))
+
+
+def judge(proof, contact, uncertain, as_of, skew, warning_days, client_start, wording=None) -> tuple[str, list[str], list[str]]:
+    """Checks 2–5 for one proof that passed check 1: (status, codes, labels). `wording` = the consent checklist from
+    CiV's capture of the certificate's page (None = not measured)."""
     labels = ['EBR_ONLY'] if proof.kind in EBR else []
     claim = proof.certificate
     if proof.kind == ConsentProof.Kind.CERTIFICATE and claim is not None:
@@ -79,7 +91,19 @@ def judge(proof, contact, uncertain, as_of, skew, warning_days, client_start) ->
             return S.CONFLICTING, ['CF_EXPIRED'], labels
         if claim.state != CertificateClaim.State.CLAIMED:
             return S.PENDING, ['PD_NO_CERT_ACCOUNT' if claim.state == CertificateClaim.State.NO_KEY else 'PD_NOT_READ_YET'], labels
-        # 4. Do the sources agree? (certificate made after the lead was delivered)
+        if claim.gone_at or (claim.cert_expires_at and claim.cert_expires_at <= as_of):
+            # No longer opens, but CiV read it and holds its sealed fingerprint: it existed on that date, content unseen.
+            return S.WEAK, ['WK_FINGERPRINT_ONLY'], labels
+        # 3. Does the page really ask for permission? (CiV's own capture of it, checklist items with a status effect)
+        if wording is not None:
+            labels += ['wording_measured', *[f'warn:{w}' for w in wording['warnings']]]
+            step3 = [c for c in wording['codes'] if c.startswith('NP_')]
+            if step3:
+                return S.NO_PROOF, step3, labels
+        # 4. Do the sources agree? The provider says whether the number contacted was typed into the form.
+        if (claim.phone_match or {}).get(contact.phone_token) is False:
+            return S.CONFLICTING, ['CF_PHONE_MISMATCH'], labels
+        # ... and the certificate was not made after the lead was delivered.
         delivered = _delivered_at(proof)
         if delivered and claim.cert_created_at and claim.cert_created_at > delivered + skew:
             return S.CONFLICTING, ['CF_CERT_AFTER_DELIVERY'], labels
@@ -91,6 +115,8 @@ def judge(proof, contact, uncertain, as_of, skew, warning_days, client_start) ->
         codes.append('WK_TIMING_UNCERTAIN')
     if claim is not None and (claim.cert_expires_at is None or claim.cert_expires_at <= as_of + timedelta(days=warning_days)):
         codes.append('WK_RETENTION')
+    if wording is not None and 'WK_WORDING' in wording['codes']:
+        codes.append('WK_WORDING')
     return (S.WEAK, codes, labels) if codes else (S.VERIFIED, ['VF_OK'], labels)
 
 
@@ -125,7 +151,8 @@ def evaluate(contact, need: ConsentNeed, rules: RuleSet, as_of=None) -> dict:
             continue
         judged = []
         for proof, uncertain in kept:
-            status, codes, proof_labels = judge(proof, contact, uncertain, as_of, skew, warning_days, contact.client.start_date)
+            status, codes, proof_labels = judge(proof, contact, uncertain, as_of, skew, warning_days, contact.client.start_date,
+                                                wording_for(proof, contact, rules, variant))
             judged.append((BEST_FIRST.index(status), -(proof.when() or as_of).timestamp(), proof, status, codes, proof_labels))
         judged.sort(key=lambda j: (j[0], j[1]))  # best status, then the most recently captured proof
         _, _, proof, status, codes, proof_labels = judged[0]
@@ -133,6 +160,14 @@ def evaluate(contact, need: ConsentNeed, rules: RuleSet, as_of=None) -> dict:
         results.append({'basis': basis['basis'], 'status': status, 'codes': codes, 'proof': proof.pk})
     worst = max(results, key=lambda r: BEST_FIRST.index(r['status']))
     winner = ConsentProof.objects.filter(pk=worst['proof']).first() if worst['proof'] else None
+    certs = [p.certificate for p in proofs if p.certificate_id and any(r['proof'] == p.pk for r in results)]
+    if certs and all(contact.phone_token in (c.phone_match or {}) for c in certs):
+        labels.discard('not_measured:phone_match')  # the provider answered for every certificate used
+    if 'wording_measured' in labels:  # the rule-based wording items were measured; meaning waits for AI
+        labels.discard('wording_measured')
+        labels.discard('not_measured:consent_wording')
+        labels.discard('not_measured:seller_name')  # measured (information only)
+        labels.update({'not_measured:ai_wording', 'draft:consent_checklist'})
     ebr_ids = {p.pk for p in proofs if p.kind in EBR}
     winners = [r['proof'] for r in results if r['proof']]
     if not winners or not all(w in ebr_ids for w in winners):

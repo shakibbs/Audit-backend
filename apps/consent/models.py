@@ -21,6 +21,7 @@ class ConsentProof(models.Model):
     source_system = models.CharField(max_length=30)
     source_record_id = models.CharField(max_length=200)
     lead_id = models.CharField(max_length=120, blank=True)  # links the proof to contacts carrying the same lead (timing rule)
+    source_hint = models.CharField(max_length=30, blank=True)  # how the tool says its record was made (FORM, IMPORT, Web…): see sources.py
     source_seen_at = models.DateTimeField(null=True, blank=True)  # last weekly full check that found its record
     withdrawn_at = models.DateTimeField(null=True, blank=True)  # its record changed or was deleted: no longer used for new checks
     created_at = models.DateTimeField(auto_now_add=True)
@@ -111,7 +112,7 @@ class ResultChange(models.Model):
     new_status = models.CharField(max_length=11)
     old_code = models.CharField(max_length=30, blank=True)
     new_code = models.CharField(max_length=30, blank=True)
-    reason = models.CharField(max_length=20)  # new_contact, certificate_read, new_proof, late_opt_out, owner_changed, rule_changed, time_passed, frozen
+    reason = models.CharField(max_length=20)  # new_contact, certificate_read, new_proof, late_opt_out, owner_changed, rule_changed, time_passed, page_captured, frozen
     at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

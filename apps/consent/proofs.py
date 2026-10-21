@@ -16,6 +16,7 @@ from apps.certificates.scan import found_in
 from apps.contacts.epochs import epoch_for
 
 from .models import ConsentProof
+from .sources import hint_from_record
 
 YES = {True, 'true', 'yes', 'y', '1', 'on', 'consented', 'opted in', 'opted_in'}
 
@@ -74,6 +75,7 @@ def proofs_seen(client, connection, record, phone_tokens) -> None:
         row = {}
     source, rid = connection.provider, record.source_record_id
     made: set = set()
+    hint = hint_from_record(source, row)
     lead_id = str(row.get('lead_id') or row.get('Id') or row.get('id') or '')
     for provider, ref in found_in(record.raw):
         claim = CertificateClaim.objects.filter(client=client, provider=provider, cert_ref=ref).first()
@@ -82,17 +84,17 @@ def proofs_seen(client, connection, record, phone_tokens) -> None:
         at = claim.cert_created_at or record.changed_at
         for token in tokens:
             _save(client, token, at, made, kind=ConsentProof.Kind.CERTIFICATE, proof_type='web_cert', certificate=claim,
-                  date_known=bool(claim.cert_created_at), source_system=source, source_record_id=rid, lead_id=lead_id)
+                  date_known=bool(claim.cert_created_at), source_system=source, source_record_id=rid, lead_id=lead_id, source_hint=hint)
     if record.content_kind in ('lead', 'crm_record') and not rid.startswith('calls:'):
         if consent_fields(source, row):
             for token in tokens:
                 _save(client, token, record.changed_at, made, kind=ConsentProof.Kind.SELF_ASSERTED, proof_type='crm_flag',
-                      source_system=source, source_record_id=rid, lead_id=lead_id)
+                      source_system=source, source_record_id=rid, lead_id=lead_id, source_hint=hint)
         customer_since = _when(row.get('properties', {}).get('hs_lifecyclestage_customer_date')) if source == 'hubspot' else None
         if customer_since:
             for token in tokens:
                 _save(client, token, customer_since, made, kind=ConsentProof.Kind.EBR_PURCHASE, proof_type='purchase',
-                      source_system=source, source_record_id=rid, lead_id=lead_id)
+                      source_system=source, source_record_id=rid, lead_id=lead_id, source_hint=hint)
     # The record came back without a proof it gave before (link removed, box unticked, number changed): withdraw it.
     withdraw(ConsentProof.objects.filter(client=client, source_system=source, source_record_id=rid).exclude(pk__in=made), 'FZ_INPUTS_CHANGED')
 

@@ -31,6 +31,29 @@ class Facts:
     created_at: datetime | None
     expires_at: datetime | None
     page_url: str
+    phone_match: bool | None = None  # was this phone typed into the form? None = not asked or no answer
+
+
+def _found(data: dict, *paths: str):
+    """Like _first, but False counts as an answer."""
+    for path in paths:
+        node = data
+        for part in path.split('.'):
+            node = node.get(part) if isinstance(node, dict) else None
+        if node is not None:
+            return node
+    return None
+
+
+def lead_phone(number: str) -> str:
+    """The phone as TrustedForm's lead matching takes it: digits, no leading +1 for US numbers (to confirm)."""
+    digits = ''.join(ch for ch in number if ch.isdigit())
+    return digits[1:] if len(digits) == 11 and digits.startswith('1') else digits
+
+
+def phone_answer(data: dict) -> bool | None:
+    value = _found(data, 'match_lead.result.phone_match', 'match_lead.phone_match', 'match_lead.result.phone', 'phone_match')
+    return value if isinstance(value, bool) else None
 
 
 def _when(value) -> datetime | None:
@@ -64,8 +87,13 @@ def _send(request: urllib.request.Request) -> bytes:
         raise  # 5xx and others: try again later
 
 
-def claim_trustedform(cert_id: str, key: str, reference: str) -> Facts:
-    body = json.dumps({'retain': {'reference': reference}, 'insights': {'properties': ['created_at', 'expires_at', 'page_url']}}).encode()
+def claim_trustedform(cert_id: str, key: str, reference: str, phone: str | None = None) -> Facts:
+    """Claims (retains) the certificate; with a phone, TrustedForm also says whether it was typed into the form. The
+    phone goes only into this request: it is never stored (lead matching, built from the docs, to confirm)."""
+    request = {'retain': {'reference': reference}, 'insights': {'properties': ['created_at', 'expires_at', 'page_url']}}
+    if phone:
+        request['match_lead'] = {'phone': lead_phone(phone)}
+    body = json.dumps(request).encode()
     auth = base64.b64encode(f'API:{key}'.encode()).decode()
     raw = _send(urllib.request.Request(f'{TRUSTEDFORM}/{cert_id}', data=body, method='POST', headers={
         'Authorization': f'Basic {auth}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'api-version': '4.0'}))
@@ -75,7 +103,17 @@ def claim_trustedform(cert_id: str, key: str, reference: str) -> Facts:
     return Facts(raw=raw,
                  created_at=_when(_first(data, 'insights.properties.created_at', 'created_at', 'cert.created_at')),
                  expires_at=_when(_first(data, 'retain.results.expires_at', 'expires_at', 'cert.expires_at')),
-                 page_url=str(_first(data, 'insights.properties.page_url', 'page_url', 'cert.page_url') or ''))
+                 page_url=str(_first(data, 'insights.properties.page_url', 'page_url', 'cert.page_url') or ''),
+                 phone_match=phone_answer(data) if phone else None)
+
+
+def match_trustedform(cert_id: str, key: str, phone: str) -> bool | None:
+    """An already claimed certificate seen with another phone: lead matching only (to confirm on a real account)."""
+    auth = base64.b64encode(f'API:{key}'.encode()).decode()
+    raw = _send(urllib.request.Request(f'{TRUSTEDFORM}/{cert_id}', data=json.dumps({'match_lead': {'phone': lead_phone(phone)}}).encode(),
+                                       method='POST', headers={'Authorization': f'Basic {auth}', 'Content-Type': 'application/json',
+                                                               'Accept': 'application/json', 'api-version': '4.0'}))
+    return phone_answer(json.loads(raw))
 
 
 def read_jornaya(token: str, account_code: str, key: str) -> Facts:

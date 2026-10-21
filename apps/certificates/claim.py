@@ -21,7 +21,19 @@ def key_for(claim: CertificateClaim) -> Connection | None:
     return Connection.objects.filter(client_id=claim.client_id, provider=claim.provider, status__in=USABLE).first()
 
 
-def claim_one(claim: CertificateClaim) -> None:
+PHONE_CHECKED: list = []  # callables (claim, phone_token): a phone match answer arrived (results are checked again)
+
+
+def note_phone(claim: CertificateClaim, token: str, answer: bool | None) -> None:
+    if answer is None or not token:
+        return
+    claim.phone_match = {**(claim.phone_match or {}), token: answer}
+    CertificateClaim.objects.filter(pk=claim.pk).update(phone_match=claim.phone_match)
+    for receiver in PHONE_CHECKED:
+        receiver(claim, token)
+
+
+def claim_one(claim: CertificateClaim, phone: str | None = None, token: str = '') -> None:
     now = timezone.now()
     if now > claim.deadline_at:
         claim.state = CertificateClaim.State.LOST
@@ -37,7 +49,7 @@ def claim_one(claim: CertificateClaim) -> None:
     claim.attempts += 1
     try:
         if claim.provider == CertificateClaim.Provider.TRUSTEDFORM:
-            facts = vendors.claim_trustedform(claim.cert_ref, creds.get('key', ''), f'civ-client-{claim.client_id}')
+            facts = vendors.claim_trustedform(claim.cert_ref, creds.get('key', ''), f'civ-client-{claim.client_id}', phone)
         else:
             facts = vendors.read_jornaya(claim.cert_ref, creds.get('account', ''), creds.get('key', ''))
     except vendors.NotFound:
@@ -56,6 +68,24 @@ def claim_one(claim: CertificateClaim) -> None:
     claim.state, claim.claimed_at, claim.last_error = CertificateClaim.State.CLAIMED, now, ''
     claim.cert_created_at, claim.cert_expires_at, claim.page = facts.created_at, facts.expires_at, vendors.host_and_path(facts.page_url)
     claim.save()
+    note_phone(claim, token, facts.phone_match)
+
+
+def match_now(claim: CertificateClaim, number: str, token: str) -> None:
+    """Phone match while the number is still in memory (owner decision A: numbers are never stored). If the provider
+    cannot answer now, the match stays "not measured"; the claim itself is retried by the queue as usual."""
+    if claim.provider != CertificateClaim.Provider.TRUSTEDFORM or token in (claim.phone_match or {}):
+        return  # Jornaya's lead matching is to confirm on a real account
+    if claim.state in (CertificateClaim.State.WAITING, CertificateClaim.State.NO_KEY):
+        claim_one(claim, phone=number, token=token)
+        return
+    connection = key_for(claim)
+    if claim.state != CertificateClaim.State.CLAIMED or connection is None:
+        return
+    try:
+        note_phone(claim, token, vendors.match_trustedform(claim.cert_ref, connection.get_credentials().get('key', ''), number))
+    except Exception:  # provider down or refused: not measured, never retried (the number is gone)
+        return
 
 
 def claim_due() -> int:

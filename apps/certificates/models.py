@@ -27,6 +27,8 @@ class CertificateClaim(models.Model):
     cert_created_at = models.DateTimeField(null=True, blank=True)
     cert_expires_at = models.DateTimeField(null=True, blank=True)
     page = models.CharField(max_length=300, blank=True)  # host and path only: a query string could carry personal data
+    gone_at = models.DateTimeField(null=True, blank=True)  # no longer opens at the provider (its expiry date passed, or found gone)
+    phone_match = models.JSONField(default=dict, blank=True)  # {phone code: true/false}: was that phone typed into the form?
 
     class Meta:
         db_table = 'certificate_claim'

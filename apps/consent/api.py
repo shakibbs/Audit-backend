@@ -10,7 +10,8 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsClientUser
 from apps.certificates.models import CertificateClaim
 
-from .models import ConsentResult
+from .models import ConsentProof, ConsentResult
+from .sources import LABEL, UNKNOWN, source_of
 from .words import REASONS
 
 MIX = ['VERIFIED', 'WEAK', 'CONFLICTING', 'NO_PROOF']
@@ -84,7 +85,12 @@ class CertificatesView(APIView):
         client = request.user.client
         claims = (CertificateClaim.objects.filter(client=client).order_by('-seen_at')
                   .annotate(used=Count('proofs__results', filter=Q(proofs__results__variant='strict'), distinct=True))[:200])
+        first_proof = {}
+        for proof in ConsentProof.objects.filter(client=client, certificate__in=claims).order_by('pk'):
+            first_proof.setdefault(proof.certificate_id, proof)
         return Response([{
+            'source': LABEL[source_of(first_proof[c.pk])] if c.pk in first_proof else LABEL[UNKNOWN],
+            'phoneMatch': None if not c.phone_match else all(c.phone_match.values()),
             'id': f'cc-{c.pk}', 'provider': c.get_provider_display(), 'ref': f'{c.cert_ref[:8]}…', 'state': c.state, 'stateLabel': c.get_state_display(),
             'seenAt': c.seen_at, 'deadlineAt': c.deadline_at, 'createdAt': c.cert_created_at, 'expiresAt': c.cert_expires_at, 'page': c.page,
             'usedBy': c.used, 'problem': c.last_error if c.state == 'lost' else ''} for c in claims])

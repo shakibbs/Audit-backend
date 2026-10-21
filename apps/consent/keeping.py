@@ -65,6 +65,18 @@ def proof_saved(proof: ConsentProof, created: bool, old_when=None) -> None:
     queue(proof.client_id, proof.phone_token, min(starts) - SKEW if starts else None, 'new_proof' if created else 'certificate_read')
 
 
+def phone_checked(claim, token: str) -> None:
+    queue(claim.client_id, token, None, 'new_proof')  # a phone match answer can change that number's results
+
+
+def page_captured(page, captured_at) -> None:
+    """A new capture of a consent page: numbers whose certificate from that page was made within a day are checked again."""
+    near = ConsentProof.objects.filter(client_id=page.client_id, certificate__page=page.address,
+                                       captured_at__gte=captured_at - timedelta(days=1), captured_at__lte=captured_at + timedelta(days=1))
+    for token in set(near.values_list('phone_token', flat=True)):
+        queue(page.client_id, token, None, 'page_captured')
+
+
 def optout_saved(sender, instance, created, **kwargs) -> None:
     if created:
         queue(instance.client_id, instance.phone_token, instance.at, 'late_opt_out')
@@ -174,8 +186,22 @@ def recheck_pending(limit: int = BATCH) -> int:
     return len(contacts)
 
 
+def mark_gone(now=None) -> int:
+    """Claimed certificates past their expiry date no longer open: note it and check their numbers again (they become
+    fingerprint-only proof). No request to the provider is needed: it gave the expiry date when CiV claimed it."""
+    from apps.certificates.models import CertificateClaim
+    now = now or timezone.now()
+    gone = list(CertificateClaim.objects.filter(state=CertificateClaim.State.CLAIMED, gone_at__isnull=True, cert_expires_at__lte=now))
+    for claim in gone:
+        CertificateClaim.objects.filter(pk=claim.pk).update(gone_at=claim.cert_expires_at)
+        for proof in ConsentProof.objects.filter(certificate=claim):
+            queue(proof.client_id, proof.phone_token, None, 'time_passed')
+    return len(gone)
+
+
 def recheck_time_passed(limit: int = 5000) -> int:
-    """Nightly: results that stood on a certificate now expiring within the warning days."""
+    """Nightly: certificates that stopped opening, then results that stood on one now expiring within the warning days."""
+    mark_gone()
     rules = RuleSet()
     warning = timedelta(days=int(rules.get('cert_expiry_warning_days', on=timezone.localdate()).value or 30))
     soon = timezone.now() + warning

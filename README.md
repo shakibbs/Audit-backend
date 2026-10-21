@@ -554,6 +554,79 @@ not supplied share, certificate validity, before-engagement expiries, four-month
 (first 8 characters of the ID only), state, dates, page, and how many contacts' results used each. Words in
 `apps/consent/words.py`.
 
+## Certificates: where from, who holds them, fingerprint-only proof (Module 7, step 1)
+
+- **Where from** (`apps/consent/sources.py`, owner decision): each proof keeps the record's own word for how it was
+  made (`source_hint`: HubSpot `hs_object_source`, Salesforce `LeadSource`). `source_of()` → **client_form** (HubSpot
+  FORM; a Salesforce "Web" lead not part of an upload or feed), **vendor** (HubSpot INTEGRATION/API, or an automatic
+  feed), **uploaded_list** (HubSpot IMPORT, or a Module 5 upload batch), else **unknown**. Never skips a check.
+- **Who holds it** (`custody_of`): CiV claims every certificate automatically in the client's own account (no switch;
+  covered by the service agreement) → claimed / being claimed / not claimed in time / provider does not have it.
+  A vendor-only holder cannot be seen through the API (to confirm on a real account): never guessed.
+- **Fingerprint-only proof:** a claimed certificate past its expiry date (or found gone) no longer opens; CiV read it
+  and holds its sealed fingerprint → **WK_FINGERPRINT_ONLY** (weak), not conflicting. Nightly, `mark_gone()` sets
+  `CertificateClaim.gone_at` from the expiry date the provider gave at claim time (no extra request, no extra cost)
+  and queues rechecks of the numbers that used it.
+
+### Phone match (Module 7, step 2)
+
+Owner decision A: phone numbers are never stored, so the match happens **while the lead is being read**. The
+certificate scanner (`scan_record` → `match_phones`) takes each phone of a CRM lead or person record that carries a
+certificate and, in the same request as the claim, asks TrustedForm whether it was typed into the form
+(`match_lead`, `vendors.claim_trustedform(..., phone)`; an already claimed certificate gets a match-only request).
+Only the answer is kept: `CertificateClaim.phone_match` = {phone code: true/false}. A "no" →
+**CF_PHONE_MISMATCH** (conflicting); a "yes" removes `not_measured:phone_match`; no answer (provider down, dialer
+record, Jornaya) stays "not measured" and never makes a result worse. A new answer queues a recheck of that number.
+Lead matching's request and answer shape are built from TrustedForm's docs and marked **to confirm**; Jornaya's
+matching is to confirm.
+
+### CiV's own copy of each consent page (Module 7, step 3)
+
+`apps/captures` (spec `page_capture`; decision D32a: CiV keeps the screenshot, the page text and the measurements).
+- **Pages:** every page named by a claimed certificate (host and path only, never the "?" part) becomes a
+  `consent_page`, once per client and address. Pages named in the last 30 days are captured about once a day
+  (`page_capture_interval_hours`), at phone and computer size (`cc_viewports`: 390×844, 1440×900).
+- **A capture** (`page_capture`): screenshot (private media file), the page's words, the consent block's words (the
+  element with the most permission words, if any on that page), measurements for Step 4 (checkboxes and whether
+  ticked, buttons, the consent block's font size, colours and position, phone fields), hashes, and a sealed
+  fingerprint (grade A, captured by CiV itself). A page that does not open is recorded with the reason, never held
+  against the client. The browser never types into or submits a form.
+- **Safety:** only public internet addresses on ports 80/443 are opened; every request the page makes is checked the
+  same way; a redirect to a private address keeps nothing; service workers are blocked.
+- **Where it runs:** its own container `capture` (`deploy/Dockerfile.capture`: Debian Chromium, `CHROMIUM_PATH`),
+  Celery queue `capture`, hourly (`capture_pages`); the main worker never opens a browser. Locally, Playwright with
+  `CHROMIUM_PATH=/usr/bin/chromium`.
+- **Kept 4 years** (owner decision: the TCPA time limit to sue): nightly `purge_old_captures` deletes older
+  screenshots and words; hashes and fingerprints stay.
+
+### The consent checklist (Module 7, step 4)
+
+`apps/captures/checklist.py` reads CiV's capture of a certificate's page taken within `page_snapshot_max_gap_days`
+(1) of the consent, closest first; no capture that close → `not_measured:consent_wording`, never worse.
+Rule items per screen size, the worse counting (owner decision): **CC_CONSENT_TEXT** (no permission words although the
+page has a phone box and a button → **NP_NO_CONSENT_TEXT**; no phone box → not measured, the form may go on later),
+**CC_UNTICKED** (a ticked box next to the words → **NP_PRETICKED**), **CC_BUTTON_MATCH** ("by clicking X" names a real
+button), **CC_NUMBER_SHOWN**, **CC_FONT_SIZE** (`cc_min_font_px`, draft 10 px), **CC_CONTRAST** (`cc_min_contrast_ratio`
+4.5 : 1, 3 : 1 from 24 px) → any failing = **WK_WORDING**; **CC_ABOVE_BUTTON**, **CC_NO_SCROLL** = warnings only;
+**CC_SELLER_NAMED** (the client's own name; no brand list) = information only. Meaning items (opt-out, not a
+condition, autodialer disclosed) wait for AI (`not_measured:ai_wording`). Results carry `draft:consent_checklist`
+while the checklist is not approved. A new capture queues a recheck (`page_captured`) of numbers whose certificate
+from that page was made within a day.
+
+**Page match (step 5): skipped** (owner decision 2026-10-21): TrustedForm's copy of the page costs the client per lead;
+`not_measured:page_match` stays until a client's plan makes it worth it.
+
+### Made visible (Module 7, step 6)
+
+- `GET /api/consent-pages` (`apps/captures/api.py`): the Wording tab: each page (most common source of its
+  certificates, how many certificates), CiV's latest photos, the consent words, and every checklist item with its
+  result and effect (no_proof / wording / warning / info / ai). `GET /api/consent-pages/<ref>/photo/<viewport>`: the
+  photo, own client only. No approve/reject mark (owner decision: results come only from the checks).
+- `GET /api/certificates` adds `source` and `phoneMatch`; the number page's proofs add `source`, `phoneMatch`, `page`.
+- **Admin → client page → Consent pages tab** (read only, shown when viewing, left out of a save): each page, when
+  seen, the latest photo time or why it could not be captured, Phone / Computer photo buttons (staff only), and the
+  checklist.
+
 ## Use it with the portal
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.

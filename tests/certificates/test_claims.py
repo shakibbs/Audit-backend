@@ -90,7 +90,7 @@ def test_claimed_quickly_facts_kept_personal_details_not(company, trustedform, m
 
 def test_nearest_deadline_first(company, trustedform, monkeypatch):
     order = []
-    monkeypatch.setattr(vendors, 'claim_trustedform', lambda ref, key, reference: order.append(ref) or vendors.Facts(b'{}', None, None, ''))
+    monkeypatch.setattr(vendors, 'claim_trustedform', lambda ref, key, reference, phone=None: order.append(ref) or vendors.Facts(b'{}', None, None, ''))
     now = timezone.now()
     for i, hours in enumerate([60, 5, 30]):
         CertificateClaim.objects.create(client=company, provider='trustedform', cert_ref=f'{i:040d}', deadline_at=now + timedelta(hours=hours))

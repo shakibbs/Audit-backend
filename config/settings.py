@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'apps.optouts',
     'apps.reconcile',
     'apps.consent',
+    'apps.captures',
 ]
 
 MIDDLEWARE = [
@@ -162,6 +163,8 @@ CELERY_BEAT_SCHEDULE = {
     'claim-certificates': {'task': 'apps.certificates.tasks.claim_certificates', 'schedule': 60.0},
     'consent-needs': {'task': 'apps.consent.tasks.work_out_needs', 'schedule': 60.0},  # each new contact: what it needs, its result
     'consent-recheck': {'task': 'apps.consent.tasks.keep_results_up_to_date', 'schedule': 60.0},  # queued rechecks, read certificates
+    'capture-pages': {'task': 'apps.captures.tasks.capture_pages', 'schedule': crontab(minute=20)},  # hourly; each page about once a day
+    'purge-old-captures': {'task': 'apps.captures.tasks.purge_old_captures', 'schedule': crontab(minute=45, hour=4)},
     'consent-nightly': {'task': 'apps.consent.tasks.recheck_time_passed', 'schedule': crontab(minute=0, hour=3)},  # expiring certificates
     'proof-dates': {'task': 'apps.consent.tasks.refresh_proof_dates', 'schedule': 5 * 60.0},  # claimed certificates date their proofs
     # Uploaded lists (apps.imports): CRM records regrouped into batches every 15 minutes.
@@ -211,3 +214,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '3600'))
     SECURE_CONTENT_TYPE_NOSNIFF = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Page captures run only in the capture container, which has Chromium (deploy/Dockerfile.capture).
+CELERY_TASK_ROUTES = {'apps.captures.tasks.capture_pages': {'queue': 'capture'}}
+CHROMIUM_PATH = os.environ.get('CHROMIUM_PATH', '')  # empty = Playwright's own browser

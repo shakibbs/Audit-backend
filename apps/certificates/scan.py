@@ -36,9 +36,25 @@ def scan_record(client, connection, record, phone_tokens) -> None:
     if not found:
         return
     deadline = record.changed_at + timedelta(hours=window_hours())
+    claims = []
     for provider, ref in found:
         try:
             with transaction.atomic():
-                CertificateClaim.objects.create(client=client, provider=provider, cert_ref=ref, deadline_at=deadline)
+                claims.append(CertificateClaim.objects.create(client=client, provider=provider, cert_ref=ref, deadline_at=deadline))
         except IntegrityError:
-            pass  # already queued
+            claims.append(CertificateClaim.objects.get(client=client, provider=provider, cert_ref=ref))  # already queued
+    if record.content_kind in ('lead', 'crm_record') and not record.source_record_id.startswith('calls:'):
+        match_phones(client, record, claims)
+
+
+def match_phones(client, record, claims) -> None:
+    """The lead's phones against the form, right now, while the numbers are in memory (they are never stored)."""
+    from apps.contacts.normalize import codes_for
+    from apps.keyring.phones import normalize
+
+    from .claim import match_now
+    codes = codes_for(client)
+    for number in dict.fromkeys(n for n in map(normalize, record.phones) if n):
+        token = codes.token(number)
+        for claim in claims:
+            match_now(claim, number, token)

@@ -26,6 +26,7 @@ from apps.onboarding import views as onboarding_views
 from apps.onboarding.progress import checklist
 from apps.reconcile.summary import completeness_tile
 from apps.reconcile.views import completeness_page
+from apps.captures.admin import ConsentPageInline, open_photo
 
 
 @admin.register(Client)
@@ -40,14 +41,17 @@ class ClientAdmin(CivModelAdmin):
     list_filter = ('status', 'plan', 'counsel_directed', 'access_level')
     search_fields = ('name', 'industry', 'users__email', 'users__name')  # find a person's company by their email
     readonly_fields = ('access_shown', 'status_since', 'created_at')
-    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline]
+    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, ConsentPageInline]
     fieldsets = (
         (None, {'fields': ('name', 'industry', 'plan', 'start_date', 'status', 'status_reason', 'status_since', 'counsel_directed', 'access_shown', 'created_at')}),
     )
 
     # A new company has no people yet: show only the Connections tab beside its details.
     def get_inlines(self, request, obj):
-        return self.inlines if obj else [ConnectionInline, ContractInline, DocumentInline]
+        if not obj:
+            return [ConnectionInline, ContractInline, DocumentInline]
+        # Consent pages are read only: shown when viewing, left out of a save (nothing in them is sent back).
+        return self.inlines if request.method == 'GET' else [i for i in self.inlines if i is not ConsentPageInline]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('contract').annotate(
@@ -146,6 +150,7 @@ class ClientAdmin(CivModelAdmin):
                  name='clients_client_document_open'),
             path('<int:client_id>/onboarding/<str:step>/', site.admin_view(onboarding_views.toggle_step),
                  name='clients_client_onboarding_toggle'),
+            path('<int:client_id>/consent-pages/<int:capture_id>/photo/', site.admin_view(open_photo), name='clients_client_page_photo'),
             path('<int:client_id>/completeness/', site.admin_view(completeness_page), name='clients_client_completeness'),
             path('<int:client_id>/users/<int:user_id>/password-link/', site.admin_view(user_views.password_link),
                  name='clients_client_user_password_link'),

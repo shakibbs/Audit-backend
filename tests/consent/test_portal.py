@@ -74,7 +74,7 @@ def test_the_number_page_has_the_consent_card_history_and_opt_outs(company, memb
     assert card['proofs'][0]['provider'] == 'TrustedForm' and card['proofs'][0]['usedBy'] == 1  # calls that used it
     assert {x['basis']: x['status'] for x in card['needs']} == {'dnc_unknown': 'VERIFIED'}
     assert card['history'][0] == {**card['history'][0], 'from': 'PENDING', 'to': 'VERIFIED', 'reason': 'certificate read'}
-    assert len(card['notMeasured']) == 5 and card['draftRules'] is True
+    assert len(card['notMeasured']) == 5 and card['draftRules'] is True  # wording, phone, page, lead trace, seller
     assert page['optOuts'][0]['channel'] == 'text'
 
 

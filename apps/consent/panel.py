@@ -30,12 +30,14 @@ def optouts_of(client, token: str) -> list[dict]:
             for o in OptOutEvent.objects.filter(client=client, phone_token=token).order_by('at')]
 
 
-def _proof(p: ConsentProof, used: int) -> dict:
+def _proof(p: ConsentProof, used: int, token: str = '') -> dict:
+    from .sources import LABEL, source_of
     claim = p.certificate
+    match = (claim.phone_match or {}).get(token) if claim else None
     return {'id': f'cp-{p.pk}', 'kind': KIND.get(p.kind, p.kind), 'provider': claim.get_provider_display() if claim else None,
             'madeAt': p.when(), 'dateKnown': p.date_known, 'expiresAt': claim.cert_expires_at if claim else None,
             'state': claim.get_state_display() if claim else None, 'tool': p.source_system, 'withdrawn': p.withdrawn_at is not None,
-            'usedBy': used}
+            'usedBy': used, 'source': LABEL[source_of(p)], 'phoneMatch': match, 'page': claim.page if claim else ''}
 
 
 def consent_panel(client, token: str, epoch, results) -> dict:
@@ -55,13 +57,13 @@ def consent_panel(client, token: str, epoch, results) -> dict:
         draft = True
     return {
         'owner': epoch.number if epoch else None,
-        'proofs': [_proof(p, used.get(p.pk, 0)) for p in proofs],
+        'proofs': [_proof(p, used.get(p.pk, 0), token) for p in proofs],
         'needs': [{'basis': b['basis'], 'status': b['status'].upper(), 'proof': names.get(b.get('proof'))} for b in (latest.bases if latest else [])],
         'needsFor': latest.contact.occurred_at if latest else None,
         'history': [{'at': c.at, 'contactAt': c.contact.occurred_at, 'from': c.old_status.upper() or None, 'to': c.new_status.upper(),
                      'reason': CHANGE_REASONS.get(c.reason, c.reason), 'frozen': c.reason == 'frozen'} for c in changes],
         'frozen': sum(1 for r in results if r.frozen),
         'pending': sum(1 for r in results if r.status == ConsentResult.Status.PENDING and not r.frozen),
-        'notMeasured': list(NOT_MEASURED.values()),
+        'notMeasured': [text for key, text in NOT_MEASURED.items() if latest is None or key in (latest.labels or [])],
         'draftRules': draft,
     }

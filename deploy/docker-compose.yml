@@ -70,6 +70,23 @@ services:
       redis: {condition: service_healthy}
     networks: [internal]
 
+  # Page capture worker: CiV's own browser (Chromium) takes photos of public consent pages, about once a day each.
+  # Only public internet addresses are opened (apps/captures/browser.py).
+  capture:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.capture
+    restart: unless-stopped
+    env_file: .env.production
+    environment: *backend_env
+    volumes:
+      - media:/app/media  # screenshots, private like client documents
+    shm_size: 512mb  # Chromium needs shared memory
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [internal]
+
   # The clock: puts jobs on the to-do list on a timetable (heartbeat every minute, nightly jobs).
   beat:
     build: ..
