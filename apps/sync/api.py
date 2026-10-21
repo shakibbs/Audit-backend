@@ -1,6 +1,7 @@
 """Client API: the Source Registry list and the Overview's Data health card, from the real connections and sync.
 The upload rows keep the names the Upload centre offers; no upload is tracked here yet."""
 from django.db.models import Max
+from django.utils import timezone
 from django.utils.timesince import timesince
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -78,6 +79,24 @@ class SourcesView(APIView):
         return Response(rows)
 
 
+def conversation_review(client) -> dict | None:
+    """Overview card "Opt-outs your dialer missed" (Module 9), last 30 days: conversations the AI read, opt-outs it found
+    (that count), how many a tool still had not marked by the deadline, and how many were not marked at the first check.
+    None until the AI has read anything (the card says "not yet measured")."""
+    from datetime import timedelta
+
+    from apps.conversations.models import ConversationReview
+    from apps.optouts.models import OptOutEvent
+    since = timezone.now() - timedelta(days=30)
+    reviews = ConversationReview.objects.filter(client=client, reviewed_at__gte=since).exclude(result='not_reviewed')
+    if not reviews.exists():
+        return None
+    found = OptOutEvent.objects.filter(client=client, method='ai', counts=True, at__gte=since)
+    return {'reviewed': reviews.count(), 'optOutsFound': found.count(),
+            'missed': found.filter(mark_checks__missed=True).distinct().count(),
+            'notMarkedFirstCheck': found.filter(mark_checks__urgent_at__isnull=False).distinct().count()}
+
+
 class DataHealthView(APIView):
     """Real: access level, tools live / stale / not connected, last change. Not measured yet: records completeness
     (Module 5) and conversation review (Module 9), sent as null."""
@@ -95,7 +114,7 @@ class DataHealthView(APIView):
             'lastChangeAt': last,  # None until something has been read
             'sources': {'live': sum(r['status'] == 'current' for r in rows), 'stale': sum(r['status'] == 'stale' for r in rows),
                         'notSupplied': sum(r['status'] == 'not_supplied' for r in rows), 'total': len(rows)},
-            **records_completeness(client), 'conversationReview': None, 'proofRequestsWaiting': proof_requests_waiting(client),
+            **records_completeness(client), 'conversationReview': conversation_review(client), 'proofRequestsWaiting': proof_requests_waiting(client),
         })
 
 

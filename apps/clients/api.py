@@ -57,9 +57,12 @@ class BilledNumbersView(APIView):
 
 
 class RevocationView(APIView):
-    """Only the Annex C signed date is real before Module 9 (test opt-outs)."""
+    """Revocation page: M08 / M09, the opt-out matrix and the time-to-stop chart from the client's real opt-outs
+    (Module 9; no paid test lines), and the Annex C signed date. Wording coverage stays with the sample."""
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        doc = ClientDocument.objects.filter(client=request.user.client, kind=ClientDocument.Kind.ANNEX_C, signed_on__isnull=False).order_by('-signed_on').first()
-        return Response({'authorisation': {'signedOn': doc.signed_on.isoformat() if doc else '—'}})
+        from apps.optouts.measures import revocation_page
+        client = request.user.client
+        doc = ClientDocument.objects.filter(client=client, kind=ClientDocument.Kind.ANNEX_C, signed_on__isnull=False).order_by('-signed_on').first()
+        return Response({**revocation_page(client), 'authorisation': {'signedOn': doc.signed_on.isoformat() if doc else '—'}})

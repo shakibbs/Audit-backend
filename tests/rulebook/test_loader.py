@@ -22,7 +22,7 @@ def rule(d, key):
 def test_spec_v3_loads_as_provisional_with_state_rows():
     version, result = load(V3)
     assert result == 'loaded' and version.status == 'provisional' and version.version == '3.0'
-    assert RuleValue.objects.filter(version=version, jurisdiction='US').count() == 146
+    assert RuleValue.objects.filter(version=version, jurisdiction='US').count() == 147
     fl = RuleValue.objects.get(key='calling_hours', jurisdiction='FL')
     assert fl.status == 'tbd' and fl.provisional == {'start': '08:00', 'end': '20:00'} and fl.counsel_item == 'A6'
     deadline = RuleValue.objects.get(key='optout_deadline_business_days', jurisdiction='US')
@@ -96,9 +96,9 @@ def test_meaning_and_shown_text_have_no_banned_words():
         assert [w for w in BANNED if re.search(rf'(^|[^a-z]){w}(?=$|[^a-z])', text)] == [], r['key']
 
 
-def test_spec_v3_still_needs_counsel_for_five_result_changing_keys():
+def test_spec_v3_still_needs_counsel_for_six_result_changing_keys():
     """Found while loading the spec: these change results but are neither counsel-owned nor marked counsel-approved."""
     d = doc()
     pending = sorted(r['key'] for r in d['rules'] if r['affects_status'] and r['owner'] != 'Counsel' and not r['counsel_approved'])
     assert pending == ['cert_confirmed_expiry_hours', 'cert_unretained_expiry_hours', 'conv_review_accuracy_pass_mark',
-                       'conv_review_min_confidence', 'conv_review_thread_days']
+                       'conv_review_min_confidence', 'conv_review_stop_catch_mark', 'conv_review_thread_days']

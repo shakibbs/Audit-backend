@@ -1559,7 +1559,7 @@ rules:
   - text
 - key: conv_review_min_confidence
   section: AI conversation review
-  meaning: Below this the result is unclear and no opt-out is marked
+  meaning: Below this a possible stop is treated as a stop (safe side); any other answer is unclear (owner decision 2026-10-21)
   owner: Product
   status: proposed
   counsel_item: C21
@@ -1569,14 +1569,24 @@ rules:
   value: 0.9
 - key: conv_review_accuracy_pass_mark
   section: AI conversation review
-  meaning: Accuracy gate, measured separately for calls and texts
+  meaning: Accuracy gate, all answers, measured separately for calls and texts (owner decision 2026-10-21)
   owner: Product
   status: proposed
   counsel_item: C21
   affects_status: true
   counsel_approved: false
-  shown: 95%
-  value: 0.95
+  shown: 98%
+  value: 0.98
+- key: conv_review_stop_catch_mark
+  section: AI conversation review
+  meaning: Accuracy gate, share of stops (opt-outs and wrong numbers) the AI must catch; one missed stop fails (owner decision 2026-10-21)
+  owner: Product
+  status: proposed
+  counsel_item: C21
+  affects_status: true
+  counsel_approved: false
+  shown: 100%
+  value: 1.0
 - key: conv_review_thread_days
   section: AI conversation review
   meaning: How far back a text thread is read for context

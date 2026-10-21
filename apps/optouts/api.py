@@ -1,6 +1,7 @@
 """Client API: the Opt-outs card on Revocation Integrity. Every opt-out on the STOP list, newest first, with its
 deadline (business days, in the person's time zone) and any contact after it. Whether the dialer marked the number
-is checked in Module 9: until then "not checked yet"."""
+is checked by step 3 of Module 9 (marks.py): yes / no / null = not checked. Added fields: each tool's answer, an urgent
+flag (a tool has not marked it), and whether the opt-out counts in the score (AI before its exam: not counted)."""
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
@@ -40,10 +41,18 @@ def row(event: OptOutEvent, rules: RuleSet | None) -> dict:
         'phoneE164': number_ref(event.phone_token) if latest else None,
         'how': HOW.get((event.method, event.channel), event.get_method_display()), 'words': event.keyword or None, 'at': event.at,
         'deadline': deadline, 'businessDaysLeft': days_left or 0, 'deadlineProvisional': provisional,
-        'dialerMarked': None,  # checked in Module 9
+        **marks_of(event),
         'contactsAfter': {'count': count, 'channel': after.first().get_channel_display(), 'lastAt': after.first().occurred_at,
                           'afterDeadline': bool(end_of_deadline and after.filter(occurred_at__gt=end_of_deadline).exists())} if count else None,
     }
+
+
+def marks_of(event: OptOutEvent) -> dict:
+    checks = list(event.mark_checks.select_related('connection'))
+    dialers = [c.marked for c in checks if c.connection.kind == 'dialer' and c.marked is not None]
+    return {'dialerMarked': False if False in dialers else (True if dialers else None),
+            'tools': [{'name': c.connection.tool.name, 'marked': c.marked, 'note': c.note or None} for c in checks],
+            'urgent': any(c.urgent_at and c.marked is False for c in checks), 'counted': event.counts}
 
 
 class OptOutsView(APIView):

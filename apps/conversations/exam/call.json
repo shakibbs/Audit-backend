@@ -1,0 +1,6592 @@
+[
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 15.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 22.5
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please",
+    "at": 24.3
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-001"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.5
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays",
+    "at": 12.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-002"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 4.7
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 7.0
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 8.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this from again?",
+    "at": 17.5
+   }
+  ],
+  "expected": "none",
+  "id": "call-003"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 9.0
+   },
+   {
+    "who": "customer",
+    "text": "Opt me out",
+    "at": 17.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-004"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 9.2
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 16.1
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 23.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-005"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list",
+    "at": 4.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-006"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "I don't want to hear from you again",
+    "at": 9.6
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 14.7
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now",
+    "at": 17.7
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-007"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 14.7
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 23.1
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 25.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-008"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.5
+   },
+   {
+    "who": "customer",
+    "text": "No. Stop. Bye.",
+    "at": 6.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-009"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "I'm on the do not call list, stop calling",
+    "at": 12.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-010"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.5
+   },
+   {
+    "who": "customer",
+    "text": "Can you just stop calling me?",
+    "at": 10.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-011"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 6.7
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please",
+    "at": 13.7
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-012"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 7.5
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 15.9
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 24.9
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone",
+    "at": 29.4
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-013"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 3.4
+   },
+   {
+    "who": "customer",
+    "text": "I can't talk, I'm at the bus stop",
+    "at": 10.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-014"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.8
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 4.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-015"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 2.1
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 7.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-016"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 2.5
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 4.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-017"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so.",
+    "at": 15.6
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?",
+    "at": 19.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-018"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.0
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.9
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 20.9
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 25.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-019"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 4.9
+   },
+   {
+    "who": "customer",
+    "text": "I'm not interested, and stop calling",
+    "at": 8.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-020"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 4.1
+   },
+   {
+    "who": "customer",
+    "text": "I'll think about it",
+    "at": 11.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-021"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 4.0
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday.",
+    "at": 6.0
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works",
+    "at": 13.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-022"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "I want off your list",
+    "at": 8.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-023"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "Don't contact me anymore",
+    "at": 6.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-024"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 14.9
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 18.2
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado",
+    "at": 22.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-025"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 2.3
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 6.2
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 7.7
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 10.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-026"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 12.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 18.7
+   },
+   {
+    "who": "customer",
+    "text": "Please send the contract",
+    "at": 26.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-027"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.7
+   },
+   {
+    "who": "customer",
+    "text": "Don't contact me anymore",
+    "at": 10.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-028"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 16.0
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 19.5
+   },
+   {
+    "who": "customer",
+    "text": "Don't stop, this sounds great",
+    "at": 26.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-029"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number",
+    "at": 15.5
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-030"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 5.2
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out.",
+    "at": 13.5
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 20.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-031"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Maria?",
+    "at": 7.4
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 16.0
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 19.5
+   },
+   {
+    "who": "customer",
+    "text": "Sounds good",
+    "at": 23.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-032"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "Never call this number again",
+    "at": 8.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-033"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "Send me the details",
+    "at": 10.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-034"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Aisha?",
+    "at": 1.5
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 9.5
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 14.4
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number",
+    "at": 19.0
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 22.4
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again",
+    "at": 30.6
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-035"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 14.1
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.1
+   },
+   {
+    "who": "customer",
+    "text": "Delete my number",
+    "at": 19.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-036"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 6.4
+   },
+   {
+    "who": "customer",
+    "text": "My wife handles this, she'll call you",
+    "at": 13.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-037"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 3.7
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 10.5
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 15.2
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only",
+    "at": 23.4
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-038"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 4.0
+   },
+   {
+    "who": "customer",
+    "text": "I asked last week, stop calling",
+    "at": 7.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-039"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 3.6
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 9.2
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line",
+    "at": 15.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-040"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 6.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 11.1
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.2
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list",
+    "at": 21.9
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 29.1
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers",
+    "at": 31.8
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-041"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Aisha, I'm calling about your energy bill.",
+    "at": 5.6
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 9.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 15.5
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers",
+    "at": 21.0
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-042"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "Opt me out",
+    "at": 7.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-043"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 2.1
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 8.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 12.9
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls",
+    "at": 18.8
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-044"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?",
+    "at": 15.3
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one",
+    "at": 19.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-045"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.6
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 15.2
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 20.6
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line",
+    "at": 22.8
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-046"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.3
+   },
+   {
+    "who": "customer",
+    "text": "Is it the same plan as before?",
+    "at": 6.5
+   }
+  ],
+  "expected": "none",
+  "id": "call-047"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 8.7
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 13.4
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 21.7
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me",
+    "at": 27.4
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-048"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 3.1
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 11.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 13.5
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again",
+    "at": 18.8
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-049"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 5.1
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 12.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-050"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 10.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-051"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 8.2
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 14.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.8
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 22.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-052"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 6.4
+   },
+   {
+    "who": "customer",
+    "text": "Never call this number again",
+    "at": 9.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-053"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 3.8
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday.",
+    "at": 9.4
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works",
+    "at": 17.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-054"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.8
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 6.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.7
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me llame más",
+    "at": 20.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-055"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Aisha, I'm calling about your energy bill.",
+    "at": 3.8
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls",
+    "at": 11.0
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-056"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 8.4
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list",
+    "at": 12.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-057"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 1.7
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number",
+    "at": 4.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-058"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 3.0
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 4.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-059"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 8.7
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm",
+    "at": 13.9
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-060"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Dev, I'm calling about your energy bill.",
+    "at": 6.4
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 14.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-061"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.7
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so.",
+    "at": 10.8
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?",
+    "at": 14.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-062"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 9.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-063"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "I'll stop by the office later",
+    "at": 10.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-064"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 7.2
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 13.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-065"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 15.8
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 18.1
+   },
+   {
+    "who": "customer",
+    "text": "I want off your list",
+    "at": 26.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-066"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 8.0
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 13.3
+   },
+   {
+    "who": "customer",
+    "text": "START",
+    "at": 15.0
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-067"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.1
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 9.8
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.1
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list",
+    "at": 22.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-068"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please",
+    "at": 10.4
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-069"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.6
+   },
+   {
+    "who": "customer",
+    "text": "How long does install take?",
+    "at": 11.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-070"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 5.5
+   },
+   {
+    "who": "customer",
+    "text": "My wife handles this, she'll call you",
+    "at": 9.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-071"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 7.6
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number",
+    "at": 15.7
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-072"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 6.0
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 7.5
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 12.9
+   },
+   {
+    "who": "customer",
+    "text": "I asked last week, stop calling",
+    "at": 17.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-073"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Aisha, I'm calling about your energy bill.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 6.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 13.5
+   },
+   {
+    "who": "customer",
+    "text": "Don't contact me anymore",
+    "at": 21.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-074"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.4
+   },
+   {
+    "who": "customer",
+    "text": "Do not call me, ever",
+    "at": 9.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-075"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 8.4
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 13.8
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.9
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 21.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-076"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 4.0
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 11.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-077"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 3.2
+   },
+   {
+    "who": "customer",
+    "text": "Stop! That's a great price",
+    "at": 10.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-078"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 5.6
+   },
+   {
+    "who": "customer",
+    "text": "How long does install take?",
+    "at": 12.3
+   }
+  ],
+  "expected": "none",
+  "id": "call-079"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.2
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me llame más",
+    "at": 7.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-080"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 6.6
+   },
+   {
+    "who": "customer",
+    "text": "I want off your list",
+    "at": 11.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-081"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.2
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Linda",
+    "at": 6.4
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-082"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 8.5
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 11.8
+   },
+   {
+    "who": "customer",
+    "text": "Deje de llamarme",
+    "at": 19.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-083"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.0
+   },
+   {
+    "who": "customer",
+    "text": "Take my name off, I'm not interested",
+    "at": 13.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-084"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 5.8
+   },
+   {
+    "who": "customer",
+    "text": "Can you stop by tomorrow?",
+    "at": 9.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-085"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.5
+   },
+   {
+    "who": "customer",
+    "text": "I'm not interested, and stop calling",
+    "at": 5.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-086"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 5.5
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person",
+    "at": 8.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-087"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Mike, I'm calling about your energy bill.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays",
+    "at": 11.0
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-088"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 7.4
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 14.1
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 21.5
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number from your system",
+    "at": 27.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-089"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 17.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 21.8
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again",
+    "at": 24.5
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-090"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.8
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 7.7
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 11.5
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here",
+    "at": 14.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-091"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 4.2
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.0
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 17.0
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 23.2
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 29.4
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again",
+    "at": 37.4
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-092"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 10.5
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 15.0
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again",
+    "at": 21.8
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-093"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 14.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 21.6
+   },
+   {
+    "who": "customer",
+    "text": "Can you just stop calling me?",
+    "at": 26.8
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 29.7
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again",
+    "at": 38.3
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-094"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.4
+   },
+   {
+    "who": "customer",
+    "text": "Can you just stop calling me?",
+    "at": 11.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-095"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.2
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me llame más",
+    "at": 10.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-096"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Dev, I'm calling about your energy bill.",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 10.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 15.5
+   },
+   {
+    "who": "customer",
+    "text": "No more calls please",
+    "at": 22.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-097"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 3.2
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 5.7
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 14.1
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please",
+    "at": 21.9
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-098"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 9.5
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.7
+   },
+   {
+    "who": "customer",
+    "text": "There's no Maria here",
+    "at": 22.6
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-099"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.0
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here",
+    "at": 10.6
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-100"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 5.4
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 10.6
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.8
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out.",
+    "at": 15.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 24.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-101"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Aisha?",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 16.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-102"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 2.3
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 10.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.3
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone",
+    "at": 20.7
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-103"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 4.0
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here",
+    "at": 7.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-104"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 6.1
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.8
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday.",
+    "at": 18.8
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works",
+    "at": 25.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-105"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 10.5
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 13.3
+   },
+   {
+    "who": "customer",
+    "text": "I can't talk, I'm at the bus stop",
+    "at": 16.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-106"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 5.6
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 8.8
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.0
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Carlos",
+    "at": 18.5
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-107"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Aisha, I'm calling about your energy bill.",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "Stop sending me the wrong prices, send the right ones",
+    "at": 5.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-108"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number from your system",
+    "at": 5.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-109"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 2.4
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 6.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 10.3
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now",
+    "at": 13.3
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-110"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 6.3
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 8.8
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 15.4
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 20.5
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 25.6
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me",
+    "at": 32.4
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-111"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 8.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-112"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 1.8
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 8.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 12.4
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 15.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 21.9
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers",
+    "at": 24.1
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-113"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.0
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 9.5
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 12.7
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line",
+    "at": 17.4
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-114"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.5
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 10.3
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 13.4
+   },
+   {
+    "who": "customer",
+    "text": "Can you call me back at 3?",
+    "at": 17.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-115"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number",
+    "at": 11.5
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-116"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 4.5
+   },
+   {
+    "who": "customer",
+    "text": "Never call this number again",
+    "at": 12.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-117"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 7.0
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so.",
+    "at": 9.8
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?",
+    "at": 15.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-118"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.4
+   },
+   {
+    "who": "customer",
+    "text": "Please remove me",
+    "at": 15.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-119"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 6.8
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 9.5
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.4
+   },
+   {
+    "who": "customer",
+    "text": "I asked last week, stop calling",
+    "at": 22.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-120"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.6
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me",
+    "at": 9.6
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-121"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 4.5
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 7.0
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 14.1
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so.",
+    "at": 15.7
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?",
+    "at": 18.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-122"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 7.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-123"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 6.2
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number",
+    "at": 14.6
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-124"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm",
+    "at": 14.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-125"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 5.8
+   },
+   {
+    "who": "customer",
+    "text": "This isn't Carlos's phone anymore",
+    "at": 12.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-126"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Dev doesn't have this number anymore",
+    "at": 11.7
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-127"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 15.1
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 22.4
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 25.6
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again",
+    "at": 28.5
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-128"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.1
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 5.3
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.8
+   },
+   {
+    "who": "customer",
+    "text": "Deje de llamarme",
+    "at": 16.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-129"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.5
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 6.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-130"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 6.9
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 8.5
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 11.1
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 18.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-131"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "Linda doesn't have this number anymore",
+    "at": 8.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-132"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.8
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 10.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 16.3
+   },
+   {
+    "who": "customer",
+    "text": "Don't stop, this sounds great",
+    "at": 24.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-133"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 5.8
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person",
+    "at": 10.4
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-134"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Maria?",
+    "at": 6.9
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 15.5
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 18.5
+   },
+   {
+    "who": "customer",
+    "text": "Take my name off, I'm not interested",
+    "at": 22.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-135"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 7.9
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 11.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-136"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.4
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 15.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 23.0
+   },
+   {
+    "who": "customer",
+    "text": "Don't contact me anymore",
+    "at": 26.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-137"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 1.8
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Carlos",
+    "at": 4.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-138"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 6.8
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening",
+    "at": 10.0
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-139"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.7
+   },
+   {
+    "who": "customer",
+    "text": "Your service was bad last time, but what's the offer?",
+    "at": 5.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-140"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 5.2
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 10.3
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.0
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening",
+    "at": 19.8
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-141"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 4.5
+   },
+   {
+    "who": "customer",
+    "text": "Not now, I'm driving, call me later",
+    "at": 9.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-142"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.2
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me from calls",
+    "at": 9.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-143"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.7
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 7.5
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 13.9
+   },
+   {
+    "who": "customer",
+    "text": "There's no Maria here",
+    "at": 16.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-144"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 3.9
+   },
+   {
+    "who": "customer",
+    "text": "I'll stop by the office later",
+    "at": 6.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-145"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.9
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 12.8
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.9
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays",
+    "at": 22.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-146"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 4.8
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number",
+    "at": 11.0
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-147"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free.",
+    "at": 12.1
+   },
+   {
+    "who": "customer",
+    "text": "oh nice",
+    "at": 16.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-148"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.3
+   },
+   {
+    "who": "customer",
+    "text": "What does the panel cost?",
+    "at": 12.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-149"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "What's the price?",
+    "at": 13.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-150"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.1
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 7.9
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 11.2
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 13.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-151"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 11.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 19.3
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 24.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-152"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 7.7
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me from calls",
+    "at": 15.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-153"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.8
+   },
+   {
+    "who": "customer",
+    "text": "OK thanks",
+    "at": 9.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-154"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.2
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 10.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 15.9
+   },
+   {
+    "who": "customer",
+    "text": "No. Stop. Bye.",
+    "at": 18.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-155"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Maria?",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 15.3
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 21.1
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number",
+    "at": 29.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-156"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.7
+   },
+   {
+    "who": "customer",
+    "text": "Arrêtez de m'appeler",
+    "at": 10.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-157"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 1.7
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 8.5
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.5
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me from calls",
+    "at": 22.5
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 27.0
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me",
+    "at": 35.3
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-158"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado",
+    "at": 14.6
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-159"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 6.3
+   },
+   {
+    "who": "customer",
+    "text": "Can you just stop calling me?",
+    "at": 13.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-160"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 6.6
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.4
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.4
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead",
+    "at": 23.0
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-161"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Carlos",
+    "at": 9.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-162"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.4
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please",
+    "at": 12.1
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-163"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "Delete my number",
+    "at": 6.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-164"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 4.1
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 9.4
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 16.1
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again",
+    "at": 23.9
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-165"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.4
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number",
+    "at": 5.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-166"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Don't contact me anymore",
+    "at": 10.9
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 12.7
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now",
+    "at": 20.6
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-167"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 5.3
+   },
+   {
+    "who": "customer",
+    "text": "I'm not interested, and stop calling",
+    "at": 9.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-168"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 4.7
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 8.2
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 11.5
+   },
+   {
+    "who": "customer",
+    "text": "No more calls please",
+    "at": 14.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-169"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.1
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please",
+    "at": 8.8
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-170"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 6.1
+   },
+   {
+    "who": "customer",
+    "text": "I'm not interested, and stop calling",
+    "at": 13.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-171"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead",
+    "at": 5.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-172"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 11.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 15.3
+   },
+   {
+    "who": "customer",
+    "text": "Thanks, see you Tuesday",
+    "at": 21.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-173"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 11.1
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 16.3
+   },
+   {
+    "who": "customer",
+    "text": "I don't want to hear from you again",
+    "at": 24.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-174"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 12.0
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 14.7
+   },
+   {
+    "who": "customer",
+    "text": "Never call this number again",
+    "at": 23.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-175"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 3.6
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 9.7
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 11.9
+   },
+   {
+    "who": "customer",
+    "text": "I asked last week, stop calling",
+    "at": 14.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-176"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.2
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 14.1
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 15.9
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm",
+    "at": 18.7
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-177"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 8.5
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.4
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead",
+    "at": 21.5
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-178"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Do not call me, ever",
+    "at": 14.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-179"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 8.3
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.6
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 19.0
+   },
+   {
+    "who": "customer",
+    "text": "Stop sending me the wrong prices, send the right ones",
+    "at": 27.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-180"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.5
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me from calls",
+    "at": 17.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-181"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 12.1
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 19.6
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me",
+    "at": 26.6
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-182"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 2.8
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 6.3
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 11.3
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person",
+    "at": 17.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-183"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.3
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please",
+    "at": 11.3
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-184"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 6.7
+   },
+   {
+    "who": "customer",
+    "text": "No more calls please",
+    "at": 10.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-185"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "Yes, I'm interested",
+    "at": 9.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-186"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "I'm on the do not call list, stop calling",
+    "at": 15.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 20.7
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again",
+    "at": 24.1
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-187"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.6
+   },
+   {
+    "who": "customer",
+    "text": "Sounds good",
+    "at": 12.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-188"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 3.1
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 5.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-189"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 11.5
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 14.4
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 22.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-190"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 4.5
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me from calls",
+    "at": 11.6
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 19.3
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again",
+    "at": 22.9
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-191"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "Is it the same plan as before?",
+    "at": 11.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-192"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 4.1
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 7.8
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 15.9
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers",
+    "at": 18.5
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-193"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 3.8
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 10.8
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.5
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number from your system",
+    "at": 21.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-194"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Maria?",
+    "at": 4.2
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 9.5
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 13.2
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again",
+    "at": 15.2
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-195"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.7
+   },
+   {
+    "who": "customer",
+    "text": "Opt me out",
+    "at": 15.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-196"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 8.4
+   },
+   {
+    "who": "customer",
+    "text": "I'm busy right now",
+    "at": 11.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-197"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, following up on your quote.",
+    "at": 5.8
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 7.4
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.6
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday.",
+    "at": 20.5
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works",
+    "at": 23.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-198"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 9.0
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 13.3
+   },
+   {
+    "who": "customer",
+    "text": "I don't want to hear from you again",
+    "at": 17.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-199"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 8.1
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 15.7
+   },
+   {
+    "who": "customer",
+    "text": "Please send the contract",
+    "at": 24.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-200"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Please remove me",
+    "at": 8.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-201"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not Linda",
+    "at": 7.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-202"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.6
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 8.1
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 9.7
+   },
+   {
+    "who": "customer",
+    "text": "No. Stop. Bye.",
+    "at": 14.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-203"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 3.3
+   },
+   {
+    "who": "customer",
+    "text": "Linda doesn't have this number anymore",
+    "at": 9.0
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-204"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 8.9
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 13.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 22.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this from again?",
+    "at": 30.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-205"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 8.7
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 11.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.2
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 22.0
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 25.7
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list",
+    "at": 31.4
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-206"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 8.3
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only",
+    "at": 16.3
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-207"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 11.4
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 14.0
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number",
+    "at": 22.3
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-208"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 3.5
+   },
+   {
+    "who": "customer",
+    "text": "No more calls please",
+    "at": 6.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-209"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 6.6
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 12.7
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 20.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Mike",
+    "at": 28.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-210"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 2.3
+   },
+   {
+    "who": "customer",
+    "text": "Please remove me",
+    "at": 10.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-211"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Mike, I'm calling about your energy bill.",
+    "at": 7.9
+   },
+   {
+    "who": "customer",
+    "text": "lol ok",
+    "at": 15.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-212"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me llame más",
+    "at": 10.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-213"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 8.1
+   },
+   {
+    "who": "customer",
+    "text": "Stop! That's a great price",
+    "at": 15.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-214"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.1
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please",
+    "at": 14.6
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-215"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.1
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free.",
+    "at": 8.3
+   },
+   {
+    "who": "customer",
+    "text": "oh nice",
+    "at": 10.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-216"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.8
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 13.6
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 20.5
+   },
+   {
+    "who": "customer",
+    "text": "I don't want to hear from you again",
+    "at": 23.9
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 28.7
+   },
+   {
+    "who": "customer",
+    "text": "START",
+    "at": 35.3
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-217"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.7
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 7.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.2
+   },
+   {
+    "who": "customer",
+    "text": "I'm on the do not call list, stop calling",
+    "at": 21.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-218"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.2
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone",
+    "at": 7.8
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-219"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, following up on your quote.",
+    "at": 6.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 13.0
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 15.7
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 19.6
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-220"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please",
+    "at": 10.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-221"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 7.7
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me",
+    "at": 14.8
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-222"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Dev?",
+    "at": 8.2
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 11.9
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.4
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not Dev",
+    "at": 21.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-223"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 7.1
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 9.2
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 16.1
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again",
+    "at": 25.0
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-224"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 7.5
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list",
+    "at": 10.4
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-225"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 16.5
+   },
+   {
+    "who": "customer",
+    "text": "Not now, I'm driving, call me later",
+    "at": 22.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-226"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 4.6
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 11.4
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 15.7
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out.",
+    "at": 19.9
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 26.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-227"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 2.5
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free.",
+    "at": 8.6
+   },
+   {
+    "who": "customer",
+    "text": "oh nice",
+    "at": 17.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-228"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, following up on your quote.",
+    "at": 7.5
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail",
+    "at": 10.0
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-229"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 8.1
+   },
+   {
+    "who": "customer",
+    "text": "What's the price?",
+    "at": 11.2
+   }
+  ],
+  "expected": "none",
+  "id": "call-230"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.2
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please",
+    "at": 5.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-231"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 4.9
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail",
+    "at": 8.1
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-232"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 4.1
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number from your system",
+    "at": 10.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-233"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Mike, I'm calling about your energy bill.",
+    "at": 6.9
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 12.9
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-234"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.2
+   },
+   {
+    "who": "customer",
+    "text": "Please stop calling me",
+    "at": 10.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-235"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 7.8
+   },
+   {
+    "who": "customer",
+    "text": "I'm not interested, and stop calling",
+    "at": 15.3
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 18.0
+   },
+   {
+    "who": "customer",
+    "text": "START",
+    "at": 22.1
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-236"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 6.3
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please",
+    "at": 12.3
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-237"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 5.2
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number",
+    "at": 10.5
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-238"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 2.5
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 4.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 11.1
+   },
+   {
+    "who": "customer",
+    "text": "Deje de llamarme",
+    "at": 15.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-239"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 11.8
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 14.8
+   },
+   {
+    "who": "customer",
+    "text": "Delete my number",
+    "at": 21.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-240"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 9.9
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.1
+   },
+   {
+    "who": "customer",
+    "text": "OK thanks",
+    "at": 19.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-241"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.2
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 6.2
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 13.4
+   },
+   {
+    "who": "customer",
+    "text": "Can you stop by tomorrow?",
+    "at": 19.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-242"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 11.3
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 17.4
+   },
+   {
+    "who": "customer",
+    "text": "Take my name off, I'm not interested",
+    "at": 23.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-243"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 7.6
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 13.4
+   },
+   {
+    "who": "customer",
+    "text": "There's no John here",
+    "at": 18.8
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-244"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 3.6
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 9.7
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 16.7
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead",
+    "at": 23.4
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-245"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 5.1
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 11.2
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 18.7
+   },
+   {
+    "who": "customer",
+    "text": "Your service was bad last time, but what's the offer?",
+    "at": 21.5
+   }
+  ],
+  "expected": "none",
+  "id": "call-246"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.9
+   },
+   {
+    "who": "customer",
+    "text": "What does the panel cost?",
+    "at": 10.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-247"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 4.4
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 9.1
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 16.9
+   },
+   {
+    "who": "customer",
+    "text": "This isn't Grace's phone anymore",
+    "at": 22.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-248"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "I'll think about it",
+    "at": 14.9
+   }
+  ],
+  "expected": "none",
+  "id": "call-249"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 4.6
+   },
+   {
+    "who": "customer",
+    "text": "This is the fifth call, stop",
+    "at": 6.6
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 12.3
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again",
+    "at": 14.6
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-250"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Maria?",
+    "at": 2.4
+   },
+   {
+    "who": "customer",
+    "text": "I'm busy right now",
+    "at": 8.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-251"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 7.1
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 10.3
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 18.1
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays",
+    "at": 24.5
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-252"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 1.8
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 8.1
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 14.3
+   },
+   {
+    "who": "customer",
+    "text": "I don't want to hear from you again",
+    "at": 17.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-253"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.4
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 7.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 15.7
+   },
+   {
+    "who": "customer",
+    "text": "START",
+    "at": 22.3
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-254"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 8.1
+   },
+   {
+    "who": "customer",
+    "text": "Do not call me, ever",
+    "at": 13.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-255"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 5.3
+   },
+   {
+    "who": "customer",
+    "text": "There's no Linda here",
+    "at": 7.6
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-256"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 5.5
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me",
+    "at": 14.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-257"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Mike?",
+    "at": 6.1
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 8.9
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 12.7
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Mike",
+    "at": 18.4
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-258"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Grace?",
+    "at": 3.0
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out.",
+    "at": 7.0
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 15.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-259"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Aisha, I'm calling about your energy bill.",
+    "at": 4.9
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 8.7
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-260"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Grace, I'm calling about your energy bill.",
+    "at": 9.0
+   },
+   {
+    "who": "customer",
+    "text": "Opt me out",
+    "at": 15.0
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 19.8
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list",
+    "at": 28.7
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-261"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 2.8
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 11.5
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 17.2
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm",
+    "at": 24.5
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-262"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 7.9
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 9.8
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-263"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.6
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 12.2
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 15.3
+   },
+   {
+    "who": "customer",
+    "text": "I don't want any more calls",
+    "at": 22.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-264"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 5.0
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?",
+    "at": 10.0
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one",
+    "at": 17.8
+   }
+  ],
+  "expected": "none",
+  "id": "call-265"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.0
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 10.6
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 14.6
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?",
+    "at": 20.0
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one",
+    "at": 21.5
+   }
+  ],
+  "expected": "none",
+  "id": "call-266"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 5.9
+   },
+   {
+    "who": "customer",
+    "text": "Thanks, see you Tuesday",
+    "at": 8.0
+   }
+  ],
+  "expected": "none",
+  "id": "call-267"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Carlos, I'm calling about your energy bill.",
+    "at": 1.6
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 9.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-268"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 1.8
+   },
+   {
+    "who": "customer",
+    "text": "I asked last week, stop calling",
+    "at": 5.7
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 13.0
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list",
+    "at": 17.1
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-269"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Aisha?",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 15.1
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 18.8
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only",
+    "at": 21.7
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-270"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.5
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 11.0
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.1
+   },
+   {
+    "who": "customer",
+    "text": "Quit calling me",
+    "at": 20.5
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-271"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.4
+   },
+   {
+    "who": "customer",
+    "text": "Can I stop the old plan and switch?",
+    "at": 9.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-272"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.3
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 5.2
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 7.7
+   },
+   {
+    "who": "customer",
+    "text": "Yes, I'm interested",
+    "at": 9.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-273"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 5.2
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls",
+    "at": 7.9
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-274"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 6.2
+   },
+   {
+    "who": "customer",
+    "text": "Deje de llamarme",
+    "at": 9.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-275"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello John, I'm calling about your energy bill.",
+    "at": 4.3
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?",
+    "at": 8.4
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 12.8
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free.",
+    "at": 14.4
+   },
+   {
+    "who": "customer",
+    "text": "oh nice",
+    "at": 17.4
+   }
+  ],
+  "expected": "none",
+  "id": "call-276"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.7
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number",
+    "at": 10.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-277"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 3.6
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 7.8
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 9.6
+   },
+   {
+    "who": "customer",
+    "text": "I want off your list",
+    "at": 14.2
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "call-278"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Linda, I'm calling about your energy bill.",
+    "at": 4.2
+   },
+   {
+    "who": "customer",
+    "text": "Do not call me, ever",
+    "at": 7.0
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 10.5
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list",
+    "at": 12.7
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-279"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 8.8
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not Aisha",
+    "at": 13.3
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-280"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this John?",
+    "at": 5.7
+   },
+   {
+    "who": "customer",
+    "text": "lol ok",
+    "at": 12.3
+   }
+  ],
+  "expected": "none",
+  "id": "call-281"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Aisha?",
+    "at": 2.6
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 9.1
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer.",
+    "at": 12.6
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only",
+    "at": 16.2
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-282"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 3.1
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening",
+    "at": 7.4
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-283"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.8
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 9.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 16.4
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Maria",
+    "at": 23.5
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "call-284"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello, I'm calling from SunPath about the form you filled in.",
+    "at": 5.0
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your calling list",
+    "at": 9.7
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 17.2
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now",
+    "at": 23.6
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "call-285"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 1.9
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 10.1
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 16.0
+   },
+   {
+    "who": "customer",
+    "text": "Stop phoning me",
+    "at": 24.7
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 29.5
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again",
+    "at": 35.7
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-286"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 2.3
+   },
+   {
+    "who": "customer",
+    "text": "I'm on the do not call list, stop calling",
+    "at": 6.1
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-287"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, following up on your quote.",
+    "at": 7.4
+   },
+   {
+    "who": "customer",
+    "text": "yes?",
+    "at": 12.6
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote.",
+    "at": 14.7
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls",
+    "at": 18.1
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "call-288"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 7.5
+   },
+   {
+    "who": "customer",
+    "text": "Can you call me back at 3?",
+    "at": 10.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-289"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 2.5
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone",
+    "at": 10.5
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-290"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, following up on your quote.",
+    "at": 3.6
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?",
+    "at": 7.3
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one",
+    "at": 12.1
+   }
+  ],
+  "expected": "none",
+  "id": "call-291"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, following up on your quote.",
+    "at": 6.8
+   },
+   {
+    "who": "customer",
+    "text": "Hi",
+    "at": 12.4
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 20.8
+   },
+   {
+    "who": "customer",
+    "text": "Stop. Calling. Me.",
+    "at": 25.3
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 27.5
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me",
+    "at": 29.1
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-292"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, following up on your quote.",
+    "at": 1.7
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado",
+    "at": 5.7
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-293"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Carlos?",
+    "at": 5.4
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail",
+    "at": 10.1
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "call-294"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Aisha?",
+    "at": 2.9
+   },
+   {
+    "who": "customer",
+    "text": "Hello?",
+    "at": 11.7
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up.",
+    "at": 15.4
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me again",
+    "at": 21.1
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us.",
+    "at": 23.5
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again",
+    "at": 29.0
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "call-295"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Maria, I'm calling about your energy bill.",
+    "at": 6.3
+   },
+   {
+    "who": "customer",
+    "text": "Delete my number",
+    "at": 8.0
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "call-296"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, following up on your quote.",
+    "at": 5.4
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number",
+    "at": 13.2
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-297"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath Solar, is this Linda?",
+    "at": 2.4
+   },
+   {
+    "who": "customer",
+    "text": "Send me the details",
+    "at": 7.6
+   }
+  ],
+  "expected": "none",
+  "id": "call-298"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Good afternoon, this is Ana with SunPath, do you have a minute?",
+    "at": 3.7
+   },
+   {
+    "who": "customer",
+    "text": "This isn't Grace's phone anymore",
+    "at": 8.1
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "call-299"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hello Dev, I'm calling about your energy bill.",
+    "at": 6.5
+   },
+   {
+    "who": "customer",
+    "text": "Can I stop the old plan and switch?",
+    "at": 8.7
+   }
+  ],
+  "expected": "none",
+  "id": "call-300"
+ }
+]

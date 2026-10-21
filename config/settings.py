@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.provenance',
     'apps.uploads',
     'apps.metrics',
+    'apps.conversations',
 ]
 
 MIDDLEWARE = [
@@ -169,6 +170,9 @@ CELERY_BEAT_SCHEDULE = {
     'provenance': {'task': 'apps.provenance.tasks.rebuild_provenance', 'schedule': crontab(minute='*/30')},  # where each number came from
     'purge-old-proof-files': {'task': 'apps.provenance.tasks.purge_old_proof_files', 'schedule': crontab(minute=50, hour=4)},
     'purge-old-uploads': {'task': 'apps.uploads.tasks.purge_old_uploads', 'schedule': crontab(minute=55, hour=4)},
+    'conversation-review': {'task': 'apps.conversations.tasks.review_conversations', 'schedule': 60.0},  # off until an AI is chosen
+    'conversation-exam': {'task': 'apps.conversations.tasks.run_exams', 'schedule': crontab(minute=10, hour=2)},  # the AI's exam (step 4)
+    'optout-mark-check': {'task': 'apps.optouts.tasks.check_marks', 'schedule': 300.0},  # urgent within 15 min of an opt-out
     'capture-pages': {'task': 'apps.captures.tasks.capture_pages', 'schedule': crontab(minute=20)},  # hourly; each page about once a day
     'purge-old-captures': {'task': 'apps.captures.tasks.purge_old_captures', 'schedule': crontab(minute=45, hour=4)},
     'consent-nightly': {'task': 'apps.consent.tasks.recheck_time_passed', 'schedule': crontab(minute=0, hour=3)},  # expiring certificates
@@ -224,3 +228,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Page captures run only in the capture container, which has Chromium (deploy/Dockerfile.capture).
 CELERY_TASK_ROUTES = {'apps.captures.tasks.capture_pages': {'queue': 'capture'}}
 CHROMIUM_PATH = os.environ.get('CHROMIUM_PATH', '')  # empty = Playwright's own browser
+
+# AI conversation review (Module 9): empty = no AI chosen yet, nothing is sent anywhere (owner decision 2026-10-21).
+CONVERSATION_REVIEW_MODEL = os.environ.get('CONVERSATION_REVIEW_MODEL', '')

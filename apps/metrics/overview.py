@@ -1,5 +1,6 @@
 """Overview key numbers that are real now: M01 consent coverage and M10 contacts after opt-out, from the consent
-engine's strict results (pending, frozen and "not needed" left out), with a four-month history."""
+engine's strict results (pending, frozen and "not needed" left out), and M08 / M09 from real opt-outs (Module 9),
+with a four-month history."""
 from apps.consent.models import ConsentResult
 
 from .conduct import months_before, span
@@ -33,8 +34,9 @@ def after_optout(client, start, end) -> dict:
 
 
 def overview_metrics(client, period) -> list[dict]:
+    from apps.optouts.measures import propagation_time, unprocessed
     out = []
-    for fn in (coverage, after_optout):
+    for fn in (coverage, after_optout, propagation_time, unprocessed):
         now = fn(client, *span(period))
         now['history'] = [fn(client, *span(p))['value'] for p in months_before(period, 3)] + [now['value']]
         out.append(now)

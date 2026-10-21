@@ -1,0 +1,5824 @@
+[
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I don't want these messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-001"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Aisha doesn't have this number anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-002"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Don't text this number again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-003"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Delete my info and stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-004"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Enough. No more messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-005"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-006"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-007"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-008"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-009"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "I never signed up for this, stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-010"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Don't text this number again"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-011"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Quit sending me this stuff"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-012"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "What does the panel cost?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-013"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "I want off this list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-014"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-015"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-016"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "My wife handles this, she'll call you"
+   }
+  ],
+  "expected": "none",
+  "id": "text-017"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-018"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-019"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Linda"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-020"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-021"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Can I stop the old plan and switch?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-022"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Not now, I'm driving, call me later"
+   }
+  ],
+  "expected": "none",
+  "id": "text-023"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Quit sending me this stuff"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-024"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-025"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Please don't text me anymore"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-026"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "I don't want these messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-027"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this from again?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-028"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Carlos"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-029"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not John"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-030"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-031"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "OK thanks"
+   }
+  ],
+  "expected": "none",
+  "id": "text-032"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number please"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-033"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "End"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-034"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-035"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-036"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Your service was bad last time, but what's the offer?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-037"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "No more texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-038"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-039"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Can you call me back at 3?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-040"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Not now, I'm driving, call me later"
+   }
+  ],
+  "expected": "none",
+  "id": "text-041"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "This isn't Dev's phone anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-042"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-043"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-044"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-045"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-046"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-047"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-048"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-049"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-050"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "how many times do I have to say it, stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-051"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-052"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-053"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-054"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "This isn't John's phone anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-055"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-056"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-057"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I'll stop by the office later"
+   }
+  ],
+  "expected": "none",
+  "id": "text-058"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Don't stop, this sounds great"
+   }
+  ],
+  "expected": "none",
+  "id": "text-059"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Leave me alone"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-060"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Please don't text me anymore"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-061"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Please send the contract"
+   }
+  ],
+  "expected": "none",
+  "id": "text-062"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-063"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me mande más mensajes"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "START"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-064"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-065"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "No more texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-066"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-067"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-068"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-069"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-070"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so."
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-071"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Enough. No more messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-072"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-073"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Aisha"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-074"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-075"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Cancel these texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-076"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-077"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so."
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-078"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Unsub"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-079"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-080"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-081"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-082"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free."
+   },
+   {
+    "who": "customer",
+    "text": "oh nice"
+   }
+  ],
+  "expected": "none",
+  "id": "text-083"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?"
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one"
+   }
+  ],
+  "expected": "none",
+  "id": "text-084"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-085"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Do not contact me again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-086"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "End"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-087"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Can you call me back at 3?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-088"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Delete my info and stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-089"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Do not contact me again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-090"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Can I stop the old plan and switch?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-091"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Please only contact me by mail"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-092"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Enough. No more messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-093"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?"
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one"
+   }
+  ],
+  "expected": "none",
+  "id": "text-094"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Stop sending me the wrong prices, send the right ones"
+   }
+  ],
+  "expected": "none",
+  "id": "text-095"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so."
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-096"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "End"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-097"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-098"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-099"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I never signed up for this, stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-100"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Deja de enviarme mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-101"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-102"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "I can't talk, I'm at the bus stop"
+   }
+  ],
+  "expected": "none",
+  "id": "text-103"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-104"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "How long does install take?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-105"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "lol ok"
+   }
+  ],
+  "expected": "none",
+  "id": "text-106"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-107"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday."
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works"
+   }
+  ],
+  "expected": "none",
+  "id": "text-108"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-109"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-110"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "I'm done, take me off"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-111"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "End"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-112"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "My wife handles this, she'll call you"
+   }
+  ],
+  "expected": "none",
+  "id": "text-113"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-114"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?"
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one"
+   }
+  ],
+  "expected": "none",
+  "id": "text-115"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-116"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Please resume, I want the offers"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-117"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-118"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-119"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Delete my info and stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-120"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Mike doesn't have this number anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-121"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Don't text this number again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-122"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-123"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "I don't want these messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-124"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-125"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-126"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "I'm done, take me off"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "You can contact me again now"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-127"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-128"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Unsub"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-129"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Leave me alone"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-130"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-131"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-132"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-133"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-134"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me mande más mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-135"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not John"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-136"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-137"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Leave me alone"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-138"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Please don't text me anymore"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-139"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "There's no Linda here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-140"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-141"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Send me the details"
+   }
+  ],
+  "expected": "none",
+  "id": "text-142"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "I want off this list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-143"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "I'll stop by the office later"
+   }
+  ],
+  "expected": "none",
+  "id": "text-144"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Is it the same plan as before?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-145"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "business",
+    "text": "Should I stop the old order?"
+   },
+   {
+    "who": "customer",
+    "text": "Yes please, and send the new one"
+   }
+  ],
+  "expected": "none",
+  "id": "text-146"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Cancel these texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-147"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-148"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Your service was bad last time, but what's the offer?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-149"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-150"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Deja de enviarme mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-151"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-152"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Leave me alone"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-153"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me mande más mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-154"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-155"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-156"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "opt me out"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-157"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free."
+   },
+   {
+    "who": "customer",
+    "text": "oh nice"
+   }
+  ],
+  "expected": "none",
+  "id": "text-158"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Calls ok, but no texts please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-159"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-160"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I never signed up for this, stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-161"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-162"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Leave me alone"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-163"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "What does the panel cost?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-164"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-165"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-166"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-167"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-168"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number please"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-169"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Wrong person"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-170"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I'm busy right now"
+   }
+  ],
+  "expected": "none",
+  "id": "text-171"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "how many times do I have to say it, stop texting"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "START"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-172"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Please send the contract"
+   }
+  ],
+  "expected": "none",
+  "id": "text-173"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Aisha"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-174"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-175"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Deja de enviarme mensajes"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-176"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Unsub"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-177"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not Carlos"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-178"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-179"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Cancel these texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-180"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-181"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "No more texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-182"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-183"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Lose my number"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-184"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-185"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "No more texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-186"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "OK thanks"
+   }
+  ],
+  "expected": "none",
+  "id": "text-187"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "I want off this list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-188"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "I can't talk, I'm at the bus stop"
+   }
+  ],
+  "expected": "none",
+  "id": "text-189"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "I just got this number, I don't know any Dev"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-190"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Stop sending me the wrong prices, send the right ones"
+   }
+  ],
+  "expected": "none",
+  "id": "text-191"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "START"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-192"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Take me off your list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-193"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number please"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-194"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-195"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-196"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-197"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Don't text this number again"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-198"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-199"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-200"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-201"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Actually you can text me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-202"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-203"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this from again?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-204"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-205"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "I'm done, take me off"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-206"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this? I'm not Aisha"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-207"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Please don't text me anymore"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-208"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-209"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "I'm done, take me off"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-210"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "I never signed up for this, stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-211"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-212"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-213"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "What's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-214"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-215"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "I don't want these messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-216"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Quit sending me this stuff"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-217"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "I'm busy right now"
+   }
+  ],
+  "expected": "none",
+  "id": "text-218"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-219"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "I'll think about it"
+   }
+  ],
+  "expected": "none",
+  "id": "text-220"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "There's no Linda here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-221"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday."
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works"
+   }
+  ],
+  "expected": "none",
+  "id": "text-222"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Stop! That's a great price"
+   }
+  ],
+  "expected": "none",
+  "id": "text-223"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "I'll think about it"
+   }
+  ],
+  "expected": "none",
+  "id": "text-224"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "You've got the wrong guy, I'm not Dev"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-225"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free."
+   },
+   {
+    "who": "customer",
+    "text": "oh nice"
+   }
+  ],
+  "expected": "none",
+  "id": "text-226"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-227"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Deja de enviarme mensajes"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-228"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "lol ok"
+   }
+  ],
+  "expected": "none",
+  "id": "text-229"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Thanks, see you Tuesday"
+   }
+  ],
+  "expected": "none",
+  "id": "text-230"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Do not contact me again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-231"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "opt me out"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-232"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Do not contact me again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-233"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Text is fine but no calls"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-234"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-235"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Call me on weekends only"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-236"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me mande más mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-237"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Don't call on Sundays"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 3,
+  "id": "text-238"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Can you stop by tomorrow?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-239"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Yes, I'm interested"
+   }
+  ],
+  "expected": "none",
+  "id": "text-240"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "There's no Linda here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-241"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Don't call me at work, text instead"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-242"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday."
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works"
+   }
+  ],
+  "expected": "none",
+  "id": "text-243"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Enough. No more messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-244"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-245"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Grace doesn't have this number anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-246"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Only text me after 6pm"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-247"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-248"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "please stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-249"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "business",
+    "text": "We can stop by on Tuesday."
+   },
+   {
+    "who": "customer",
+    "text": "Tuesday works"
+   }
+  ],
+  "expected": "none",
+  "id": "text-250"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Yes, I'm interested"
+   }
+  ],
+  "expected": "none",
+  "id": "text-251"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-252"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Put me on your do not call list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-253"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Sounds good"
+   }
+  ],
+  "expected": "none",
+  "id": "text-254"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Mike, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "business",
+    "text": "Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-255"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Quit sending me this stuff"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-256"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Por favor no me mande más mensajes"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "OK, start sending me updates again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-257"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Is it the same plan as before?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-258"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Cancel these texts"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-259"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Please only email me"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-260"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Stop! That's a great price"
+   }
+  ],
+  "expected": "none",
+  "id": "text-261"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "How long does install take?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-262"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "business",
+    "text": "Let me stop you there, the install is free."
+   },
+   {
+    "who": "customer",
+    "text": "oh nice"
+   }
+  ],
+  "expected": "none",
+  "id": "text-263"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Not before 10am please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-264"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "business",
+    "text": "If you want us to stop, just say so."
+   },
+   {
+    "who": "customer",
+    "text": "ok thanks, what's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-265"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "stop stop stop"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-266"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Send me the details"
+   }
+  ],
+  "expected": "none",
+  "id": "text-267"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Linda, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Can you stop by tomorrow?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-268"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Unsubscribe me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I'd like to hear from you again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-269"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "how many times do I have to say it, stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-270"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi John, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Don't text this number again"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-271"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-272"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "opt me out"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-273"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Mornings only please"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-274"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Yes, you may call me again"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 3,
+  "id": "text-275"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Grace, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-276"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Ne m'envoyez plus de messages"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-277"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Dev, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Only between 5 and 7 in the evening"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-278"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number please"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-279"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Quit sending me this stuff"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-280"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Delete my info and stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-281"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Only call my cell, not my home phone"
+   }
+  ],
+  "expected": "partial_request",
+  "moment": 1,
+  "id": "text-282"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "yes?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Stop texting me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "START"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-283"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "It's about your solar quote."
+   },
+   {
+    "who": "customer",
+    "text": "Sorry, wrong number, this is a business line"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-284"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Aisha, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "What's the price?"
+   }
+  ],
+  "expected": "none",
+  "id": "text-285"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "You have the wrong number"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-286"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "I want off this list"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-287"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Sounds good"
+   }
+  ],
+  "expected": "none",
+  "id": "text-288"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Don't stop, this sounds great"
+   }
+  ],
+  "expected": "none",
+  "id": "text-289"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Número equivocado"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-290"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "Who is this?"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "STOP!!"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-291"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Your free consultation is waiting. Reply for details."
+   },
+   {
+    "who": "customer",
+    "text": "Thanks, see you Tuesday"
+   }
+  ],
+  "expected": "none",
+  "id": "text-292"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "This isn't Maria's phone anymore"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-293"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Carlos, it's SunPath Solar. Your quote is ready!"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "how many times do I have to say it, stop texting"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "Fine, put me back on the list"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-294"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "Deja de enviarme mensajes"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 3,
+  "id": "text-295"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi, this is Sam from SunPath. Got a minute?"
+   },
+   {
+    "who": "customer",
+    "text": "Hi"
+   },
+   {
+    "who": "business",
+    "text": "Just a quick follow-up."
+   },
+   {
+    "who": "customer",
+    "text": "No one by that name lives here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 3,
+  "id": "text-296"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Hi Maria, still interested in lowering your bill?"
+   },
+   {
+    "who": "customer",
+    "text": "Hello?"
+   },
+   {
+    "who": "business",
+    "text": "We have a new offer."
+   },
+   {
+    "who": "customer",
+    "text": "Not interested. Stop messaging me"
+   },
+   {
+    "who": "business",
+    "text": "Done, you won't hear from us."
+   },
+   {
+    "who": "customer",
+    "text": "I changed my mind, you can call me"
+   }
+  ],
+  "expected": "opted_back_in",
+  "moment": 5,
+  "id": "text-297"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "Remove my number please"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-298"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "Reminder: your appointment is tomorrow at 10."
+   },
+   {
+    "who": "customer",
+    "text": "There's no Grace here"
+   }
+  ],
+  "expected": "wrong_number",
+  "moment": 1,
+  "id": "text-299"
+ },
+ {
+  "turns": [
+   {
+    "who": "business",
+    "text": "New offer this week only. Reply STOP to opt out."
+   },
+   {
+    "who": "customer",
+    "text": "how many times do I have to say it, stop texting"
+   }
+  ],
+  "expected": "opted_out",
+  "moment": 1,
+  "id": "text-300"
+ }
+]

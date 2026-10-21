@@ -34,7 +34,7 @@ def test_consent_coverage_and_contacts_after_opt_out(company):
     result(company, 'no_proof')
     result(company, 'verified', legal=False)
     result(company, 'no_proof', codes=['NP_AFTER_OPT_OUT'])
-    m01, m10 = overview_metrics(company, None)
+    m01, m10, *_ = overview_metrics(company, None)
     assert m01['value'] == 33.3 and 'including CiV-policy contacts' in m01['note'] and m01['history'][-1] == 33.3
     assert (m10['value'], m10['note']) == (1, '1 number affected')
 

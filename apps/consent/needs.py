@@ -30,8 +30,9 @@ def opt_out_in_force(contact, rules, variant, newer_consent_lifts=True):
     """The latest opt-out before the contact that still applies, or None. Not in force for the one confirmation text
     inside confirmation_window_minutes, before the grace days end, or (for the STOP list) once the person gave a new
     consent after it; a later purchase or a CRM box never lifts it."""
-    optout = (OptOutEvent.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, at__lt=contact.occurred_at)
-              .order_by('-at').first())
+    optout = (OptOutEvent.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, at__lt=contact.occurred_at,
+                                         counts=True)  # not counted: found by an AI that had not passed its exam (Module 9)
+              .exclude(lifted_at__lte=contact.occurred_at).order_by('-at').first())  # lifted: the person allowed contact again
     if optout is None:
         return None
     window = timedelta(minutes=int(_value(rules, 'confirmation_window_minutes', contact, variant, 5)))

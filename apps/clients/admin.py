@@ -28,6 +28,7 @@ from apps.reconcile.summary import completeness_tile
 from apps.reconcile.views import completeness_page
 from apps.captures.admin import ConsentPageInline, open_photo
 from apps.provenance.admin import provenance_tile
+from apps.conversations.admin import ai_tile
 
 
 @admin.register(Client)
@@ -130,6 +131,7 @@ class ClientAdmin(CivModelAdmin):
                         certificates_tile(client),
                         completeness_tile(client, reverse('admin:clients_client_completeness', args=[client.pk])),
                         provenance_tile(client),
+                        ai_tile(client),
                     ],
                     'onboarding': checklist(client),
                     'status_pill': stages.status_pill(client),

@@ -75,7 +75,7 @@ def test_settings_facts_and_agreements_and_annex_c(call, company, member_user):
     settings = api.get('/api/settings').json()
     assert settings['company']['name'] == company.name and settings['company']['states'] == ['CA'] and 'forum' not in settings['company']
     assert {a['name']: a['status'] for a in settings['agreements']}['Annex C · test opt-outs'] == 'signed'
-    assert api.get('/api/revocation').json() == {'authorisation': {'signedOn': '2026-09-01'}}
+    assert api.get('/api/revocation').json()['authorisation'] == {'signedOn': '2026-09-01'}
 
 
 def test_insurer_page_gets_real_completeness_and_reconciliation(company, member_user):

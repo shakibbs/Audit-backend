@@ -51,6 +51,11 @@ def unfold_config(portal_url: str) -> dict:
                     link('Regulatory changes', 'gavel', 'admin:regulatory_regchange_changelist'),
                     link('Client suggestions', 'lightbulb', 'admin:regulatory_clientsuggestion_changelist'),
                 ]},
+                {'title': 'AI', 'separator': True, 'items': [
+                    link('AI answers', 'forum', 'admin:conversations_conversationreview_changelist'),
+                    link('AI exam results', 'school', 'admin:conversations_examrun_changelist'),
+                    link('Extra exam questions', 'quiz', 'admin:conversations_examcase_changelist'),
+                ]},
                 {'title': 'CiV team', 'separator': True, 'items': [
                     link('CiV staff', 'badge', 'admin:staff_staffuser_changelist'),
                     link('Permission groups', 'admin_panel_settings', 'admin:auth_group_changelist'),

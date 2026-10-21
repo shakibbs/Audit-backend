@@ -468,7 +468,7 @@ numbers, %, status), with the extra checks (days with any records, STOP replies)
 - **Opt-outs card:** `GET /api/optouts`: the STOP list, one row per number (its latest opt-out), newest first, with
   the masked label, how (e.g. "Text · keyword"), the deadline in business days in the person's time zone (provisional
   while the 10 days are Proposed), business days left, counted contacts after the opt-out (before / after the
-  deadline), and `dialerMarked: null` (= not checked yet, Module 9).
+  deadline), and `dialerMarked` (Module 9 step 3: yes / no / null = not checked).
 - **Admin → Records:** read-only **Failed-job cleanups** (`purge_log`) and **Missed records** (`sync_gap`, empty while
   every tool is polled).
 
@@ -848,3 +848,83 @@ opt-out history, internal list and consent status as of the end of that day; the
 (contacts per month, prerecorded share when the dialer says, purchased-lead and manual-import shares, evidence found,
 consent proof rate, contacts after opt-out, re-added numbers, internal-list contacts, monitoring, records
 fingerprinted); the rest keep the sample and its worst-case notes.
+
+## AI conversation review: texts (Module 9, step 1)
+
+`apps/conversations` (spec §8, D37). Every minute: numbers where the customer wrote and the thread has been quiet for
+10 minutes, with a message newer than the last review. The thread (last 30 days) is re-read **by message ID from the
+tool, in memory only** — one small reader per tool (`readers.READERS`, Twilio now; a new texting connector adds its
+reader), everything else shared — and sent to the **AI slot** (`ai.py`). **No AI is chosen yet (owner decision): the
+slot is off, nothing is sent anywhere and nothing is saved**; `CONVERSATION_REVIEW_MODEL` + the chosen AI's adapter
+switch it on. Results (`conversation_review`, locked): opted_out / wrong_number → the STOP list (`method='ai'`;
+wrong number also starts a new owner) · opted_back_in → the earlier opt-out's `lifted_at` (the consent engine
+ignores it from then) · partial_request → kept for the client · unclear (below 90 % sure) / none → counted ·
+not_reviewed when the tool can't share the words. Kept: result, deciding message, confidence, AI and prompt version,
+fingerprint of the words. Never the words or the number.
+
+### Calls (step 2)
+
+**Every** recorded call is listened to (owner decision: no skipping short calls), once it ended (10 min after start)
+and within 30 days. The recording is fetched from the dialer in memory — one reader per dialer
+(`readers.RECORDINGS`: Twilio recordings by CallSid, Vicidial `recording_log`, Convoso call-log link *to confirm*;
+Five9 and others "not reviewed" until their reader is added) — turned into words by the **speech-to-text slot**
+(`speech.py`, customer and agent told apart; off until chosen), then the **same AI request** as texts ("one listen,
+one request, several answers": later questions such as disclosures go in this request). The moment is the second in
+the call (`moment_seconds`, `moment_at` = call start + seconds). A stop said by the agent, or with no deciding moment,
+is "unclear". No recording → not_reviewed "No recording". The recording and words are dropped at once; only the
+result and a fingerprint stay. Recording consent (C22) is noted for the client's lawyers.
+
+### Did the tools mark the stop? (step 3)
+
+`apps/optouts/marks.py`, every 5 minutes. For each opt-out on the STOP list (not lifted), one `MarkCheck` per connected
+dialer, texting tool and CRM: was the number marked "do not contact"? One small check per tool (`marks.CHECKS`):
+Vicidial re-reads the number from its own call record (in memory, checked against the phone code) and looks in
+`vicidial_dnc` / `vicidial_campaign_dnc` (SELECT only) · Convoso DNC search (*to confirm*) · Twilio blocks stop words
+itself (plain-word opt-outs can't be checked) · CRMs use the synced opt-out / do-not-call field (no extra calls) ·
+Five9 later. A tool that can't tell = `marked: null` "not checked", **never a fail**. Timing: first check 10 minutes
+after CiV learned of the opt-out; not marked → **urgent** (`urgent_at`, shown in the portal in step 6; **no email**,
+owner decision). Then again every hour until the deadline; marked → once more a day later (marked then unmarked →
+urgent). Still not marked at the deadline → `missed` = **M38 Missed opt-outs** (`missed_optouts`). Opt-outs older than
+a day when first seen are checked but raise no urgent alert.
+
+### The AI's exam (step 4)
+
+`apps/conversations/exam.py`. Made-up conversations with known answers: `exam/text.json` and `exam/call.json` (300
+each — stops, wrong numbers, "allowed again", limits, and tricky "none" cases such as an agent saying "stop", "stop by
+tomorrow", other languages) plus `ExamCase` rows CiV staff add. Marked through the same `judge()` as live reviews.
+**Pass = every stop caught (100 %, with the right moment) and ≥ 98 % of all answers right**, texts and calls separately
+(owner decision 2026-10-21; Rulebook `conv_review_stop_catch_mark`, `conv_review_accuracy_pass_mark`). Runs daily at
+02:10 when the AI or `PROMPT_VERSION` changed or 30 days passed (calls only once speech-to-text is chosen); each run
+sends about 300 conversations per channel to the AI. Below 90 % sure, a possible stop is treated as a stop.
+
+Until the AI passes (`ConversationReview.trusted`): its stops still go on the STOP list and are still checked in the
+tools, but `OptOutEvent.counts = False`, so they don't count against the client (consent engine, M10, M38). "Allowed
+contact again" and the new owner after "wrong number" wait (`approval = waiting`). Admin → **AI**: *AI answers*
+(approve / reject / report as wrong; *Read* re-reads the conversation from the client's tool for one look, never
+saved, logged), *AI exam results* (red "AI failed the exam" with the mistakes), *Extra exam questions*. Reporting a
+wrong answer fails the AI at once; a wrong stop stays on the STOP list but stops counting, a wrong "allowed again" is
+undone.
+Each client's admin page has an **AI review** tile in the top row: stops found this month, conversations read, answers
+waiting for staff, and the exam state for texts and calls; it opens *AI answers* filtered to that client.
+
+### M08 and M09 from real opt-outs (step 5)
+
+Owner decision 2026-10-21: **no paid CiV test lines**. `apps/optouts/measures.py` measures from the client's real
+opt-outs instead (only those that count), using the step 3 tool checks, labelled "Measured from your real opt-outs"
+(Tier 3). **M08** opt-out propagation time: hours from the opt-out until every checkable tool had marked the number —
+median and 90th percentile, "NEVER" when a tool still hadn't by the deadline (accurate to about an hour: CiV checks
+after 10 minutes, then hourly). **M09** opt-outs past their deadline: **M09a** not marked in a tool · **M09b**
+contacted after the deadline. Not measured until there is data. Shown in the portal in step 6.
+
+### In the portal (step 6)
+
+- `GET /api/revocation`: M08 median / 90th percentile, M09a / M09b, the opt-out matrix (rows: STOP texts, plain-word
+  texts, spoken on a call, CRM box; columns: the client's tools; median hours per cell, NEVER when missed) and the
+  time-to-stop chart, last 90 days. Before anything is checked the KPIs say "Not measured" and the matrix keeps its sample.
+- `GET /api/optouts`: `dialerMarked` (dialers only), plus `tools` (each tool's answer), `urgent`, `counted`.
+- `GET /api/data-health` → `conversationReview` (Overview card "Opt-outs your dialer missed"), last 30 days.
+- `GET /api/metrics`: M08 and M09 added.
+- Who You Contact: **M41** stop requests that never reached every tool, **M42** share marked within the deadline,
+  **M48** contacts after a "wrong number" reply, **M45** contacts after naming an attorney (a 4th answer in the same AI
+  request, `ConversationReview.attorney_at`; trusted reviews only; complaint-log demand letters not counted yet). Shown
+  once the AI has read anything; before that the sample rows stay.

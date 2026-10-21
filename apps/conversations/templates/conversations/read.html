@@ -1,0 +1,33 @@
+{% extends 'admin/base.html' %}
+{% comment %}One conversation re-read from the client's tool for CiV staff: shown once, never saved; the opening is logged.{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">AI · {{ review.client.name }}</div>
+            <h1>{{ review.get_channel_display|default:review.channel|capfirst }} conversation</h1>
+            <p class="ph-sub">Re-read from {{ review.source_system }} just now. Not saved anywhere; this opening is logged.
+                AI answer: <strong>{{ review.get_result_display }}</strong>{% if review.confidence %} ({{ review.confidence|floatformat:2 }} sure){% endif %}.</p>
+        </div>
+        <div><a class="civ-btn civ-btn-ghost" href="{{ back_url }}">Back</a></div>
+    </header>
+    <div class="card">
+        {% if problem %}
+            <p>Can't show this conversation: {{ problem }}.</p>
+        {% else %}
+            <table class="tbl"><thead><tr><th>Who</th>{% if review.channel == 'call' %}<th>Second</th>{% endif %}<th>Words</th></tr></thead>
+                <tbody>{% for turn in turns %}
+                    <tr><td>{% if turn.who == 'customer' %}<strong>Customer</strong>{% else %}Business{% endif %}</td>
+                        {% if review.channel == 'call' %}<td>{{ turn.at }}</td>{% endif %}<td>{{ turn.text }}</td></tr>
+                {% endfor %}</tbody></table>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

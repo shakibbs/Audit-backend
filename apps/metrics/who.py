@@ -1,6 +1,6 @@
 """Who You Contact: the checks that are real from what CiV holds (consent results, uploaded DNC check records and
 internal list, reassigned-number query logs, CRM opt-out marks), over the last 30 days. Checks that need a later module
-(AI review of replies, CiV's own reassigned-number queries, litigator lists, court dockets) are left out: the portal keeps
+(CiV's own reassigned-number queries, litigator lists, court dockets) are left out: the portal keeps
 its sample for them until those modules exist. Names match the portal's check names so each one replaces its own row."""
 import hashlib
 from collections import Counter
@@ -78,8 +78,10 @@ def internal_area(client, contacts) -> dict:
     removed = CrmUpdate.objects.filter(client=client, cleared_optout=True).count()
     checks.append(check('fail' if removed else 'pass', 'Removed from the list too early', many(removed, 'number') if removed else 'None', 'records', 'M44',
                         'Opt-out marks cleared in your CRM (for example by a re-uploaded sheet). Requests must be honored for 5 years.'))
+    stop_checks, stop_flags = stops_reached(client, contacts)
+    checks += stop_checks
     if not InternalListEntry.objects.filter(client=client).exists():
-        return {'id': 'idn', 'checks': checks}
+        return {'id': 'idn', 'checks': checks, 'flags': stop_flags}
     flags, numbers = [], set()
     for c in contacts.only('phone_token', 'occurred_at', 'masked_label', 'channel'):
         entry = InternalListEntry.objects.filter(client=client, phone_token=c.phone_token, added_on__lte=c.occurred_at.date()).order_by('added_on').first()
@@ -89,7 +91,71 @@ def internal_area(client, contacts) -> dict:
     last = UploadedFile.objects.filter(client=client, source=Source.INTERNAL_LIST).first()
     checks.insert(0, check('fail' if flags else 'pass', 'Called after joining your list', many(len(flags), 'contact') if flags else 'None', 'list', 'M12',
                            f'{len(numbers):,} numbers were contacted after they joined your list (uploaded {last.received_at:%-d %b}).'))
-    return {'id': 'idn', 'checks': checks, 'flags': flags[:50]}
+    return {'id': 'idn', 'checks': checks, 'flags': (flags + stop_flags)[:50]}
+
+
+def ai_running(client) -> bool:
+    from apps.conversations.models import ConversationReview
+    return ConversationReview.objects.filter(client=client).exclude(result='not_reviewed').exists()
+
+
+def stops_reached(client, contacts) -> tuple[list, list]:
+    """M41 stop requests (texted STOP or said in plain words) that never reached every tool by the deadline, and M42 the
+    share marked in time (Module 9 step 3 checks). Only opt-outs that count; left out until there is something checked."""
+    from statistics import median
+
+    from apps.conversations.models import ConversationReview
+    from apps.optouts.models import OptOutEvent
+    since = timezone.now() - timedelta(days=DAYS)
+    asked = OptOutEvent.objects.filter(client=client, counts=True, method__in=['keyword', 'ai'], at__gte=since).prefetch_related('mark_checks')
+    checked = [e for e in asked if any(c.marked is not None for c in e.mark_checks.all())]
+    if not checked and not ai_running(client):
+        return [], []
+    never = [e for e in checked if any(c.missed for c in e.mark_checks.all())]
+    read = ConversationReview.objects.filter(client=client, reviewed_at__gte=since).exclude(result='not_reviewed').count()
+    out = [check('fail' if never else 'pass', 'Stop requests that never reached your list', f'{len(never):,} of {len(checked):,}', 'records', 'M41',
+                 f'{many(len(checked), "stop request")} checked in your tools ({read:,} calls and texts reviewed by AI); '
+                 f'{len(never):,} never reached every tool by the deadline.')]
+    now = timezone.now()
+    due = [e for e in checked if all(c.deadline_at and c.deadline_at <= now for c in e.mark_checks.all() if c.marked is not None)]
+    if due:
+        late = [e for e in due if any(c.missed for c in e.mark_checks.all())]
+        share = round(100 * (len(due) - len(late)) / len(due))
+        days = [(max(c.marked_at for c in e.mark_checks.all() if c.marked_at) - e.at).total_seconds() / 86400
+                for e in due if any(c.marked_at for c in e.mark_checks.all())]
+        why = f'{len(late):,} {"was" if len(late) == 1 else "were"} late.' + (f' Median is {median(days):.0f} days.' if days else '')
+        out.append(check('pass' if share == 100 else 'warn', 'Added within 10 business days', f'{share}%', 'records', 'M42', why))
+    flags = [flag(c, 'Asked to stop, never added', 'AI review' if e.method == 'ai' else 'Texting tool replies', e.at)
+             for e in never for c in contacts.filter(phone_token=e.phone_token, occurred_at__gt=e.at)[:3]]
+    return out, flags
+
+
+def wrong_number_check(client, contacts) -> tuple[list, list]:
+    """M48: contacts after the person said "wrong number" (AI review, counted only after the exam)."""
+    from apps.optouts.models import OptOutEvent
+    told = list(OptOutEvent.objects.filter(client=client, counts=True, method='ai', keyword='wrong number'))
+    if not told and not ai_running(client):
+        return [], []
+    flags = [flag(c, 'Replied “wrong number”', 'AI review', e.at) for e in told for c in contacts.filter(phone_token=e.phone_token, occurred_at__gt=e.at)]
+    return [check('fail' if flags else 'pass', 'Contacted after a “wrong number” reply', many(len(flags), 'contact') if flags else 'None', 'records', 'M48',
+                  'Once you are told the number changed hands, the safe harbor no longer applies.')], flags
+
+
+def litigation_area(client, contacts) -> dict:
+    """M45: people who named a lawyer in a call or text (AI review, after its exam) and were contacted again. Demand letters
+    in the complaint log are not counted yet (the log has no letter type)."""
+    from apps.conversations.models import ConversationReview
+    named = {}
+    for r in ConversationReview.objects.filter(client=client, trusted=True, attorney_at__isnull=False).order_by('attorney_at'):
+        named.setdefault(r.phone_token, r.attorney_at)
+    if not named and not ai_running(client):
+        return {'id': 'lit', 'checks': []}
+    flags = [flag(c, 'Named an attorney', 'AI review', at) for token, at in named.items()
+             for c in contacts.filter(phone_token=token, occurred_at__gt=at)[:3]]
+    again = len({f['number'] for f in flags})
+    return {'id': 'lit', 'checks': [check('fail' if again else 'pass', 'Contacted after naming an attorney', f'{again:,} of {len(named):,}', 'records', 'M45',
+                                          f'{many(len(named), "person")} named an attorney in a call or text; {again:,} contacted again.')],
+            'flags': flags[:50]}
 
 
 def reassigned_area(client, contacts) -> dict:
@@ -113,7 +179,8 @@ def reassigned_area(client, contacts) -> dict:
         share = round(100 * asked / n) if n else 100
         checks.append(check('pass' if share >= 99 else 'warn', 'Covered by the safe harbor', f'{share}% of contacts', 'list', 'M11',
                             'Contacts preceded by your own reassigned-number check (answer "no") within the month before.'))
-    return {'id': 'rnd', 'checks': checks}
+    wrong_checks, wrong_flags = wrong_number_check(client, contacts)
+    return {'id': 'rnd', 'checks': wrong_checks + checks, 'flags': wrong_flags[:50]}
 
 
 def services(client) -> list[dict]:
@@ -163,6 +230,7 @@ def lead_sources(client) -> list[dict]:
 def who_contact(client) -> dict:
     contacts = window(client)
     # An empty list would wipe the portal's rows for checks not built yet: leave out empty parts, and areas with nothing real.
-    areas = [{k: v for k, v in a.items() if v != []} for a in (dnc_area(client, contacts), internal_area(client, contacts), reassigned_area(client, contacts))]
+    areas = [{k: v for k, v in a.items() if v != []} for a in (dnc_area(client, contacts), internal_area(client, contacts), reassigned_area(client, contacts),
+                                                     litigation_area(client, contacts))]
     return {'areas': [a for a in areas if 'checks' in a],
             'services': services(client), 'leadSources': lead_sources(client)}
