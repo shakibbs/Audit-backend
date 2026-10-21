@@ -1,0 +1,47 @@
+{% extends 'admin/base.html' %}
+{% comment %}The Rulebook check (Module 13 step 5): what still needs a decision, what a lawyer has not confirmed.{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">Rules · Rulebook v{{ data.version.version }} ({{ data.version.status }})</div>
+            <h1>Rulebook check</h1>
+            <p class="ph-sub">Federal values today: {{ data.counts.set }} set · {{ data.counts.proposed }} proposed · {{ data.counts.tbd }} not set yet.
+                Rules that change results but are not set are "rule pending" for clients; Proposed ones run, marked provisional.</p>
+        </div>
+    </header>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-h"><div><h3>Needs a decision ({{ data.pending|length }})</h3>
+            <div class="card-sub">Change results but are still not set. Clients = active clients that contacted where it applies in the last 30 days.</div></div></div>
+        {% if data.pending %}
+        <div style="overflow-x:auto"><table class="tbl">
+            <thead><tr><th>Rule</th><th>Place</th><th>What it decides</th><th>Owner</th><th>Counsel item</th><th>Clients</th><th></th></tr></thead>
+            <tbody>{% for r in data.pending %}
+                <tr><td><code>{{ r.key }}</code></td><td>{{ r.place }}</td><td>{{ r.meaning }}</td><td>{{ r.owner }}</td><td>{{ r.counsel_item|default:"-" }}</td>
+                    <td><strong>{{ r.clients }}</strong></td><td><a href="{% url 'admin:rulebook_rulevalue_history' r.key %}">History</a></td></tr>
+            {% endfor %}</tbody></table></div>
+        {% else %}<p>Nothing: every rule that changes results has a value.</p>{% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-h"><div><h3>Not confirmed by a lawyer ({{ data.unconfirmed|length }})</h3>
+            <div class="card-sub">Change results and run as Proposed. The clients' lawyers can review them as rule updates on Regulatory changes.</div></div></div>
+        {% if data.unconfirmed %}
+        <div style="overflow-x:auto"><table class="tbl">
+            <thead><tr><th>Rule</th><th>Place</th><th>Value in force</th><th>Owner</th><th>Counsel item</th><th></th></tr></thead>
+            <tbody>{% for r in data.unconfirmed %}
+                <tr><td><code>{{ r.key }}</code></td><td>{{ r.place }}</td><td>{{ r.shown }}</td><td>{{ r.owner }}</td><td>{{ r.counsel_item|default:"-" }}</td>
+                    <td><a href="{% url 'admin:rulebook_rulevalue_history' r.key %}">History</a></td></tr>
+            {% endfor %}</tbody></table></div>
+        {% else %}<p>Nothing.</p>{% endif %}
+    </div>
+</div>
+{% endblock %}

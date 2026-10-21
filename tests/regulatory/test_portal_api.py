@@ -50,7 +50,7 @@ def browser_for(user):
 
 def test_rulebook_page_counts_note_and_no_banned_names(rulebook, member_user):
     data = browser_for(member_user).get('/api/rulebook').json()
-    assert (data['set'], data['proposed'], data['tbd']) == (70, 58, 21)
+    assert (data['set'], data['proposed'], data['tbd']) == (70, 59, 20)
     assert data['versionStatus'] == 'provisional' and 'not yet confirmed by a lawyer' in data['note']
     keys = {s['key'] for s in data['settings']}
     assert 'direct_contact_cap_grade' in keys and not any('violation' in k for k in keys)
@@ -118,3 +118,17 @@ def test_suggestions_go_only_to_civ(client, rulebook, member_user, lawyer, other
     staff = StaffUser.objects.create_superuser(email='team@complyiv.com', name='Team', password=PASSWORD)
     client.force_login(staff)
     assert 'Florida ends calls at 7pm' in client.get('/civ-admin/regulatory/clientsuggestion/').content.decode()
+
+
+def test_vendor_clauses_draft_is_reviewed_by_lawyers_and_approved_by_civ(rulebook, lawyer):
+    """Module 12: CiV's draft of the vendor contract clauses, as a rule update the clients' lawyers review."""
+    from apps.rulebook.lookup import RuleSet
+    mine = browser_for(lawyer)
+    change = next(c for c in mine.get('/api/reg-changes').json() if c['title'] == 'CiV draft: clauses each vendor contract must contain')
+    update = change['updates'][0]
+    assert update['state'] == 'draft' and change['jurisdiction'] == 'CiV draft'
+    assert mine.call('post', f"/api/rule-updates/{update['id']}/review", {'verdict': 'agree', 'comment': 'Looks right.'}).status_code == 200
+    staff = StaffUser.objects.create_superuser(email='team@complyiv.com', name='Team', password=PASSWORD)
+    approve(RuleUpdate.objects.get(key='vendor_required_clauses'), staff)
+    rule = RuleSet('internal').get('vendor_required_clauses', on=date(2026, 10, 22))
+    assert rule.status == 'set' and len(rule.value) == 12

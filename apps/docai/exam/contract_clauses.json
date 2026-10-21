@@ -1,0 +1,40 @@
+[
+ {
+  "id": "contract-1",
+  "document": {
+   "text": "LEAD SUPPLY AGREEMENT between LeadCo LLC (Vendor) and Example Solar Co (Client). 3. Vendor warrants every lead gave prior express written consent naming Example Solar Co, and supplies a TrustedForm certificate Client may claim. 4. On request Vendor sends consent records within 5 business days and keeps them 5 years. 5. Vendor passes on any opt-out within 24 hours and never sells that number again. 7. Vendor shall indemnify Client against all claims arising from Vendor's leads. 9. Client may return a bad lead for credit within 10 days. Term ends 2027-06-30."
+  },
+  "expected": {
+   "clauses": {
+    "consent": true,
+    "certificate": true,
+    "proof_on_request": true,
+    "optouts_passed": true,
+    "indemnity": true,
+    "insurance": false,
+    "audit_right": false,
+    "refunds": true
+   },
+   "ends_on": "2027-06-30",
+   "dispute_days": 10
+  }
+ },
+ {
+  "id": "contract-2",
+  "document": {
+   "text": "Data purchase terms. Buyer accepts leads as is. Vendor makes no warranty about consent. All sales final."
+  },
+  "expected": {
+   "clauses": {
+    "consent": false,
+    "certificate": false,
+    "proof_on_request": false,
+    "optouts_passed": false,
+    "indemnity": false,
+    "refunds": false
+   },
+   "ends_on": null,
+   "dispute_days": null
+  }
+ }
+]

@@ -13,7 +13,11 @@ from apps.metrics.conduct import conduct_metrics, contacts as contacts_in, span
 from apps.metrics.overview import overview_metrics
 from apps.optouts.marks import missed_optouts
 
+from apps.vendors.contracts import terms_on_file
+from apps.vendors.disputes import disputable_value
+
 from .extra import extra_metrics
+from .coverage import cap, coverage
 from .exposure import exposure
 from .factors import factors
 from .models import MetricSnapshot, SnapshotRun
@@ -52,7 +56,8 @@ def measure(client, period: date) -> list[dict]:
     start, end = span(key)
     sent = contacts_in(client, start, end)
     found = (conduct_metrics(client, key) + overview_metrics(client, key) + [missed_optouts(client, start, end)]
-             + extra_metrics(client, start, end, sent))
+             + extra_metrics(client, start, end, sent) + [terms_on_file(client, end if end < timezone.now() else None),
+                                                          disputable_value(client, end if end < timezone.now() else None)])
     base, table = sent.count(), bands(period)
     for metric in found:
         metric.pop('history', None)  # history comes from the saved months
@@ -72,7 +77,9 @@ def scored(client, period: date, metrics: list[dict]) -> dict:
     """Steps 3–4: the factors, D, and the Exposure with its multipliers, grade and caps."""
     start, end = span(period.strftime('%Y-%m'))
     result = factors(metrics)
-    result['exposure'] = exposure(client, start, end, contacts_in(client, start, end), result['defect'], period)
+    result['coverage'] = coverage(metrics)  # M36 (Module 14)
+    held = cap(result['coverage']['value'], period)
+    result['exposure'] = exposure(client, start, end, contacts_in(client, start, end), result['defect'], period, held)
     return result
 
 

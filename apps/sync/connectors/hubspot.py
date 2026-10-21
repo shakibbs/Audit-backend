@@ -95,6 +95,22 @@ class HubSpot(OAuthTool, Connector):
         return Record(source_record_id=f"{obj.name}:{row['id']}", raw=json.dumps(row, sort_keys=True, separators=(',', ':')).encode(),
                       content_kind=obj.content_kind, changed_at=modified(row), phones=[props[p] for p in obj.phone_props if props.get(p)])
 
+    def fetch_one(self, record_id: str) -> Record | None:
+        import urllib.error
+        import urllib.parse
+        name, _, key = record_id.partition(':')
+        obj = next((o for o in OBJECTS if o.name == name), None)
+        if obj is None:
+            raise NotImplementedError
+        query = urllib.parse.urlencode({'properties': ','.join(self.properties(obj))})
+        try:
+            row = self.call(f'{API}/crm/v3/objects/{obj.path}/{urllib.parse.quote(key)}?{query}')
+        except urllib.error.HTTPError as error:
+            if error.code == 404:
+                return None
+            raise
+        return self.record(row, obj)
+
     def changes_since(self, cursor: str, limit: int) -> Page:
         marks = json.loads(cursor) if cursor else {}
         first = ms(datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC))

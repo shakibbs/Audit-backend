@@ -1,7 +1,7 @@
 """Module 11 step 3: every 5 minutes, what needs a look is gathered into alerts (owner decision 2026-10-21):
 High — a stop a tool never marked (Module 9), contacts after an opt-out, opted-out numbers brought back by a list;
 Medium — consent wording changed, certificates expiring within 30 days, a tool stopped syncing, a month with
-incomplete data. Conditions that last (a stale tool, an unmarked stop, an incomplete month) resolve by themselves;
+incomplete data, a vendor score that fell 10 points or more (Module 12). Conditions that last (a stale tool, an unmarked stop, an incomplete month) resolve by themselves;
 events (contacts after an opt-out on a day) stay until reviewed."""
 from datetime import timedelta
 
@@ -72,6 +72,20 @@ def gather(client, now) -> dict[str, dict]:
                                                       title=f'{month.period:%B %Y} is marked incomplete data',
                                                       detail=(f'CiV holds about {100 * month.completeness:.0f}% of the records your tools report. ' if month.completeness else '')
                                                       + 'The missing share counts at its worst case.')
+    from apps.evidence.models import RefetchCheck
+    changed = RefetchCheck.objects.filter(client=client, result='changed', checked_at__gte=since)
+    if changed.exists():
+        tools = sorted(set(changed.values_list('source_system', flat=True)))
+        n = changed.values('source_system', 'source_record_id').distinct().count()
+        out[f'refetch-changed-{now:%G-%V}'] = dict(kind='Records changed at the source', severity=MEDIUM, domain='REC', lasting=False, count=n,
+                                                  title=f'{many(n, "record")} changed in {", ".join(tools)} after CiV saw {"it" if n == 1 else "them"}',
+                                                  detail='Asked again, the tool gave a different record than the one CiV fingerprinted and sealed.')
+    from apps.vendors.score import drops
+    for d in drops(client, now):
+        label = d['name'] + (f', sub-ID {d["subId"]}' if d['subId'] else '')
+        out[f'vendor-drop-{d["key"]}-{d["subId"]}-{now:%Y-%m}'] = dict(
+            kind='Vendor score drop', severity=MEDIUM, domain='LPV', lasting=False,
+            title=f'{label} fell {d["drop"]:.1f} points', detail=f'Vendor score from {d["from"]:.1f} last month to {d["to"]:.1f} this month.')
     return out
 
 

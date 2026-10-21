@@ -65,6 +65,33 @@ def send(client) -> int:
                                                        phone_token=t, masked_label=labels.get(t, ''), due_at=due) for t in picked],
                                          ignore_conflicts=True)
         made += len(picked)
+    return made + send_lead_files(client)
+
+
+def send_lead_files(client) -> int:
+    """Vendor lead files (Module 12): leads with no consent link and no other proof, called, sampled the same way."""
+    from apps.uploads.models import Source, UploadedFile
+    made = 0
+    for upload in UploadedFile.objects.filter(client=client, source=Source.VENDOR_LEADS):
+        key = f'leadfile|{upload.pk}'
+        if ProofRequest.objects.filter(client=client, batch_key=key).exists():
+            continue
+        tokens = set(upload.vendor_lead_rows.values_list('phone_token', flat=True))
+        called = set(ContactEvent.objects.filter(client=client, phone_token__in=tokens, direction='outbound').values_list('phone_token', flat=True))
+        proven = set(ConsentProof.objects.filter(client=client, phone_token__in=called, kind__in=EVIDENCE, withdrawn_at__isnull=True)
+                     .values_list('phone_token', flat=True))
+        pool = sorted(called - proven)
+        if not pool:
+            continue
+        size = BIG_SAMPLE if len(tokens) > BIG_LIST else SAMPLE
+        seed = int(hashlib.sha256(f'{client.pk}|{key}'.encode()).hexdigest()[:12], 16)
+        picked = random.Random(seed).sample(pool, min(size, len(pool)))
+        labels = dict(ContactEvent.objects.filter(client=client, phone_token__in=picked).values_list('phone_token', 'masked_label'))
+        label = f'Vendor lead file · {len(tokens):,} lead{"" if len(tokens) == 1 else "s"} · {upload.received_at:%d %b %Y}'
+        due = timezone.now() + timedelta(days=ANSWER_DAYS)
+        ProofRequest.objects.bulk_create([ProofRequest(client=client, batch_key=key, batch_label=label, batch_size=len(tokens), phone_token=t,
+                                                       masked_label=labels.get(t, ''), due_at=due) for t in picked], ignore_conflicts=True)
+        made += len(picked)
     return made
 
 
@@ -131,7 +158,11 @@ def purge_old(now=None) -> int:
     """Files older than 4 years are deleted; the fingerprint and the review stay."""
     now = now or timezone.now()
     count = 0
+    from apps.evidence.holds import Holds
+    holds = Holds()
     for request in ProofRequest.objects.filter(answered_at__lt=now - timedelta(days=365 * KEEP_YEARS + 1), purged_at__isnull=True).exclude(file=''):
+        if holds.covers(request.client_id, request.answered_at, [request.phone_token]):
+            continue  # under a legal hold (Module 14)
         request.file.delete(save=False)
         ProofRequest.objects.filter(pk=request.pk).update(file='', purged_at=now)
         count += 1

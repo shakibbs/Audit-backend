@@ -23,6 +23,8 @@ def hint_from_record(provider: str, row: dict) -> str:
 
 
 def source_of(proof) -> str:
+    if proof.source_system == 'vendor_lead_file':
+        return VENDOR  # a consent link sent by the vendor with the lead (Module 12)
     if proof.source_system == 'hubspot' and proof.source_hint in HUBSPOT:
         return HUBSPOT[proof.source_hint]
     creation = (CrmCreation.objects.filter(client_id=proof.client_id, source_system=proof.source_system, record_id=proof.source_record_id)

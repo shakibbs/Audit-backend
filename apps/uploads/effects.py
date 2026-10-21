@@ -27,7 +27,14 @@ def purge_old(now=None) -> int:
     from .models import UploadedFile
     now = now or timezone.now()
     count = 0
+    from apps.evidence.holds import Holds
+    from apps.vendors.rates import vendor_key
+    holds = Holds()
     for upload in UploadedFile.objects.filter(received_at__lt=now - timedelta(days=365 * 4 + 1), purged_at__isnull=True).exclude(file=''):
+        tokens = set(tokens_of(upload)) | set(upload.vendor_lead_rows.values_list('phone_token', flat=True))
+        vendors = {vendor_key(v) for v in upload.vendor_lead_rows.values_list('vendor', flat=True).distinct()}
+        if holds.covers(upload.client_id, upload.received_at, tokens, vendors):
+            continue  # under a legal hold (Module 14)
         upload.file.delete(save=False)
         UploadedFile.objects.filter(pk=upload.pk).update(file='', purged_at=now)
         count += 1

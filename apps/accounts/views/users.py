@@ -51,7 +51,8 @@ class UsersView(APIView):
         form = InviteSerializer(data=request.data)
         form.is_valid(raise_exception=True)
         data = form.validated_data
-        if ClientUser.objects.filter(email=data['email']).exists():
+        from apps.buyers.models import BuyerUser
+        if ClientUser.objects.filter(email=data['email']).exists() or BuyerUser.objects.filter(email=data['email'].lower()).exists():
             return Response({'detail': 'That email already has an account.'}, status=status.HTTP_400_BAD_REQUEST)
 
         client = request.user.client

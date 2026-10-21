@@ -62,8 +62,9 @@ def test_vendors_are_your_own_and_search_finds_them_and_numbers(company, member_
     assert api.get('/api/search?q=0001').json()[0]['label'] == '(916) •••-0001'
 
 
-def test_no_vendors_sends_nothing_so_the_page_keeps_its_rows(company, member_user):
-    assert browser_for(member_user).get('/api/vendors').json() == {}
+def test_no_vendors_says_so_instead_of_the_sample(company, member_user):
+    page = browser_for(member_user).get('/api/vendors').json()
+    assert page['vendors'] == [] and page['gradeMix'] == 'Not measured' and page['disputeCandidates'] == 0
 
 
 def test_updated_time_is_the_last_read(company, member_user):

@@ -12,6 +12,7 @@ from apps.accounts.models import ClientUser, Invite
 from apps.billing.models import renewals_within
 from apps.clients.models import Client
 from apps.connections.models import Connection, Status
+from apps.regulatory.models import LawItem
 
 
 
@@ -23,6 +24,19 @@ def locked_count(now) -> int:
     failures = AccessEntry.objects.filter(action='sign_in_failed', at__gte=now - WINDOW)
     emails = failures.values_list('object', flat=True).distinct()
     return sum(1 for email in emails if failures.filter(object=email).count() >= MAX_FAILURES)
+
+
+def rulebook_tile() -> dict:
+    """Module 13: rules that change results but still need a decision."""
+    from apps.rulebook.health import check
+    from apps.rulebook.lookup import NoRulebook
+    try:
+        data = check()
+    except NoRulebook:
+        return {'tag': 'Rulebook', 'value': 0, 'foot': 'No Rulebook loaded', 'url': reverse('admin:rulebook_rulevalue_changelist')}
+    c = data['counts']
+    return {'tag': 'Rules needing a decision', 'value': len(data['pending']),
+            'foot': f'{c["tbd"]} not set · {c["proposed"]} proposed · {c["set"]} set', 'url': reverse('admin:rulebook_rulevalue_check')}
 
 
 def dashboard(request, context: dict) -> dict:
@@ -42,6 +56,9 @@ def dashboard(request, context: dict) -> dict:
                  f'{Connection.objects.filter(status__in=[Status.FAILED, Status.STALE]).count()} failed or stale',
                  'admin:clients_client_changelist'),
             stat('Renewals · 30 days', renewals_within(30).count(), 'Contracts ending or renewing soon', 'admin:clients_client_changelist'),
+            rulebook_tile(),
+            stat('New law items', LawItem.objects.filter(state='new', level='High').count(),
+                 f'High · {LawItem.objects.filter(state="new").count()} new in all (law watcher)', 'admin:regulatory_lawitem_changelist'),
             stat('Sign-ins · 24 h', day.filter(action='sign_in').count(),
                  f'{day.filter(action="sign_in_failed").count()} failed · {locked_count(now)} locked now', 'admin:access_log_accessentry_changelist'),
         ],

@@ -25,6 +25,7 @@ FEEDS = {'dialer': ['CON', 'DLR', 'PRV', 'CTF', 'IDD', 'SHK', 'REV', 'REC', 'IDN
 UPLOAD_ROWS = [
     ('Internal do-not-contact list', None), ('Policies, training, contracts', None), ('Complaint log', None),
     ('DNC check records', 'Blocks M13'), ('Reassigned-number query logs', 'Blocks M11'),
+    ('Vendor lead files', None),  # Module 12: leads that do not pass through a CRM
 ]
 TIER = {Kind.CERTIFICATES: 2}  # certificates come from an independent third party; the client's own tools are tier 3
 STATE = {'live': 'current', 'catching_up': 'current', 'stale': 'stale', 'never': 'not_supplied'}
@@ -55,7 +56,7 @@ def tool_row(connection, cursor) -> dict:
 
 
 UPLOAD_FEEDS = {'Internal do-not-contact list': ['IDN'], 'Policies, training, contracts': ['GOV', 'VND'], 'Complaint log': ['INC'],
-                'DNC check records': ['NDN', 'SDN'], 'Reassigned-number query logs': ['RND']}
+                'DNC check records': ['NDN', 'SDN'], 'Reassigned-number query logs': ['RND'], 'Vendor lead files': ['LPV', 'VND']}
 
 
 def upload_row(client, i: int, name: str, blocks) -> dict:

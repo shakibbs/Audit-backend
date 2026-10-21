@@ -15,7 +15,7 @@ class RuleValueAdmin(CivModelAdmin):
     page_sub = ('Every legal setting and parameter the engine uses, by place and date. Read only: rules change in the '
                 'Rulebook file, reviewed and pushed. Set = decided · Proposed = runs, results provisional · '
                 'TBD = never scored (rule pending).')
-    list_display = ('key', 'place', 'shown', 'status_pill', 'owner', 'counsel_item', 'affects', 'version')
+    list_display = ('key', 'place', 'shown', 'status_pill', 'owner', 'counsel_item', 'affects', 'version', 'history_link')
     list_filter = ('status', 'owner', 'section', 'jurisdiction', 'affects_status', 'version')
     search_fields = ('key', 'meaning', 'shown', 'counsel_item')
     list_per_page = 200
@@ -30,6 +30,31 @@ class RuleValueAdmin(CivModelAdmin):
     @admin.display(description='Status', ordering='status')
     def status_pill(self, rule):
         return format_html('<span class="civ"><span class="pill pill-{}">{}</span></span>', STATUS_PILL[rule.status], rule.get_status_display())
+
+    @admin.display(description='History')
+    def history_link(self, rule):
+        from django.urls import reverse
+        return format_html('<a href="{}">History</a>', reverse('admin:rulebook_rulevalue_history', args=[rule.key]))
+
+    def get_urls(self):
+        from django.urls import path
+        return [path('check/', self.admin_site.admin_view(self.check_view), name='rulebook_rulevalue_check'),
+                path('history/<str:key>/', self.admin_site.admin_view(self.history_view), name='rulebook_rulevalue_history'),
+                *super().get_urls()]
+
+    def check_view(self, request):
+        from django.template.response import TemplateResponse
+
+        from .health import check
+        return TemplateResponse(request, 'rulebook/check.html', {**self.admin_site.each_context(request), 'title': 'Rulebook check', 'data': check()})
+
+    def history_view(self, request, key):
+        from django.template.response import TemplateResponse
+        from django.urls import reverse
+
+        from .health import history
+        return TemplateResponse(request, 'rulebook/history.html', {**self.admin_site.each_context(request), 'title': f'History · {key}',
+                                                                   'key': key, 'rows': history(key), 'back_url': reverse('admin:rulebook_rulevalue_check')})
 
     @admin.display(description='Changes results', boolean=True, ordering='affects_status')
     def affects(self, rule):

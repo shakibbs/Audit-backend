@@ -198,31 +198,12 @@ def vendor_id(name: str) -> str:
 
 
 class VendorsView(APIView):
-    """Vendor Ledger: the client's own vendors (as its CRM names them, else certificate websites) and their leads this
-    month. Scores, grades, signals, terms and disputes come with Module 12: "not enough data" until then."""
+    """Vendor Ledger: the client's vendor scorecards (Module 12, `vendors.portal`)."""
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        from collections import Counter
-
-        from django.utils import timezone
-
-        from apps.imports.models import CrmCreation
-
-        from .models import Provenance
-        client = request.user.client
-        start, end = month_bounds(timezone.localdate())
-        named = Counter(CrmCreation.objects.filter(client=client, created_at__date__gte=start, created_at__date__lte=end)
-                        .exclude(vendor='').values_list('vendor', flat=True))
-        if not named:
-            named = Counter(Provenance.objects.filter(client=client, basis='cert_domain', first_contact_at__date__gte=start)
-                            .values_list('source_name', flat=True))
-        if not named:
-            return Response({})
-        return Response({'vendors': [
-            {'id': vendor_id(name), 'name': name, 'subId': None, 'leads': n, 'highSignals': 0,
-             'score': None, 'grade': None, 'monthOnMonth': None, 'alert': False, 'notEnoughData': True, 'history': [],
-             'termsOnFile': False, 'disputeCandidates': 0, 'rates': []} for name, n in named.most_common(50)]})
+        from apps.vendors.portal import vendors_page
+        return Response(vendors_page(request.user.client))
 
 
 class SearchView(APIView):
@@ -247,5 +228,6 @@ class SearchView(APIView):
                     hits.append({'kind': 'number', 'id': number_ref(token), 'label': label, 'hint': 'Evidence file'})
         if len(q) >= 2:
             for name in CrmCreation.objects.filter(client=client, vendor__icontains=q).values_list('vendor', flat=True).distinct()[:5]:
-                hits.append({'kind': 'vendor', 'id': vendor_id(name), 'label': name, 'hint': 'Vendor'})  # opens its Vendor Ledger row
+                from apps.vendors.rates import vendor_key
+                hits.append({'kind': 'vendor', 'id': vendor_id(f'{vendor_key(name)}|'), 'label': name, 'hint': 'Vendor'})  # opens its Vendor Ledger row
         return Response(hits[:10])

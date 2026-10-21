@@ -11,7 +11,7 @@ from apps.admin_panel.base import CivModelAdmin
 
 from .approve import approve, reject
 from .forms import RegChangeForm, RuleUpdateForm
-from .models import ClientSuggestion, RegChange, RuleUpdate
+from .models import ClientSuggestion, LawItem, RegChange, RuleUpdate
 from apps.rulebook.apply import OverlapRefused
 
 STATUS_PILL = {'proposed': 'gray', 'adopted': 'teal', 'in_force': 'green', 'court_ruling': 'amber'}
@@ -155,3 +155,142 @@ class ClientSuggestionAdmin(CivModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(LawItem)
+class LawItemAdmin(CivModelAdmin):
+    """Module 13 step 1: what the law watcher found. Read the source, then add a law change (Regulatory changes) or
+    dismiss the item. Nothing here changes the Rulebook."""
+    eyebrow = 'Rules'
+    page_sub = ('New FCC rules and proposed rules from the Federal Register that mention calling or texting, found every '
+                'morning. Open the source; if it changes a rule, add it under Regulatory changes. Otherwise dismiss it.')
+    list_display = ('level_shown', 'published_on', 'stage', 'title_shown', 'rules_shown', 'state')
+    list_filter = ('state', 'level', 'stage', 'kind', 'source')
+    search_fields = ('title', 'summary', 'ref')
+    readonly_fields = [f.name for f in LawItem._meta.fields if f.name != 'state']
+    fields = ('make_change_button', 'title', 'kind', 'level_shown', 'stage_shown', 'published_on', 'effective_on', 'agencies', 'summary', 'source_link',
+              'current_rules', 'ai_draft', 'dockets_shown', 'follows_shown', 'matched_shown', 'state')
+    actions = ('dismiss',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return [*self.readonly_fields, 'make_change_button', 'source_link', 'level_shown', 'stage_shown', 'rules_shown', 'current_rules', 'ai_draft', 'dockets_shown', 'follows_shown',
+                'matched_shown']
+
+    @admin.display(description='Stage')
+    def stage_shown(self, item):
+        return {'proposed': 'Proposed (not law yet)', 'final': 'Final (not in force yet)', 'in_force': 'In force'}.get(item.stage, item.stage)
+
+    @admin.display(description='Law change')
+    def make_change_button(self, item):
+        if item.reg_change_id:
+            url = reverse('admin:regulatory_regchange_change', args=[item.reg_change_id])
+            return format_html('<a class="civ-btn civ-btn-ghost" href="{}">Open its law change</a>', url)
+        url = reverse('admin:regulatory_lawitem_make_change', args=[item.pk])
+        return format_html('<a class="civ-btn" href="{}">Create a law change from this item</a>', url)
+
+    def get_urls(self):
+        return [path('<int:pk>/make-change/', self.admin_site.admin_view(self.make_change_view), name='regulatory_lawitem_make_change'),
+                *super().get_urls()]
+
+    def make_change_view(self, request, pk):
+        from django.core.exceptions import PermissionDenied
+        from django.template.response import TemplateResponse
+
+        from .from_item import make_change
+        if not request.user.has_perm('regulatory.add_regchange'):
+            raise PermissionDenied
+        item = get_object_or_404(LawItem, pk=pk)
+        if request.method == 'POST':
+            change = make_change(item, request.user)
+            messages.success(request, 'Law change created. Check its summary and rule updates, then it goes to the lawyers for review.')
+            return redirect('admin:regulatory_regchange_change', change.pk)
+        drafts = sum(1 for d in item.ai_drafts if d.get('known') and d.get('quote'))
+        return TemplateResponse(request, 'regulatory/create_change.html', {
+            **self.admin_site.each_context(request), 'title': 'Create a law change', 'item': item, 'drafts': drafts,
+            'back_url': reverse('admin:regulatory_lawitem_change', args=[item.pk])})
+
+    @admin.display(description="AI's draft")
+    def ai_draft(self, item):
+        if item.ai_done_at is None:
+            from .drafting import active
+            return 'No AI chosen yet: read the source and write the summary yourself.' if active() is None else 'Waiting for the AI (drafted each morning).'
+        sure = f' · {100 * item.ai_confidence:.0f}% sure' if item.ai_confidence is not None else ''
+        head = format_html('<p><strong>Summary</strong> ({}, read the {}{}): {}</p>', item.ai_model,
+                           'full document' if item.ai_read == 'full_text' else 'official summary', sure, item.ai_summary or '-')
+        rows = format_html_join('', '<div><code>{}</code> → <strong>{}</strong> from {} <span class="tiny">“{}”{}</span></div>',
+                                ((d['key'], d.get('shown') or d.get('value'), d.get('effective_from') or 'no date given', d['quote'][:300],
+                                  '' if d.get('known') else ' · not a rule CiV has') for d in item.ai_drafts))
+        return format_html('{}{}<p class="tiny">A draft only: check each value against its sentence in the source.</p>', head, rows or 'No value drafted.')
+
+    @admin.display(description='FCC case numbers')
+    def dockets_shown(self, item):
+        return ', '.join(item.dockets) or 'None given'
+
+    @admin.display(description='Follows the proposal')
+    def follows_shown(self, item):
+        if item.follows is None:
+            return 'None'
+        url = reverse('admin:regulatory_lawitem_change', args=[item.follows_id])
+        return format_html('<a href="{}">{}</a>', url, item.follows)
+
+    @admin.display(description='Calling words found')
+    def matched_shown(self, item):
+        return ', '.join(item.matched) or '-'
+
+    @admin.display(description='Title')
+    def title_shown(self, item):
+        return item.title[:140]
+
+    def get_queryset(self, request):
+        from django.db.models import Case, IntegerField, Value, When
+        order = Case(When(level='High', then=Value(0)), When(level='Medium', then=Value(1)), default=Value(2), output_field=IntegerField())
+        return super().get_queryset(request).annotate(rank=order).order_by('rank', '-published_on')
+
+    @admin.display(description='Level', ordering='rank')
+    def level_shown(self, item):
+        color = {'High': 'red', 'Medium': 'amber'}.get(item.level, 'gray')
+        return format_html('<span class="civ"><span class="pill pill-{}">{}</span></span>', color, item.level)
+
+    @admin.display(description='Rules it may touch')
+    def rules_shown(self, item):
+        return ', '.join(item.rule_keys) or 'None found'
+
+    @admin.display(description='Existing rules it may change (value in force today)')
+    def current_rules(self, item):
+        from datetime import date
+
+        from apps.rulebook.lookup import NoRulebook, RuleSet
+        try:
+            rules = RuleSet('internal')
+        except NoRulebook:
+            rules = None
+        lines = []
+        for key in item.rule_keys:
+            if key.startswith('M'):
+                lines.append((key, 'a metric CiV measures, not a Rulebook value', ''))
+                continue
+            try:
+                rule = rules.get(key, on=date.today()) if rules else None
+            except LookupError:
+                rule = None
+            if rule is None:
+                lines.append((key, 'not in the Rulebook', ''))
+            else:
+                since = f'since {rule.effective_from:%-d %b %Y}' if rule.effective_from else 'since the start'
+                lines.append((key, f'now {rule.shown}', f'{rule.status.capitalize()} · {since}'))
+        if not lines:
+            return 'None found'
+        return format_html_join('', '<div><code>{}</code>: <strong>{}</strong> <span class="tiny">{}</span></div>', lines)
+
+    @admin.display(description='Source')
+    def source_link(self, item):
+        return format_html('<a class="civ-btn civ-btn-ghost" href="{}" target="_blank" rel="noopener">Open in the Federal Register ↗</a>', item.url)
+
+    @admin.action(description='Dismiss: not a calling-rule change')
+    def dismiss(self, request, queryset):
+        n = queryset.exclude(state=LawItem.State.DISMISSED).update(state=LawItem.State.DISMISSED)
+        record('law_items_dismissed', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email, object=f'{n} items')
+        messages.info(request, f'{n} item(s) dismissed.')

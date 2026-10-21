@@ -23,6 +23,8 @@ ACTION_LABEL = {
     'rule_update_approved': ('Rule updated', 'green'), 'rule_update_rejected': ('Rule update rejected', 'gray'),
     'proof_request_answered': ('Proof request answered', 'teal'), 'proof_file_opened': ('Proof file opened', 'gray'),
     'proof_reviewed': ('Proof checked', 'teal'), 'upload_received': ('File uploaded', 'teal'), 'lead_source_marked': ('Lead source check marked', 'gray'),
+    'attestation_viewed': ('Insurer opened your sheet', 'teal'), 'attestation_sent': ('Sheet sent to insurer software', 'teal'),
+    'attestation_send_failed': ('Sheet send to insurer failed', 'amber'),
     'client_key_created': ('Phone-code key made', 'teal'), 'client_key_destroyed': ('Phone-code key destroyed', 'red'),
 }
 

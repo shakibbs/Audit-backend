@@ -129,3 +129,30 @@ def test_only_the_result_and_a_fingerprint_are_kept(company):
     review = ConversationReview.objects.get()
     kept = ' '.join(str(v) for v in review.__dict__.values())
     assert 'call me again' not in kept.lower() and len(review.thread_sha256) == 64
+
+
+def test_spoken_consent_is_flagged_for_a_person_to_confirm(company):
+    """Module 16: the same AI answer marks where the customer said yes; only the customer's words count."""
+    c = call(company, [{'who': 'business', 'text': 'May we call you about solar?', 'at': 3.0},
+                       {'who': 'customer', 'text': 'Yes, you can call me', 'at': 7.0}])
+
+    def agreeing(turns):
+        return 'none', None, 0.95, {'consent': 1}
+    agreeing.model = 'pretend-ai'
+    ai.use(agreeing)
+    speech.use(transcriber)
+    review_due(company)
+    review = ConversationReview.objects.get()
+    assert review.consent_check == 'waiting' and review.consent_at == c.occurred_at + timedelta(seconds=7.0)
+
+
+def test_an_agent_saying_yes_is_not_consent(company):
+    call(company, [{'who': 'business', 'text': 'Yes, we can call you', 'at': 3.0}])
+
+    def wrong(turns):
+        return 'none', None, 0.95, {'consent': 0}
+    wrong.model = 'pretend-ai'
+    ai.use(wrong)
+    speech.use(transcriber)
+    review_due(company)
+    assert ConversationReview.objects.get().consent_check == ''

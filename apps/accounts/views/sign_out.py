@@ -9,9 +9,15 @@ from apps.accounts.session import sign_out
 
 
 class SignOutView(APIView):
-    permission_classes = [IsClientUser]
-
     def post(self, request):
+        from apps.buyers.models import BuyerUser
+        from apps.buyers.session import sign_out as buyer_out
+        if isinstance(request.user, BuyerUser):  # Module 15
+            buyer_out(request)
+            request.session.cycle_key()
+            return Response(session_data(None))
+        if not IsClientUser().has_permission(request, self):
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=401)
         user = request.user
         sign_out(request)
         record('sign_out', request=request, actor_kind='client_user', actor_id=user.pk,

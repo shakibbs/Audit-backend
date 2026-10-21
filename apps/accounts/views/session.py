@@ -11,5 +11,9 @@ from apps.accounts.serializers.session import session_data
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class SessionView(APIView):
     def get(self, request):
+        from apps.buyers.models import BuyerUser
+        from apps.buyers.session import session_data as buyer_data
+        if isinstance(request.user, BuyerUser):
+            return Response(buyer_data(request.user))  # Module 15: an insurer or acquirer user
         user = request.user if isinstance(request.user, ClientUser) else None
         return Response(session_data(user))

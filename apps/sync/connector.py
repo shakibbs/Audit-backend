@@ -43,6 +43,11 @@ class Connector:
         """The tool's own total of `measure` from start up to (not including) end, asked in one request."""
         raise NotImplementedError
 
+    def fetch_one(self, record_id: str) -> Record | None:
+        """The record again, by its ID in the tool, built exactly as when it was synced (Module 14 re-fetch check).
+        None = the tool no longer has it. A tool that cannot fetch one record raises NotImplementedError."""
+        raise NotImplementedError
+
     def parse_event(self, body: bytes, headers: dict) -> list[Record]:
         """A live notice from the tool. Must check the tool's signature and raise BadSignature if wrong."""
         raise NotImplementedError

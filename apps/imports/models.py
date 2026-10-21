@@ -11,6 +11,8 @@ class CrmCreation(models.Model):
     created_by = models.CharField(max_length=120, blank=True)  # the CRM's user ID
     how = models.CharField(max_length=30, blank=True)  # the tool's own label when it gives one (HubSpot: IMPORT, FORM…)
     vendor = models.CharField(max_length=120, blank=True)  # the lead's vendor as the CRM names it (lead provenance, Module 8)
+    sub_id = models.CharField(max_length=60, blank=True)  # the vendor's sub-source, when the CRM names one (vendor scorecard, Module 12)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # what the lead cost, when the CRM says (dispute list)
     # Update uploads (Module 8): a fingerprint of the opt-out, do-not-call and lead-source fields, never their values,
     # and whether the record is marked opted out now.
     watched_sha = models.CharField(max_length=64, blank=True)

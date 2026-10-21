@@ -99,9 +99,19 @@ def capture_due(browser_factory=None, limit: int = PER_RUN) -> int:
 def purge_old(now=None) -> int:
     """Captures older than 4 years: the screenshot and words are deleted; the hashes and fingerprint stay."""
     now = now or timezone.now()
-    old = PageCapture.objects.filter(captured_at__lt=now - timedelta(days=365 * KEEP_YEARS + 1), purged_at__isnull=True)
+    old = PageCapture.objects.filter(captured_at__lt=now - timedelta(days=365 * KEEP_YEARS + 1), purged_at__isnull=True).select_related('page')
     count = 0
+    from apps.consent.models import ConsentProof
+    from apps.evidence.holds import Holds
+    from apps.vendors.rates import vendor_key
+
+    from .api import page_vendor
+    holds = Holds()
     for capture in old:
+        tokens = ConsentProof.objects.filter(client_id=capture.client_id, certificate__page=capture.page.address).values_list('phone_token', flat=True)
+        vendor = page_vendor(capture.page)
+        if holds.covers(capture.client_id, capture.captured_at, tokens, [vendor_key(vendor)] if vendor else []):
+            continue  # under a legal hold (Module 14)
         if capture.screenshot:
             capture.screenshot.delete(save=False)
         PageCapture.objects.filter(pk=capture.pk).update(screenshot='', text='', consent_block='', purged_at=now)

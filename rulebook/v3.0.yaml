@@ -923,13 +923,26 @@ rules:
   value: false
 - key: vendor_required_clauses
   section: Records
-  meaning: Clauses each vendor contract must contain
+  meaning: Clauses each vendor contract must contain (draft by CiV for the clients' lawyers to review, owner decision 2026-10-22; required = counted in M07, recommended = shown)
   owner: Counsel
-  status: tbd
+  status: proposed
   counsel_item: A15b
   affects_status: false
   counsel_approved: false
-  shown: Not set yet
+  shown: 12 clauses, 5 required (draft)
+  value:
+  - {id: consent, name: 'Prior express written consent naming the client', required: true}
+  - {id: certificate, name: 'A consent certificate the client can claim for every lead', required: true}
+  - {id: proof_on_request, name: 'Consent records sent within 5 business days on request, kept at least 5 years', required: true}
+  - {id: no_resale, name: 'No resale to many sellers; aged or recycled leads disclosed', required: false}
+  - {id: fresh, name: 'Leads delivered within 24 hours of consent', required: false}
+  - {id: optouts_passed, name: 'Opt-outs received by the vendor passed on, and the number never sold again', required: true}
+  - {id: dnc_checked, name: 'Leads checked against the National Do Not Call Registry before sale', required: false}
+  - {id: sub_vendors, name: 'Every sub-source named and held to the same terms', required: false}
+  - {id: indemnity, name: 'The vendor indemnifies the client for claims from its leads', required: true}
+  - {id: insurance, name: 'Insurance that covers TCPA claims', required: false}
+  - {id: audit_right, name: 'The client may audit how consent is collected', required: false}
+  - {id: refunds, name: 'Bad leads may be returned for credit within a stated window', required: false}
 - key: vendor_active_days
   section: Records
   meaning: Vendor active if it sent a lead within

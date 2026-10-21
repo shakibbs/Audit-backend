@@ -94,7 +94,8 @@ def score_page(client, key: str | None) -> dict:
     raw = grade_of(value, bands)
     exposure = run.score.get('exposure', {})
     hard = exposure.get('caps', {}).get('hard', {})
-    held_grade = 'C' if hard.get('state') == 'held' and raw in 'AB' else raw
+    cov = exposure.get('caps', {}).get('coverage', {})
+    held_grade = 'C' if (hard.get('state') == 'held' or cov.get('state') == 'held') and raw in 'AB' else raw
     history = []
     for p in months_back(run.period, 3) + [run.period]:
         r = latest(client, p)
@@ -119,12 +120,17 @@ def score_page(client, key: str | None) -> dict:
             {'name': 'Contact-after-stop cap', 'held': bool(stop_held),
              'detail': ('Contact after a stop or a do-not-call entry: ' + ', '.join(d['code'] for d in stop_held) + ' held at D.') if stop_held
              else 'No contact after a stop or a do-not-call entry.'},
-            {'name': 'Coverage cap', 'held': False, 'detail': 'Not measured yet: evidence coverage (M36) comes later.'},
+            {'name': 'Coverage cap', 'held': cov.get('state') == 'held',
+             'detail': {'held': f"Evidence coverage is {100 * cov.get('value', 0):.0f}%, below the {100 * cov.get('floor', 0.6):.0f}% floor. Overall grade held at {cov.get('grade', 'C')}.",
+                        'clear': f"Evidence coverage is {100 * cov.get('value', 0):.0f}%, above the {100 * cov.get('floor', 0.6):.0f}% floor."}.get(
+                 cov.get('state'), 'Not measured: no score computed yet.')},
         ],
         'partial': {'factorsMeasured': measured, 'factors': len(factors)} if measured < len(factors) else None,
         'draftBands': True,
         'exposure': {'value': exposure.get('value'), 'grade': exposure.get('grade'), 'defect': run.score.get('defect')},
     }
+    if run.score.get('coverage', {}).get('value') is not None:
+        out['evidenceCoverage'] = run.score['coverage']['value']  # M36 (Module 14); before it, the portal keeps its sample
     if len(history) > 1:
         out['previous'] = history[-2]['score']
     out.update(projection(client, run, bands, value, hard))

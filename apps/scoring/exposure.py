@@ -6,7 +6,7 @@
 - Volume from the real contacts of the 12 months to the month's end; 1.30 only above 1M with both calls and texts;
 - Targeting 1.00 until lawsuit data exists (step 4b);
 - caps that hold the grade at C or worse: the hard cap (legal-basis contacts with no proof above hard_cap_share; rule
-  pending while that value is TBD) and the coverage cap (waits for M36)."""
+  pending while that value is TBD) and the coverage cap (M36 below 60 %, Module 14)."""
 from datetime import timedelta
 
 from apps.consent.models import ConsentResult
@@ -71,11 +71,11 @@ def hard_cap(client, start, end, on) -> dict:
     return {'state': 'held' if bad > float(share) else 'clear', 'share': round(bad, 4)}
 
 
-def exposure(client, start, end, contacts, defect: float | None, on) -> dict:
+def exposure(client, start, end, contacts, defect: float | None, on, coverage_cap: dict | None = None) -> dict:
     s = settings(on)
     v, vol = venue(contacts, s), volume(client, end, s)
     t = {'value': 1.0, 'note': 'No lawsuit data yet'}
-    caps = {'hard': hard_cap(client, start, end, on), 'coverage': {'state': 'not_measured', 'note': 'Waits for evidence coverage (M36)'}}
+    caps = {'hard': hard_cap(client, start, end, on), 'coverage': coverage_cap or {'state': 'not_measured'}}  # coverage: M36 (Module 14)
     if defect is None:
         return {'venue': v, 'targeting': t, 'volume': vol, 'caps': caps, 'value': None, 'grade': None}
     raw = defect * v['value'] * t['value'] * vol['value']

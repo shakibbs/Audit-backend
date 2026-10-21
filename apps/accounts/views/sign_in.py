@@ -17,6 +17,18 @@ WRONG = 'That email and password do not match an account.'
 LOCKED = 'Too many tries. Wait 15 minutes, then try again.'
 
 
+def buyer_sign_in(request, email: str, password: str):
+    from apps.buyers.models import BuyerUser
+    from apps.buyers.session import session_data as buyer_data
+    from apps.buyers.session import sign_in as buyer_in
+    buyer = BuyerUser.objects.select_related('org').filter(email=email.lower()).first()
+    if buyer is None or not buyer.check_password(password) or not buyer.is_active or not buyer.org.is_active:
+        return None
+    buyer_in(request, buyer)
+    record('sign_in', request=request, actor_kind='anonymous', actor_label=f'{buyer.email} ({buyer.org.name})')
+    return Response(buyer_data(buyer))
+
+
 @method_decorator(csrf_protect, name='dispatch')
 class SignInView(APIView):
     def post(self, request):
@@ -29,6 +41,10 @@ class SignInView(APIView):
             return Response({'detail': LOCKED}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
         user = ClientUser.objects.select_related('client').filter(email=email).first()
+        if user is None:
+            buyer = buyer_sign_in(request, email, password)  # Module 15: an insurer or acquirer user
+            if buyer is not None:
+                return buyer
         if user is None:
             make_password(password)  # same work as a real check, so timing does not reveal unknown emails
         ok = user is not None and user.check_password(password) and user.is_active and user.client.is_active

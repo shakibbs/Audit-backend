@@ -7,6 +7,7 @@ class AccessEntry(models.Model):
         CLIENT_USER = 'client_user', 'Client user'
         STAFF = 'staff', 'CiV staff'
         SYSTEM = 'system', 'System'
+        BUYER = 'buyer', 'Insurer or acquirer'
         ANONYMOUS = 'anonymous', 'Not signed in'
 
     at = models.DateTimeField(auto_now_add=True, db_index=True)

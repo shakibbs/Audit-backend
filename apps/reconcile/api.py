@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsClientUser
+from apps.buyers.authentication import IsBuyerUser
 from apps.connections.providers import PROVIDERS
 
 from .models import PeriodIntegrity, Reconciliation
@@ -73,15 +74,24 @@ def attestation(client) -> dict:
 
 
 class OwnInsuredView(APIView):
-    permission_classes = [IsClientUser]
+    """A client's own page; for an insurer or acquirer, a shared company's newest snapshot (Module 15)."""
+    permission_classes = [IsClientUser | IsBuyerUser]
 
     def get(self, request, ref: str):
+        from apps.buyers.models import BuyerUser
+        if isinstance(request.user, BuyerUser):
+            from apps.buyers.portal import one
+            return one(request, ref)
         from apps.scoring.portal import exposure_reading
         client = request.user.client
         out = attestation(client)
         reading = exposure_reading(client)  # Module 10: the factor map and Exposure from the saved scores
         if reading:
             out['exposure'] = {'inside': reading}
+        from apps.buyers.attestation import statements
+        signed = statements(client)  # Module 15: the company's signed statements, conflicts shown
+        out.update({'statements': signed['statements'], 'conflicts': signed['conflicts'], 'statementRows': signed['statementRows'],
+                    'signedBy': signed['signedBy'], 'asOf': signed['asOf']})
         month = PeriodIntegrity.objects.filter(client=client).first()  # latest month checked
         if month is not None:
             out['completeness'] = month.completeness

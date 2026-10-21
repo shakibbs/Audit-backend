@@ -82,6 +82,14 @@ class Vicidial(Connector):
                       content_kind='call', changed_at=datetime.fromtimestamp(int(row['start_epoch']), UTC),
                       phones=[number] if row.get('phone_number') else [])
 
+    def fetch_one(self, record_id: str) -> Record | None:
+        name, _, key = record_id.partition(':')
+        table = next((t for t in TABLES if t.name == name), None)
+        if table is None:
+            raise NotImplementedError
+        rows = self.query(f'SELECT {table.columns} FROM {table.table} WHERE {table.id_column} = %s LIMIT 1', (key,))
+        return self.record(rows[0], table) if rows else None
+
     def start_epoch(self) -> int:
         return int(datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC).timestamp())
 

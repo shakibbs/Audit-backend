@@ -13,6 +13,7 @@ class Source(models.TextChoices):
     COMPLAINTS = 'complaints', 'Complaint log'
     DNC_CHECKS = 'dnc_checks', 'DNC check records'
     RND_QUERIES = 'rnd_queries', 'Reassigned-number query logs'
+    VENDOR_LEADS = 'vendor_leads', 'Vendor lead files'  # Module 12: leads that do not pass through a CRM
 
 
 def upload_path(upload, filename: str) -> str:

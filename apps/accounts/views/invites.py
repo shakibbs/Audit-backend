@@ -26,8 +26,12 @@ def open_invite(token: str) -> Invite | None:
 
 class InviteCheckView(APIView):
     def get(self, request):
-        invite = open_invite(request.query_params.get('token', ''))
+        token = request.query_params.get('token', '')
+        invite = open_invite(token)
         if invite is None:
+            from apps.buyers.invite import open_invite as open_buyer_invite
+            if (buyer_invite := open_buyer_invite(token)) is not None:  # Module 15: a person at an insurer or acquirer
+                return Response({'email': buyer_invite.email, 'name': buyer_invite.name, 'clientName': buyer_invite.org.name})
             return Response({'detail': BAD_LINK}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'email': invite.email, 'name': invite.name, 'clientName': invite.client.name})
 
@@ -36,7 +40,9 @@ class InviteCheckView(APIView):
 class AcceptInviteView(APIView):
     def post(self, request):
         invite = open_invite(str(request.data.get('token', '')))
-        if invite is None or ClientUser.objects.filter(email=invite.email).exists():
+        if invite is None:
+            return accept_buyer(request)  # Module 15
+        if ClientUser.objects.filter(email=invite.email).exists():
             return Response({'detail': BAD_LINK}, status=status.HTTP_400_BAD_REQUEST)
 
         form = AcceptInviteSerializer(data=request.data)
@@ -52,3 +58,19 @@ class AcceptInviteView(APIView):
         record('invite_accepted', request=request, actor_kind='client_user', actor_id=user.pk,
                actor_label=user.email, client_id=user.client_id)
         return Response(session_data(user))
+
+
+def accept_buyer(request):
+    """An insurer or acquirer person sets a password from a client's invite (Module 15) and is signed in."""
+    from apps.buyers.invite import accept, open_invite as open_buyer_invite
+    from apps.buyers.models import BuyerUser
+    from apps.buyers.session import session_data as buyer_data, sign_in as buyer_in
+    invite = open_buyer_invite(str(request.data.get('token', '')))
+    if invite is None or BuyerUser.objects.filter(email=invite.email).exists() or ClientUser.objects.filter(email__iexact=invite.email).exists():
+        return Response({'detail': BAD_LINK}, status=status.HTTP_400_BAD_REQUEST)
+    form = AcceptInviteSerializer(data=request.data)
+    form.is_valid(raise_exception=True)
+    user = accept(invite, form.validated_data['password'])
+    buyer_in(request, user)
+    record('invite_accepted', request=request, actor_kind='anonymous', actor_label=f'{user.email} ({user.org.name})', client_id=invite.client_id)
+    return Response(buyer_data(user))

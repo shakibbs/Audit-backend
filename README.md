@@ -1046,3 +1046,243 @@ before (`monthly-reports`) and on "Generate"; kept **4 years**, then the file is
 `GET /api/reports` (history), `POST /api/reports` {name, period} (period report and Rulebook snapshot are made; other
 types are recorded as "not available yet"; the **metric export** is a CSV of the month's saved metrics: value, shown,
 state, 0–100 score, note), `GET /api/reports/period?period=`, `GET /api/reports/rep-<id>/file`.
+
+## Vendor scorecard (Module 12)
+
+### Vendor rates (step 1)
+
+`apps/vendors/rates.py`. A **lead** is a CRM record that names a vendor (Module 8), called or not; the CRM's sub-source
+field (`sub_id`, `aff_sub`, …) is read into `crm_creation.sub_id`, so each vendor has a row and a row per sub-ID (owner
+decision 2026-10-22). Over `vs_window_days` (90): **consent problems** (called leads NO_PROOF or CONFLICTING),
+**consent gaps** (a required checklist item failed: NP_NO_CONSENT_TEXT, NP_PRETICKED, WK_WORDING), **late delivery**
+(reached the CRM more than 24 h after the consent time), **stops and complaints** (within 30 days of the first contact,
+finished windows only). **High-risk signals** and **name match** need the Lead Inspector signals: not measured yet. A
+rate with nothing to count is left out.
+
+### Score, grade, trend and drop alert (step 2)
+
+`apps/vendors/score.py`: **Vendor score** = clamp 0–100 of 100 × (1 − Σ wᵢ·rᵢ) with `vs_rate_weights`; rates not
+measured are left out and the weights re-normalised (owner decision 2026-10-22: shown as "partial: n of 6 rates
+measured"). Grades from `vs_grade_bands`; under `vs_min_leads_for_score` (100) leads → not enough data. Saved every
+night for the current month (`vendor_month`, locked; earlier months stay), giving a 6-month trend. A fall of
+`vs_alert_drop_points` (10) or more month on month raises a Medium **Vendor score drop** alert (Module 11). `grade_mix`
+is **M29** (vendors at each grade, lowest named).
+
+### Vendor contracts and M07 (step 3)
+
+The Rulebook's `vendor_required_clauses` is now a **CiV draft** (Proposed, owner decision 2026-10-22) for the clients'
+lawyers to review: 12 clauses, 5 required (consent naming the client, a claimable certificate, proof within 5 business
+days kept 5 years, opt-outs passed on, indemnity). The client's Admins and lawyer upload each vendor's contract on the
+Vendor Ledger (`POST /api/vendor-contracts`, multipart: vendor, file, end date, days to return a bad lead); the file is
+private, every opening logged (`GET /api/vendor-contracts/vc-<id>/file`), kept 4 years until the AI reader exists, then
+deleted with its fingerprint kept. **M07** = active vendors (a lead in `vendor_active_days`) with an unexpired contract
+on file, labelled "clauses not checked yet (needs the AI reader)"; not measured until a contract is supplied. Saved
+monthly and scored in F5.
+
+The clause draft is also a **rule update** (data migration `regulatory/0008`, law change "CiV draft: clauses each
+vendor contract must contain"), so the clients' lawyers agree, disagree or suggest a change on Regulatory Changes and
+CiV approves it in the admin panel; on approval the rule becomes **Set**. Fixed on the way: `check_no_overlap` now
+sorts a value with no start date first (the database put it last, so approving an update to such a rule was refused).
+
+### Vendor lead files and the dispute list (step 4)
+
+**Vendor lead files** (owner decision 2026-10-22) are a sixth Upload centre source, for leads that never pass through
+a CRM: a CSV with phone, vendor, sub-ID, received date, price and lead ID. Rows go to `vendor_lead` (locked; the number
+only as a phone code), kept apart from CRM records so they never form a CRM import batch, and count in the vendor
+rates, M07 and disputes like CRM leads. The CRM's price field (`lead_cost`, `price`, `cpl`…) is read into
+`crm_creation.price`. `vendors/disputes.py`: **dispute candidates** are leads with a consent problem (NO_PROOF or
+CONFLICTING; high-risk signals later) inside the vendor's dispute window (the contract's days; no contract →
+`default_dispute_window_days` = 0 → "no contract on file"); leads with no price are counted, flagged and left out of the
+total. **M30** is the total. `GET /api/vendor-disputes?vendor=` (+ `&csv=1`, logged) feeds the vendor panel; the
+Vendor Ledger's dispute column counts them. CiV never contacts vendors.
+
+A vendor lead file may carry the vendor's **consent link** (owner decision 2026-10-22: vendors send each lead with it)
+in a column named for it (`certificate`, `trustedform_url`, `xxTrustedFormCertUrl`, `leadid_token`, `jornaya`… in
+any order): `vendors/lead_certificates.py` queues it to be claimed in the client's account, matches the row's phone
+while the number is in memory, and saves it as the number's consent proof (source "vendor"). Called lead-file numbers
+with no proof get **proof requests** like uploaded CRM lists (`requests.send_lead_files`, one sample per file).
+
+### The Vendor Ledger (step 5)
+
+`vendors/portal.py` feeds `GET /api/vendors`: every vendor and sub-ID with its real score, grade, month-on-month
+change, 6-month trend, drop alert, rates behind the score ("partial: 4 of 6", high-risk signals and name match not
+measured yet), contract and dispute candidates; and the cards (M29 grade mix, dispute candidates, score-drop alerts).
+This month's saved rows are used; before the first nightly save they are worked out on the spot without saving. With
+**no vendors**, the page says so ("No vendors yet…", cards "Not measured") instead of the sample (owner decision
+2026-10-22: a real client never sees sample vendors; the sample stays only for the portal without a backend).
+
+## Rulebook admin + AI law watcher (Module 13)
+
+### Reading the sources (step 1)
+
+`regulatory/watcher.py`, daily at 06:15 UTC (`law-watcher`): the Federal Register's free official API (no key) for FCC
+rules and proposed rules on 47 CFR part 64 and any naming the TCPA; items matching calling words (robocall, TCPA,
+consent, revocation, caller ID, STIR/SHAKEN, autodialer…) are saved once each as `law_item` with their link and the
+source's own abstract (the first run looks back a year, then a week). Admin → Rules → **New law items** lists them;
+staff open the source and add a law change, or dismiss the item. The Rulebook never changes by itself. The FCC's own
+website refuses automated readers (403, 2026-10-22); every FCC rule is published in the Federal Register anyway. Courts
+(CourtListener) and state laws (LegiScan) come later.
+
+### Sorting the items (step 2)
+
+`regulatory/sorting.py`, no AI (owner decision 2026-10-22): fixed word rules tag the Rulebook rules (and metrics) an
+item probably touches (opt-out words → `optout_*`, calling hours, frequency, written consent, autodialer / prerecorded,
+texts, caller ID → M21, reassigned → M11, do-not-call); **High** = a final rule touching a rule that changes results
+(`affects_status`), **Medium** = a proposed rule or a final rule on what CiV only measures, **Low** = the rest; the
+**stage** (proposed · final · in force) follows the dates; a final rule is linked to the earlier proposal with the same
+FCC docket. The admin list is sorted High first with filters, and the admin dashboard shows a **New law items** tile
+(High items waiting). Hints only; nothing changes the Rulebook.
+
+### The AI's draft (step 3)
+
+`regulatory/drafting.py`: an **AI slot, switched off** until the owner chooses the AI (decisions 2026-10-21 /
+2026-10-22): nothing is sent anywhere and nothing costs anything; the item page says "No AI chosen yet". Once on, each
+new item gets a plain-words summary, the rules it changes, and draft values with a start date — each with the
+document's own sentence it came from (a draft without a quote is never kept; a key the Rulebook doesn't have is marked)
+— and how sure the AI is. High items are read in full (the Federal Register's raw text, in memory only), others from the
+official summary. Drafts only prefill the law change CiV staff create (step 4); the Rulebook never changes by itself.
+
+### From law item to law change (step 4)
+
+The law item page has **Create a law change from this item** (a confirm page, then `regulatory/from_item.py`): a law
+change on Regulatory changes filled from the item (title, date, source, the AI's summary or the official one, the rules
+and metrics it touches), marked **To check** (owner decision 2026-10-22). A **final rule** also gets a rule update draft
+(Proposed) for each value the AI drafted with its sentence and a start date; a **proposed rule** gets none until it
+becomes final. The item is marked "Turned into a law change" and links to it. Then the Module 2 process: the clients'
+lawyers review, CiV approves, and approving ends the old value the day before the new one starts.
+
+### Rulebook admin (step 5)
+
+Admin → Rules → **Rulebook check** (`rulebook/health.py`): **Needs a decision** — rules that change results but are
+still not set (shown to clients as "rule pending"), each with how many active clients contacted where it applies in
+the last 30 days, most affected first; **Not confirmed by a lawyer** — rules that change results and run as Proposed.
+Every rule has a **History** page (each value by place with its dates, Rulebook version and who changed / approved
+it; a new value ends the old one the day before). The admin dashboard has a **Rules needing a decision** tile.
+
+## Evidence vault (Module 14)
+
+### A number's evidence file (step 1)
+
+`apps/evidence` (`GET /api/evidence-file/<ref>?format=pdf|json`, the company's Admins and lawyer only, owner decision
+2026-10-22): everything the number page shows (`contacts.api.number_file`, shared) plus, for every record behind it
+(contacts, consent proofs, certificates, opt-outs), the **fingerprint of what CiV saw**, the tool and record ID, when
+CiV fetched it, the day's **seal** (Merkle root, the record's path, timestamp, Bitcoin stamp) and the **seal check**
+(matches / does not match / not sealed yet). The number is masked only (the lawyer adds the real one). The text passes
+the banned-word check first (a hit holds the file back, logged); every download is logged with the file's SHA-256;
+the PDF footer prints the data fingerprint. Wording fixed on the way: "DNC check records", never "scrub" (spec §9).
+
+### The re-fetch check (step 2)
+
+Every connector can now fetch one record again by its ID, built exactly as when it was synced (`Connector.fetch_one`:
+Twilio, Vicidial, HubSpot, Salesforce; Convoso to confirm on a real account; Five9 reports cannot → "this tool cannot be
+asked for one record"). `evidence/refetch.py` fingerprints the record in memory and compares it with every fingerprint
+CiV sealed of it: **matches** / **changed** / **no longer at the source** (`refetch_check`, locked; only fingerprints
+kept). On demand: **Check again at the source** on the number page (`POST /api/evidence-file/<ref>/refetch`, Admins and
+the lawyer); weekly (Sundays 03:40 UTC) a sample of 50 sealed call and text records per client (owner decision
+2026-10-22). Each record's latest result is in the evidence file ("At the source now"); changed records raise a Medium
+alert.
+
+### The re-fetch check (step 2)
+
+`evidence/refetch.py` (`refetch_check`, locked): CiV asks the tool for a record again (`Connector.fetch_one`, now in
+the Twilio, Vicidial, Convoso — to confirm —, HubSpot and Salesforce adapters), fingerprints it in memory and compares
+it with the sealed fingerprints: **Matches** / **Changed** / **No longer at the source** (or "cannot be asked for one
+record" / "did not answer"). On demand for a number (`POST /api/evidence-file/<ref>/refetch`, Admins and lawyer; the
+number page's **Check again at the source** button) and a **weekly sample of 50** sealed call and text records per
+client (Sundays). Results go into the evidence file next to each fingerprint; changed records raise a Medium
+**Records changed at the source** alert (owner decisions 2026-10-22).
+
+### Bulk export and certification pack (step 3)
+
+`evidence/bundle.py`, `POST /api/evidence-bundle {numbers, pack}` (Admins and lawyer, up to **25** numbers): one ZIP
+with each number's evidence file (PDF + JSON; typed numbers become phone codes in memory and are never stored; numbers
+CiV never saw are listed as not found). With `pack`, the **certification pack**: the fingerprint list (record, tool,
+ID, read time, SHA-256, seal day, root, leaf, path, seal check, re-fetch result), how CiV captures records, how to check
+a fingerprint against its seal, and a **custodian declaration template marked a draft for counsel to review**. Every
+file passes the banned-word check; every download is logged. The Reports page's Bulk evidence export box downloads it.
+
+### Legal holds (step 4)
+
+`evidence/holds.py` (`legal_hold`, locked): a hold on **a number** (typed, turned into its phone code, shown masked,
+never stored as typed), **a vendor** (by name key) or **a date range** (two dates). `GET /api/legal-holds` for everyone
+in the company; `POST /api/legal-holds` {scope, target, reason} and `POST /api/legal-holds/lh-<id>/release` for Admins
+and the lawyer (logged). Every 4-year deletion (uploads, proof files, page photos, reports, vendor contracts) checks
+the active holds first and skips what they cover; the number page says "Under legal hold". Fingerprints and seals are
+never deleted anyway.
+
+### M36 evidence coverage and the coverage cap (step 5)
+
+`scoring/coverage.py`: each scored input counts by its source — CiV's capture, an independent source or the client's
+tools by API: 1 · client uploads: 0.7 · statements or missing data (worst case): 0 — weighted by its share of the score
+(factor weight, then within the factor; M10 / M34 twice). Saved on `snapshot_run.score.coverage` with the mix by source
+grade. Below `coverage_cap_floor` (0.60) the grade is held at `coverage_cap_grade` (C), on the Exposure and the Audit
+Score; the score card shows the real coverage and the cap.
+
+## Insurer views (Module 15)
+
+### Insurer accounts and sharing (step 1)
+
+`apps/buyers`. Owner decision 2026-10-22: **the client invites its own insurer or acquirer** from Settings → Insurer
+sharing (`POST /api/buyer-links` {name, email, person, kind, endsOn}, Admins; an acquirer needs an end date); CiV staff
+only see buyers and can block one (Admin → Insurers). A buyer is **one company per email domain** (so a client can never
+put someone into another company's insurer account; a free-mail address is a buyer of its own). Sharing starts at
+once; a person with no account gets an invite link (the same sign-in page as client invites) and then signs in to the
+**underwriter view only** (own session keys; client endpoints refuse them). `POST /api/buyer-links/bl-<id>/revoke`
+stops sharing. In the database, a buyer's requests run in the **buyer scope**: client tables show nothing, and
+`buyer_link` shows only its own rows (`tenancy.sql.lock_buyer_table`). Loss model left out (owner, 2026-10-08).
+
+### Insured statements and the attestation snapshot (step 2)
+
+Owner decision 2026-10-22: statements are signed on the client's own **Risk Attestation** page, in the "C. Insured
+states" card. `POST /api/statements` {topic, text} (Admins or the client's lawyer); topics: `dnc_checked`,
+`internal_list`, `optouts_honored`, `consent_all`, `other` (free text, shown as "Info only: CiV cannot check this").
+`POST /api/statements/<id>/withdraw` takes one back. A statement **never raises a value**: when CiV measured
+something different (e.g. contacts after an opt-out, no DNC check records), the page shows it as a conflict beside it.
+`apps/buyers/attestation.py` builds the monthly snapshot (`civ.attestation.v1`: frequency drivers with source grades
+and worst-case flags, records integrity, insured states) with a sha256. It is saved nightly after the findings refresh:
+the open month is replaced; a locked month gets a **new version** only when something changed (old versions kept). A
+buyer reads `attestation_snapshot` only for clients that share with it right now; statements stay client-only.
+
+### The insurer's pages (step 3)
+
+A signed-in insurer or acquirer gets `GET /api/insureds` (its portfolio) and `GET /api/insureds/c-<id>` (one company),
+built only from each sharing company's **newest** attestation snapshot (owner decision 2026-10-22: newest only).
+Sharing makes a snapshot at once (this month so far), so the insurer does not wait for the nightly run. Fields CiV does
+not measure yet come back empty, never as sample values; these replies carry `X-CiV-Viewer: buyer` so the portal shows
+them as they are. Opening a company's sheet is written once a day per person into that company's access log ("Insurer
+opened your sheet"). `GET /api/litigation` is open to insurers too (public court figures). Stopping sharing hides the
+company on the next request.
+
+### Sending the sheet to the insurer's rating engine
+
+Owner decision 2026-10-22. On Underwriting Export the insurer saves its pricing software's address and key
+(`GET/POST/DELETE /api/rating-engine`, buyers only; the key is locked like a tool key and only its last 4 characters
+come back). `POST /api/rating-engine/send` {insured} sends that company's newest sheet; with "send every month" on,
+`apps.buyers.tasks.monthly_rating_sends` (the 6th, 06:30) sends last month's locked sheets once. Adapters live in
+`apps/buyers/engines.py`; today one: JSON over HTTPS with the key as bearer token and `X-CiV-Signature: sha256=<HMAC
+of the body>`. Only public `https://` addresses are accepted (private, local and redirected addresses are refused).
+Every send is kept (`rating_send`) and written to the company's access log. Tests use a pretend engine.
+
+### Security checks (step 4)
+
+`tests/buyers/test_security.py` runs like a real browser (no all-companies view): it tries every `/api/` address (75)
+as a signed-in insurer, reading and changing, and only the insurer's own addresses answer; a company that does not
+share cannot be opened or sent, even by guessing its number; access ends at once when sharing stops, an acquirer's end
+date passes, CiV blocks the insurer or a person is turned off; one insurer never sees another's companies or rating
+engine; what an insurer reads or sends holds no phone codes, record ids or statement details; the rating key never
+comes back. A deliberately opened client page makes the test fail (checked).
+
+## Document AI (Module 16)
+
+`apps/docai`. Owner decision 2026-10-22: the functions are built now; the AI is plugged in next. One shared slot
+(`docai/ai.py`, off until an adapter is set: nothing is sent and documents wait) and one reader per kind of document
+(`docai/features.py`): **contract_clauses** (vendor contracts → which Rulebook `vendor_required_clauses` are in it, end
+date, dispute days → `vendor_contract.clauses`, M07 note, insurer "with signed indemnification"), **consent_page** (the
+captured consent words → names the seller, written consent, autodialer/prerecorded wording, not a condition of
+purchase, unticked box), **policy_file** (Policies uploads → TCPA policy / training record / contract / other, its
+date → insurer "Written policy"). `read_documents` (every 15 min) queues each file once per instructions version
+(`doc_reading`, locked per company) and reads the waiting ones; answers are applied only when the AI passed its exam
+for that kind (`docai/exam.py`: ≥50 examples, 95 % right, re-run every 30 days, `run_doc_exams` daily) and was at
+least 90 % sure; earlier answers are applied after a pass. Calls: the Module 9 review now also returns
+`{"consent": turn}`; spoken consent is only a flag (`conversation_review.consent_check = waiting`) for the client's
+lawyer or an Admin to confirm. Example exam files hold a few cases; CiV adds hand-checked ones.

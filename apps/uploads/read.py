@@ -11,6 +11,8 @@ from django.db import transaction
 
 from apps.contacts.normalize import codes_for
 
+from apps.vendors.models import VendorLead
+
 from .models import Complaint, DncCheck, InternalListEntry, RndQuery, Source, TrainingRecord, UploadedFile
 
 PHONE = ('phone', 'phonenumber', 'number', 'telephone', 'mobile', 'cell', 'ani', 'dnis', 'tn', 'msisdn')
@@ -52,6 +54,27 @@ def to_date(text: str) -> date | None:
     return None
 
 
+def to_datetime(text: str):
+    """A date and time (UTC when no zone is given); a bare date is read as midnight UTC."""
+    from datetime import UTC, time
+    text = (text or '').strip()
+    try:
+        found = datetime.fromisoformat(text.replace('Z', '+00:00'))
+        return found if found.tzinfo else found.replace(tzinfo=UTC)
+    except ValueError:
+        day = to_date(text)
+        return datetime.combine(day, time(0), tzinfo=UTC) if day else None
+
+
+def to_price(text: str):
+    from decimal import Decimal, InvalidOperation
+    try:
+        value = Decimal((text or '').replace('$', '').replace(',', '').strip())
+    except InvalidOperation:
+        return None
+    return value if 0 <= value < 100000 else None
+
+
 def yes_no(text: str) -> bool | None:
     value = (text or '').strip().lower()
     return True if value in YES else False if value in NO else None
@@ -72,7 +95,7 @@ def read(upload: UploadedFile, content: bytes) -> tuple[int, int]:
     if upload.source == Source.POLICIES and not upload.original_name.lower().endswith('.csv'):
         return 0, 0  # a policy or contract document: kept and fingerprinted only
     codes, client, today = codes_for(upload.client), upload.client, upload.received_at.date()
-    made, rejected = [], 0
+    made, rejected, certificates = [], 0, []
     for row in rows_of(content):
         token = codes.token(pick(row, PHONE)) if pick(row, PHONE) else None
         if upload.source == Source.INTERNAL_LIST:
@@ -101,6 +124,20 @@ def read(upload: UploadedFile, content: bytes) -> tuple[int, int]:
                 made.append(Complaint(client=client, upload=upload, phone_token=token or '', received_on=received,
                                       resolved_on=to_date(pick(row, ('resolved', 'resolvedon', 'closed', 'closedon'))),
                                       channel=pick(row, ('channel', 'source', 'via', 'type'))[:30]))
+        elif upload.source == Source.VENDOR_LEADS:
+            vendor = pick(row, ('vendor', 'vendorname', 'supplier', 'publisher', 'affiliate', 'source', 'leadsource'))
+            received = to_datetime(pick(row, ('received', 'receivedat', 'delivered', 'deliveredat', 'leaddate', 'created', 'createdat', 'date')))
+            ok = bool(token and vendor and received)
+            if ok:
+                from apps.vendors.lead_certificates import CERT
+                cert = pick(row, CERT)
+                if cert:  # the vendor's consent link: claimed and matched while the number is in memory
+                    certificates.append((pick(row, PHONE), token, cert, received, pick(row, ('leadid', 'leadref', 'leadnumber', 'id'))[:120],
+                                         len(made) + rejected + 1))
+                made.append(VendorLead(client=client, upload=upload, row=len(made) + rejected + 1, phone_token=token, vendor=' '.join(vendor.split())[:120],
+                                       sub_id=pick(row, ('subid', 'subsource', 'affsub', 'affiliatesub', 'publishersub'))[:60],
+                                       lead_ref=pick(row, ('leadid', 'leadref', 'leadnumber', 'id'))[:120], received_at=received,
+                                       price=to_price(pick(row, ('price', 'leadprice', 'cost', 'leadcost', 'cpl', 'payout')))))
         else:  # training log
             agent = pick(row, ('agentid', 'agent', 'employeeid', 'employee', 'user', 'userid', 'id'))
             trained = to_date(pick(row, ('trained', 'trainedon', 'completed', 'completion', 'date')))
@@ -111,4 +148,7 @@ def read(upload: UploadedFile, content: bytes) -> tuple[int, int]:
     with transaction.atomic():
         if made:
             type(made[0]).objects.bulk_create(made, batch_size=1000)
+    if certificates:
+        from apps.vendors.lead_certificates import link_certificates
+        link_certificates(upload, certificates)
     return len(made), rejected

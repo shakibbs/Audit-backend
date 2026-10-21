@@ -32,6 +32,11 @@ class ConversationReview(models.Model):
     note = models.CharField(max_length=200, blank=True)  # e.g. why not reviewed
     # M45: when the customer named a lawyer ("talk to my attorney"), asked in the same AI request (no extra cost).
     attorney_at = models.DateTimeField(null=True, blank=True)
+    # Module 16: the customer gave spoken consent ("yes, you can call me"). Only a flag: the client's lawyer or an Admin
+    # confirms it (owner decision); it never counts as consent on its own.
+    consent_at = models.DateTimeField(null=True, blank=True)
+    consent_check = models.CharField(max_length=10, blank=True, choices=[('waiting', 'Waiting'), ('confirmed', 'Confirmed'), ('rejected', 'Rejected')])
+    consent_checked_by = models.CharField(max_length=120, blank=True)
     trusted = models.BooleanField(default=False)  # the AI had passed its exam for this channel when it answered (step 4)
     # Step 4: while the AI is not trusted, "allowed contact again" and the new owner after "wrong number" wait for CiV staff.
     approval = models.CharField(max_length=10, blank=True, choices=[('waiting', 'Waiting'), ('approved', 'Approved'), ('rejected', 'Rejected')])

@@ -11,6 +11,7 @@ import base64
 import hashlib
 import hmac
 import json
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -86,6 +87,16 @@ class Twilio(Connector):
         return Record(source_record_id=row['sid'], raw=json.dumps(row, sort_keys=True, separators=(',', ':')).encode(),
                       content_kind=stream.content_kind, changed_at=happened_at(row, stream),
                       phones=[n for n in (row.get('to'), row.get('from')) if n and n.startswith('+')])
+
+    def fetch_one(self, record_id: str) -> Record | None:
+        stream = CALLS if record_id.startswith('CA') else TEXTS
+        try:
+            row = self._get(f'/2010-04-01/Accounts/{self.sid}/{stream.resource}/{record_id}.json')
+        except urllib.error.HTTPError as error:
+            if error.code == 404:
+                return None
+            raise
+        return self.record(row, stream)
 
     def start(self) -> datetime:
         return datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC)

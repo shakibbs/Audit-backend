@@ -33,7 +33,7 @@ def checks(company):
 def test_nothing_connected_cannot_start(company):
     data = readiness(company)
     assert data['canStart'] is False and checks(company)['Dialer connection']['state'] == 'missing'
-    assert checks(company)['Documents']['detail'] == 'DNC scrub records and reassigned-number query logs not supplied'
+    assert checks(company)['Documents']['detail'] == 'DNC check records and reassigned-number query logs not supplied'
 
 
 def test_a_live_dialer_and_calls_make_it_ready(company):

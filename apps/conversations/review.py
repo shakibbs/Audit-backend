@@ -156,10 +156,16 @@ def review_one(client, token: str, system: str, reviewer) -> ConversationReview 
     review = save({**base, 'messages_read': len(messages), 'result': result, 'confidence': confidence, 'moment': moment,
                    'moment_at': moment.occurred_at if moment else None, 'model': getattr(reviewer, 'model', 'unknown'),
                    'prompt_version': ai.PROMPT_VERSION, 'thread_sha256': hashlib.sha256(words).hexdigest(),
-                   'trusted': exam.trusted('text', reviewer), 'attorney_at': attorney})
+                   'trusted': exam.trusted('text', reviewer), 'attorney_at': attorney,
+                   **consent_flag(messages[extras['consent']].occurred_at if 'consent' in extras else None)})
     if review:
         act(client, review)
     return review
+
+
+def consent_flag(at) -> dict:
+    """Module 16: spoken consent the AI heard waits for the client's lawyer or an Admin to confirm it."""
+    return {'consent_at': at, 'consent_check': 'waiting'} if at is not None else {}
 
 
 def save(fields: dict) -> ConversationReview | None:
@@ -200,13 +206,15 @@ def review_call(client, call: ContactEvent, transcriber, reviewer) -> Conversati
     result, index, confidence, extras = judge(turns, reviewer)
     at = turns[index].get('at') if index is not None and 0 <= index < len(turns) else None
     lawyer = turns[extras['attorney']].get('at') if 'attorney' in extras else None
+    agreed = turns[extras['consent']].get('at') if 'consent' in extras else None
     count = len(turns)
     del turns  # the words are dropped here; only their fingerprint stays
     review = save({**base, 'messages_read': count, 'result': result, 'confidence': confidence,
                    'moment_seconds': at, 'moment_at': call.occurred_at + timedelta(seconds=at) if at is not None else None,
                    'model': getattr(reviewer, 'model', 'unknown'), 'prompt_version': ai.PROMPT_VERSION,
                    'thread_sha256': hashlib.sha256(words).hexdigest(), 'trusted': exam.trusted('call', reviewer),
-                   'attorney_at': call.occurred_at + timedelta(seconds=lawyer) if lawyer is not None else None})
+                   'attorney_at': call.occurred_at + timedelta(seconds=lawyer) if lawyer is not None else None,
+                   **consent_flag(call.occurred_at + timedelta(seconds=agreed) if agreed is not None else None)})
     if review:
         act(client, review)
     return review

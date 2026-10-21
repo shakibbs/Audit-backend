@@ -43,7 +43,11 @@ def last_month(today: date) -> date:
 def purge_old(now=None) -> int:
     now = now or timezone.now()
     n = 0
+    from apps.evidence.holds import Holds
+    holds = Holds()
     for report in Report.objects.filter(made_at__lt=now - KEEP, purged_at__isnull=True).exclude(file=''):
+        if holds.covers(report.client_id, report.period or report.made_at) or holds.covers(report.client_id, report.made_at):
+            continue  # under a legal hold (Module 14)
         report.file.delete(save=False)
         report.purged_at = now
         report.save(update_fields=['file', 'purged_at'])

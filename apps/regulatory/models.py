@@ -194,3 +194,49 @@ class ClientSuggestion(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class LawItem(models.Model):
+    """Module 13 step 1: a new item from an official source (Federal Register now) that may change a calling rule. Only
+    collected here; CiV staff turn it into a law change (or dismiss it) — the Rulebook never changes by itself."""
+    class State(models.TextChoices):
+        NEW = 'new', 'New'
+        USED = 'used', 'Turned into a law change'
+        DISMISSED = 'dismissed', 'Dismissed'
+
+    source = models.CharField(max_length=30)  # federal_register
+    ref = models.CharField(max_length=60)  # the source's own ID (Federal Register document number)
+    kind = models.CharField(max_length=30)  # Rule · Proposed Rule · Notice
+    title = models.CharField(max_length=500)
+    summary = models.TextField(blank=True)  # the source's own abstract
+    agencies = models.CharField(max_length=300, blank=True)
+    published_on = models.DateField()
+    effective_on = models.DateField(null=True, blank=True)
+    url = models.URLField(max_length=500)
+    matched = models.JSONField(default=list)  # the calling words it matched
+    state = models.CharField(max_length=10, choices=State.choices, default=State.NEW)
+    found_at = models.DateTimeField(auto_now_add=True)
+    # Step 2 (word rules, no AI): the Rulebook rules it probably touches, how serious, its stage, the FCC case numbers,
+    # and the earlier proposed item it follows. Hints for CiV staff only.
+    rule_keys = models.JSONField(default=list, blank=True)
+    level = models.CharField(max_length=6, default='Low')  # High · Medium · Low
+    stage = models.CharField(max_length=10, default='proposed')  # proposed · final · in_force
+    dockets = models.JSONField(default=list, blank=True)
+    follows = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='followed_by')
+    text_url = models.URLField(max_length=500, blank=True)  # the document's full text (read in memory for High items)
+    # Step 3: the AI's draft (the AI slot stays off until the owner chooses the AI). Hints for CiV staff only.
+    ai_summary = models.TextField(blank=True)
+    ai_drafts = models.JSONField(default=list, blank=True)  # [{key, value, shown, effective_from, quote}]
+    ai_confidence = models.FloatField(null=True, blank=True)
+    ai_model = models.CharField(max_length=60, blank=True)
+    ai_read = models.CharField(max_length=10, blank=True)  # full_text · summary
+    ai_done_at = models.DateTimeField(null=True, blank=True)
+    reg_change = models.ForeignKey(RegChange, on_delete=models.SET_NULL, null=True, blank=True, related_name='law_items')  # step 4
+
+    class Meta:
+        db_table = 'law_item'
+        constraints = [models.UniqueConstraint(fields=['source', 'ref'], name='one_law_item_per_source_ref')]
+        ordering = ['-published_on']
+
+    def __str__(self) -> str:
+        return f'{self.published_on} · {self.title[:80]}'

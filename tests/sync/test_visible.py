@@ -53,7 +53,7 @@ def test_source_registry_lists_real_tools_and_keeps_the_upload_types(company, to
     assert rows['Salesforce']['status'] == 'not_supplied' and rows['Salesforce']['blocks'] == 'Waiting for you to click Allow'
     assert rows['Pipedrive']['blocks'].startswith('Not read yet')
     uploads = [n for n, r in rows.items() if r['acceptsUpload']]
-    assert uploads == ['Internal do-not-contact list', 'Policies, training, contracts', 'Complaint log', 'DNC check records', 'Reassigned-number query logs']
+    assert uploads == ['Internal do-not-contact list', 'Policies, training, contracts', 'Complaint log', 'DNC check records', 'Reassigned-number query logs', 'Vendor lead files']
 
 
 def test_data_health_is_real_and_honest_about_what_is_not_measured(company, tools, member_user, other_admin):

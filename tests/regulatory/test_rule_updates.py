@@ -99,7 +99,7 @@ def test_add_on_the_law_change_stays_draft_then_approve_on_the_same_page(client,
     law = RegChange.objects.get(jurisdiction='Oregon')
     page = client.post(f'/civ-admin/regulatory/regchange/{law.pk}/change/', law_form(law, [ROW]))
     assert page.status_code == 302, page.content.decode()[:3000]
-    update = RuleUpdate.objects.get()
+    update = RuleUpdate.objects.get(reg_change=law)
     assert (update.jurisdiction, update.proposed_by, update.state) == ('OR', 'team@complyiv.com', 'waiting')
     assert update.get_state_display().startswith('Draft')
     assert rule('calling_hours', on=date(2026, 2, 3), state='OR').jurisdiction == 'US'  # draft: not used

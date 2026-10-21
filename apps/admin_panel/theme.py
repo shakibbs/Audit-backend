@@ -46,9 +46,14 @@ def unfold_config(portal_url: str) -> dict:
                     link('Client companies', 'apartment', 'admin:clients_client_changelist'),
                     link('Proof requests', 'fact_check', 'admin:provenance_proofrequest_changelist'),
                 ]},
+                {'title': 'Insurers', 'separator': True, 'items': [
+                    link('Insurers and acquirers', 'shield', 'admin:buyers_buyerorg_changelist'),
+                ]},
                 {'title': 'Rules', 'separator': True, 'items': [
                     link('Rulebook', 'menu_book', 'admin:rulebook_rulevalue_changelist'),
+                    link('Rulebook check', 'rule', 'admin:rulebook_rulevalue_check'),
                     link('Regulatory changes', 'gavel', 'admin:regulatory_regchange_changelist'),
+                    link('New law items', 'travel_explore', 'admin:regulatory_lawitem_changelist'),
                     link('Client suggestions', 'lightbulb', 'admin:regulatory_clientsuggestion_changelist'),
                 ]},
                 {'title': 'AI', 'separator': True, 'items': [

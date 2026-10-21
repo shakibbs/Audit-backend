@@ -1,0 +1,31 @@
+{% extends 'admin/base.html' %}
+{% comment %}Every value a rule has had, with its dates (Module 13 step 5).{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">Rules · History</div>
+            <h1><code>{{ key }}</code></h1>
+            <p class="ph-sub">Every value this rule has had, by place. A new value ends the old one the day before it starts; both stay, so past contacts keep the rule of their day.</p>
+        </div>
+        <div><a class="civ-btn civ-btn-ghost" href="{{ back_url }}">Back to the Rulebook check</a></div>
+    </header>
+    <div class="card">
+        <div style="overflow-x:auto"><table class="tbl">
+            <thead><tr><th>Place</th><th>Value</th><th>Status</th><th>From</th><th>Until</th><th>Rulebook</th><th>Changed by</th><th>Approved by</th></tr></thead>
+            <tbody>{% for r in rows %}
+                <tr><td>{{ r.place }}</td><td><strong>{{ r.shown }}</strong></td><td>{{ r.status }}</td>
+                    <td>{{ r.from|date:"j M Y"|default:"the start" }}</td><td>{{ r.to|date:"j M Y"|default:"now" }}</td><td>v{{ r.version }}</td>
+                    <td>{{ r.changed_by|default:"-" }}</td><td>{{ r.approved_by|default:"-" }}</td></tr>
+            {% empty %}<tr><td colspan="8">No values.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </div>
+</div>
+{% endblock %}

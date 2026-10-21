@@ -1,0 +1,28 @@
+{% extends 'admin/base.html' %}
+{% comment %}Confirm "Create a law change from this item" (Module 13 step 4).{% endcomment %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="civ">
+    <header class="page-head">
+        <div>
+            <div class="ph-eyebrow">Rules · New law items</div>
+            <h1>Create a law change</h1>
+            <p class="ph-sub">From: <strong>{{ item.title }}</strong> ({{ item.kind }}, {{ item.published_on|date:"j M Y" }}).
+                It goes to Regulatory changes as "To check". {% if item.kind == 'Rule' %}{{ drafts }} AI-drafted value(s) become rule update drafts; add or fix values on its Rule updates tab.{% else %}A proposed rule gets no rule update until it becomes final.{% endif %}
+                Clients' lawyers review the drafts; you approve them, and approving ends the old value the day before the new one starts.</p>
+        </div>
+    </header>
+    <div class="card">
+        <form method="post">{% csrf_token %}
+            <button type="submit" class="civ-btn">Create the law change</button>
+            <a class="civ-btn civ-btn-ghost" href="{{ back_url }}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

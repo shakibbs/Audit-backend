@@ -29,7 +29,7 @@ def change(**overrides):
 
 @pytest.mark.django_db
 def test_four_starting_changes_are_loaded_to_check():
-    assert RegChange.objects.count() == 4
+    assert RegChange.objects.exclude(jurisdiction='CiV draft').count() == 4  # plus CiV's vendor clauses draft (Module 12)
     assert set(RegChange.objects.values_list('review', flat=True)) == {'to_check'}
     assert RegChange.objects.get(jurisdiction='Oregon').rule_keys == ['calling_hours', 'frequency_limits', 'quiet_hours_apply_to_sms']
 

@@ -80,6 +80,11 @@ class Convoso(Connector):
         return Record(source_record_id=str(row['id']), raw=json.dumps(row, sort_keys=True, separators=(',', ':')).encode(),
                       content_kind='call', changed_at=self.called_at(row), phones=list(dict.fromkeys(n for n in numbers if n)))
 
+    def fetch_one(self, record_id: str) -> Record | None:
+        """TO CONFIRM on a real account: the call log filtered by its ID."""
+        rows = [r for r in self._get('log/retrieve', {'id': record_id, 'limit': 1, 'offset': 0}).get('results') or [] if str(r.get('id')) == record_id]
+        return self.record(rows[0]) if rows else None
+
     def changes_since(self, cursor: str, limit: int) -> Page:
         mark, _, done = (cursor or '').partition('#')
         begin = datetime.fromisoformat(mark) if mark else datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC)

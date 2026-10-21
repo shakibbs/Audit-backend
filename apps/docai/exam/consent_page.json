@@ -1,0 +1,28 @@
+[
+ {
+  "id": "page-1",
+  "document": {
+   "text": "[ ] By checking this box I agree that Example Solar and its partners may call or text me at the number above, including by autodialer or prerecorded voice. Agreement is not a condition of purchase."
+  },
+  "expected": {
+   "names_seller": true,
+   "written_consent": true,
+   "autodialer_or_prerecorded": true,
+   "not_a_condition": true,
+   "unchecked_box": true
+  }
+ },
+ {
+  "id": "page-2",
+  "document": {
+   "text": "By clicking Submit you accept our Terms, including being contacted by our marketing partners."
+  },
+  "expected": {
+   "names_seller": false,
+   "written_consent": false,
+   "autodialer_or_prerecorded": false,
+   "not_a_condition": false,
+   "unchecked_box": false
+  }
+ }
+]

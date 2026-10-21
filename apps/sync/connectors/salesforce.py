@@ -82,6 +82,15 @@ class Salesforce(OAuthTool, Connector):
                       content_kind=obj.content_kind, changed_at=sf_time(row['SystemModstamp']),
                       phones=[row[f] for f in obj.phone_fields if row.get(f)])
 
+    def fetch_one(self, record_id: str) -> Record | None:
+        import re
+        name, _, key = record_id.partition(':')
+        obj = next((o for o in OBJECTS if o.name == name), None)
+        if obj is None or not re.fullmatch(r'[A-Za-z0-9]{15,18}', key):
+            raise NotImplementedError
+        rows = self.query(f"SELECT FIELDS(ALL) FROM {obj.sobject} WHERE Id = '{key}' LIMIT 1")
+        return self.record(rows[0], obj) if rows else None
+
     def changes_since(self, cursor: str, limit: int) -> Page:
         marks = json.loads(cursor) if cursor else {}
         start = datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC) - timedelta(seconds=1)

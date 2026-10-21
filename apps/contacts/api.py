@@ -156,7 +156,7 @@ def came_from(client, token: str, epoch) -> str | None:
 
 
 def list_checks(client, token: str) -> list[dict]:
-    """The internal do-not-contact list is CiV's STOP list (STOP texts, CRM do-not-call); DNC scrub records come from
+    """The internal do-not-contact list is CiV's STOP list (STOP texts, CRM do-not-call); DNC check records come from
     the Upload centre (not supplied yet)."""
     from apps.optouts.models import OptOutEvent
     from apps.uploads.models import DncCheck, InternalListEntry
@@ -167,9 +167,9 @@ def list_checks(client, token: str) -> list[dict]:
     supplied = DncCheck.objects.filter(client=client).exists()
     return [{'list': 'Internal do-not-contact list', 'onList': since is not None,
              'label': f'on it since {since:%d %b %Y}' if since else 'your list and STOP replies'},
-            {'list': 'DNC scrub records', 'onList': check.listed if check else None,
+            {'list': 'DNC check records', 'onList': check.listed if check else None,
              'label': f'{check.list_name} · checked {check.checked_on:%d %b %Y}' if check
-             else 'not in your DNC check records' if supplied else 'DNC scrub records not supplied'}]
+             else 'not in your DNC check records' if supplied else 'DNC check records not supplied'}]
 
 
 class NumberView(APIView):
@@ -177,41 +177,58 @@ class NumberView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request, ref):
-        client = request.user.client
-        prefix = ref.removeprefix('p-')
-        if not ref.startswith('p-') or not re.fullmatch(r'[0-9a-f]{24}', prefix):
+        found = number_file(request.user.client, ref)
+        if found is None:
             return Response({'detail': 'No evidence file for this number.'}, status=404)
-        contacts = list(ContactEvent.objects.filter(client=client, phone_token__startswith=prefix).order_by('occurred_at'))
-        if not contacts:
-            return Response({'detail': 'No evidence file for this number.'}, status=404)
-        last = contacts[-1]
-        epochs = list(PhoneEpoch.objects.filter(client=client, phone_token=last.phone_token).order_by('number'))
-        current = epochs[-1] if epochs else None
-        results = strict_results(contacts)
-        counted = [results.get(c.pk) for c in contacts if c.is_primary]
-        counts: dict[str, int] = {}
-        for r in counted:
-            counts[portal_status(r)] = counts.get(portal_status(r), 0) + 1
-        from apps.consent.panel import consent_panel, optouts_of, worst_of
-        return Response({
-            'phone': last.masked_label,
-            'epoch': f'Owner {current.number}' if current else 'Owner 1',
-            'epochCertainty': 'known' if len(epochs) > 1 else 'unknown',
-            'worstStatus': worst_of(counted), 'counts': counts,
-            'contacts': [{'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'channel': c.get_channel_display(), 'dialMode': c.dial_mode or None,
-                          'status': portal_status(results.get(c.pk)), 'code': (results[c.pk].primary_code or '—') if c.pk in results else '—',
-                          'bases': [{'basis': b['basis'], 'status': b['status'].upper()} for b in (results[c.pk].bases if c.pk in results else [])],
-                          'labels': [c.direction, *([f'owner {c.epoch.number}'] if c.epoch_id else []), *([] if c.is_primary else ['copy from another tool']),
-                                     *label_words(results.get(c.pk))]}
-                         for c in contacts],
-            'proofElements': proof_elements(client, last.phone_token, current, contacts, results), 'optOuts': optouts_of(client, last.phone_token), 'listChecks': list_checks(client, last.phone_token),
-            'consent': consent_panel(client, last.phone_token, current, results.values()),
-            'cameFrom': came_from(client, last.phone_token, current),
-            'anchor': seal_of(client, contacts), 'onHold': False,
-            'where': where(last), 'locationConfidence': last.location_confidence,
-            'callingWindow': window(last.recipient_state, last.time_zones, last.is_non_us),
-            'epochs': [{'number': e.number, 'from': e.started_at, 'to': e.ended_at, 'reason': e.get_reason_display()} for e in epochs],
-        })
+        return Response(found)
+
+
+def contacts_of(client, ref: str) -> list[ContactEvent]:
+    """The number's contacts, oldest first, from its portal address ('p-' + part of its phone code)."""
+    prefix = ref.removeprefix('p-')
+    if not ref.startswith('p-') or not re.fullmatch(r'[0-9a-f]{24}', prefix):
+        return []
+    return list(ContactEvent.objects.filter(client=client, phone_token__startswith=prefix).order_by('occurred_at'))
+
+
+def held(client, token: str) -> bool:
+    from apps.evidence.holds import number_held
+    return number_held(client, token)  # Module 14: under an active legal hold
+
+
+def number_file(client, ref: str) -> dict | None:
+    """Everything the number page shows (also the base of the evidence file, Module 14)."""
+    contacts = contacts_of(client, ref)
+    if not contacts:
+        return None
+    last = contacts[-1]
+    epochs = list(PhoneEpoch.objects.filter(client=client, phone_token=last.phone_token).order_by('number'))
+    current = epochs[-1] if epochs else None
+    results = strict_results(contacts)
+    counted = [results.get(c.pk) for c in contacts if c.is_primary]
+    counts: dict[str, int] = {}
+    for r in counted:
+        counts[portal_status(r)] = counts.get(portal_status(r), 0) + 1
+    from apps.consent.panel import consent_panel, optouts_of, worst_of
+    return {
+        'phone': last.masked_label,
+        'epoch': f'Owner {current.number}' if current else 'Owner 1',
+        'epochCertainty': 'known' if len(epochs) > 1 else 'unknown',
+        'worstStatus': worst_of(counted), 'counts': counts,
+        'contacts': [{'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'channel': c.get_channel_display(), 'dialMode': c.dial_mode or None,
+                      'status': portal_status(results.get(c.pk)), 'code': (results[c.pk].primary_code or '—') if c.pk in results else '—',
+                      'bases': [{'basis': b['basis'], 'status': b['status'].upper()} for b in (results[c.pk].bases if c.pk in results else [])],
+                      'labels': [c.direction, *([f'owner {c.epoch.number}'] if c.epoch_id else []), *([] if c.is_primary else ['copy from another tool']),
+                                 *label_words(results.get(c.pk))]}
+                     for c in contacts],
+        'proofElements': proof_elements(client, last.phone_token, current, contacts, results), 'optOuts': optouts_of(client, last.phone_token), 'listChecks': list_checks(client, last.phone_token),
+        'consent': consent_panel(client, last.phone_token, current, results.values()),
+        'cameFrom': came_from(client, last.phone_token, current),
+        'anchor': seal_of(client, contacts), 'onHold': held(client, last.phone_token),
+        'where': where(last), 'locationConfidence': last.location_confidence,
+        'callingWindow': window(last.recipient_state, last.time_zones, last.is_non_us),
+        'epochs': [{'number': e.number, 'from': e.started_at, 'to': e.ended_at, 'reason': e.get_reason_display()} for e in epochs],
+    }
 
 
 class CanCallView(APIView):

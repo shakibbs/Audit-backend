@@ -1,0 +1,23 @@
+[
+ {
+  "id": "policy-1",
+  "document": {
+   "text": "Example Solar Co \u2014 Telephone Consumer Protection Act Compliance Policy. Effective 2026-03-01. 1. We honor every opt-out within 10 business days..."
+  },
+  "expected": {
+   "kind": "tcpa_policy",
+   "dated": "2026-03-01"
+  }
+ },
+ {
+  "id": "policy-2",
+  "document": {
+   "text": "Certificate of completion: TCPA basics training, 2026-05-12. Attendees: 14 agents."
+  },
+  "expected": {
+   "kind": "training_record",
+   "dated": "2026-05-12",
+   "people_trained": 14
+  }
+ }
+]

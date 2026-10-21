@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsClientUser
+from apps.buyers.authentication import IsBuyerUser
 
 from .models import LitigationMonth
 
@@ -40,7 +41,11 @@ def page() -> dict:
 
 
 class LitigationView(APIView):
-    permission_classes = [IsClientUser]
+    permission_classes = [IsClientUser | IsBuyerUser]  # public court figures: insurers read them too (Module 15)
 
     def get(self, request):
+        from apps.buyers.models import BuyerUser
+        if isinstance(request.user, BuyerUser):
+            from apps.buyers.portal import as_buyer
+            return as_buyer(Response(page()))
         return Response(page())

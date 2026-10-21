@@ -88,9 +88,9 @@ def readiness(client) -> dict:
         checks.append(check('History depth', 'Earliest record CiV read', 'ready' if years >= 4 else 'partial',
                             f'Records reach back to {first:%b %Y}', None if years >= 4 else 'Ask your tools for older history: the time to sue is four years.'))
     dnc, rnd = (UploadedFile.objects.filter(client=client, source=s).exists() for s in (Source.DNC_CHECKS, Source.RND_QUERIES))
-    missing_docs = [label for ok, label in ((dnc, 'DNC scrub records'), (rnd, 'reassigned-number query logs')) if not ok]
+    missing_docs = [label for ok, label in ((dnc, 'DNC check records'), (rnd, 'reassigned-number query logs')) if not ok]
     checks.append(check('Documents', 'Checked uploads', 'ready' if not missing_docs else 'partial' if len(missing_docs) == 1 else 'missing',
-                        (lambda t: t[:1].upper() + t[1:])(' and '.join(missing_docs)) + ' not supplied' if missing_docs else 'DNC scrub records and query logs supplied',
+                        (lambda t: t[:1].upper() + t[1:])(' and '.join(missing_docs)) + ' not supplied' if missing_docs else 'DNC check records and query logs supplied',
                         'Upload them in Source Registry.' if missing_docs else None))
     results = Counter(ConsentResult.objects.filter(client=client, variant='strict', contact__phone_token__in=sample, frozen=False)
                       .exclude(status__in=['pending', 'not_needed']).values_list('status', flat=True))

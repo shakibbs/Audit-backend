@@ -103,7 +103,7 @@ def test_the_number_page_shows_both_list_checks(company, admin_user, member_user
     api = browser_for(member_user)
     ref = api.get('/api/contacts').json()[0]['phoneE164']
     checks = {x['list']: x for x in api.get(f'/api/evidence/{ref}').json()['listChecks']}
-    assert checks['Internal do-not-contact list']['onList'] is True and checks['DNC scrub records']['onList'] is True and c
+    assert checks['Internal do-not-contact list']['onList'] is True and checks['DNC check records']['onList'] is True and c
 
 
 def test_dates_in_common_shapes():

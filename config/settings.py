@@ -61,6 +61,10 @@ INSTALLED_APPS = [
     'apps.findings',
     'apps.alerts',
     'apps.reports',
+    'apps.vendors',
+    'apps.evidence',
+    'apps.buyers',
+    'apps.docai',  # Module 16
     'apps.conversations',
 ]
 
@@ -137,7 +141,8 @@ PASSWORD_RESET_TIMEOUT = 60 * 60  # reset links work for 1 hour
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
-    'DEFAULT_AUTHENTICATION_CLASSES': ['apps.accounts.authentication.ClientSessionAuthentication'],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['apps.accounts.authentication.ClientSessionAuthentication',
+                                       'apps.buyers.authentication.BuyerSessionAuthentication'],  # Module 15
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
     'UNAUTHENTICATED_USER': None,
 }
@@ -180,6 +185,12 @@ CELERY_BEAT_SCHEDULE = {
     'webrecon-litigation': {'task': 'apps.litigation.tasks.read_webrecon', 'schedule': crontab(minute=30, hour=5, day_of_week=1)},  # Mondays
     'alerts': {'task': 'apps.alerts.tasks.raise_alerts', 'schedule': 300.0},  # Module 11 step 3, portal only
     'monthly-reports': {'task': 'apps.reports.tasks.monthly_reports', 'schedule': crontab(minute=0, hour=6, day_of_month=6)},
+    'read-documents': {'task': 'apps.docai.tasks.read_documents', 'schedule': crontab(minute='*/15')},  # Module 16
+    'doc-exams': {'task': 'apps.docai.tasks.run_doc_exams', 'schedule': crontab(minute=20, hour=2)},
+    'rating-sends': {'task': 'apps.buyers.tasks.monthly_rating_sends', 'schedule': crontab(minute=30, hour=6, day_of_month=6)},  # Module 15
+    'purge-old-contracts': {'task': 'apps.vendors.tasks.purge_old_contracts', 'schedule': crontab(minute=50, hour=4)},
+    'law-watcher': {'task': 'apps.regulatory.tasks.watch_laws', 'schedule': crontab(minute=15, hour=6)},  # Module 13
+    'weekly-refetch': {'task': 'apps.evidence.tasks.weekly_refetch', 'schedule': crontab(minute=40, hour=3, day_of_week=0)},  # Module 14
     'metric-snapshots': {'task': 'apps.scoring.tasks.snapshot_metrics', 'schedule': crontab(minute=0, hour=4)},  # Module 10 step 1
     'optout-mark-check': {'task': 'apps.optouts.tasks.check_marks', 'schedule': 300.0},  # urgent within 15 min of an opt-out
     'capture-pages': {'task': 'apps.captures.tasks.capture_pages', 'schedule': crontab(minute=20)},  # hourly; each page about once a day

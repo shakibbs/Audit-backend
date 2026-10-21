@@ -83,12 +83,56 @@ def vendor_of(provider: str, raw: bytes) -> str:
         return ''
     fields = row.get('properties', {}) if provider == 'hubspot' else row
     for name, value in fields.items():
-        if not isinstance(value, str) or not any(word in name.lower() for word in VENDOR_FIELD):
+        if not isinstance(value, str) or not any(word in name.lower() for word in VENDOR_FIELD) or is_sub(name):
             continue
         text = ' '.join(value.split())[:120]
         if text.lower() not in NOT_A_VENDOR and not text.lower().startswith('http'):
             return text
     return ''
+
+
+SUB_FIELD = ('sub_id', 'subid', 'sub_source', 'subsource', 'aff_sub', 'affiliate_sub', 'sub_affiliate', 'subaffiliate', 'publisher_sub')
+
+
+def is_sub(name: str) -> bool:
+    low = name.lower().replace('-', '_')
+    return any(w in low or w.replace('_', '') in low.replace('_', '') for w in SUB_FIELD)
+
+
+def sub_of(provider: str, raw: bytes) -> str:
+    """The vendor's sub-source (sub-ID) the record names, '' when none (Module 12: vendors are scored per sub-ID too)."""
+    try:
+        row = json.loads(raw)
+    except ValueError:
+        return ''
+    fields = row.get('properties', {}) if provider == 'hubspot' else row
+    for name, value in fields.items():
+        if is_sub(name) and isinstance(value, (str, int)) and str(value).strip():
+            return ' '.join(str(value).split())[:60]
+    return ''
+
+
+PRICE_FIELD = ('lead_price', 'leadprice', 'lead_cost', 'leadcost', 'cost_per_lead', 'cpl', 'price', 'cost', 'payout')
+
+
+def price_of(provider: str, raw: bytes):
+    """What the lead cost, when the CRM record has a price field; None otherwise."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        row = json.loads(raw)
+    except ValueError:
+        return None
+    fields = row.get('properties', {}) if provider == 'hubspot' else row
+    for want in PRICE_FIELD:
+        for name, value in fields.items():
+            if name.lower().replace('-', '_').replace(' ', '_') in (want, f'{want}__c') and value not in (None, ''):
+                try:
+                    found = Decimal(str(value).replace('$', '').replace(',', '').strip())
+                except InvalidOperation:
+                    continue
+                if 0 <= found < 100000:
+                    return found
+    return None
 
 
 def creation_seen(client, connection, record, phone_tokens) -> None:
@@ -97,7 +141,8 @@ def creation_seen(client, connection, record, phone_tokens) -> None:
     created_at, created_by, how = creation_facts(connection.provider, record.raw)
     if created_at is None:
         return
-    vendor = vendor_of(connection.provider, record.raw)
+    vendor, sub = vendor_of(connection.provider, record.raw), sub_of(connection.provider, record.raw)
+    price = price_of(connection.provider, record.raw)
     sha, opted, by = watched(connection.provider, record.raw)
     existing = CrmCreation.objects.filter(client=client, source_system=connection.provider, record_id=record.source_record_id).first()
     if existing:  # creation time and creator never change; numbers and a vendor filled in later may
@@ -115,6 +160,12 @@ def creation_seen(client, connection, record, phone_tokens) -> None:
         if vendor and not existing.vendor:
             existing.vendor = vendor
             changed.append('vendor')
+        if sub and not existing.sub_id:
+            existing.sub_id = sub
+            changed.append('sub_id')
+        if price is not None and existing.price is None:
+            existing.price = price
+            changed.append('price')
         if changed:
             existing.save(update_fields=changed)
         return
@@ -122,6 +173,6 @@ def creation_seen(client, connection, record, phone_tokens) -> None:
         with transaction.atomic():
             CrmCreation.objects.create(client=client, source_system=connection.provider, record_id=record.source_record_id,
                                        created_at=created_at, created_by=created_by, how=how, phone_tokens=sorted(set(phone_tokens)),
-                                       vendor=vendor, watched_sha=sha, opted_out=opted)
+                                       vendor=vendor, sub_id=sub, price=price, watched_sha=sha, opted_out=opted)
     except IntegrityError:
         pass

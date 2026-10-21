@@ -57,9 +57,10 @@ def apply_update(version: RulebookVersion, update: Update) -> RuleValue:
 def check_no_overlap(version: RulebookVersion) -> None:
     """Refuses two values for the same rule, place and day."""
     by_place: dict[tuple, list[RuleValue]] = {}
-    for row in RuleValue.objects.filter(version=version).order_by('effective_from'):
+    for row in RuleValue.objects.filter(version=version):
         by_place.setdefault((row.key, row.jurisdiction), []).append(row)
     for (key, place), rows in by_place.items():
+        rows.sort(key=lambda r: r.effective_from or date.min)  # no start date = from the beginning (the database puts it last)
         for before, after in zip(rows, rows[1:]):
             end = before.effective_to or date.max
             start = after.effective_from or date.min
