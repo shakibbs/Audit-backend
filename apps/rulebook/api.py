@@ -94,3 +94,22 @@ class CalendarView(APIView):
             'timeZone': {'order': ['ZIP code of the person contacted', 'Area code of the number', 'New York time (the earliest deadline)'],
                          'status': one('business_day_tz_fallback')['status']},
         })
+
+
+class SnapshotView(APIView):
+    """GET ?period=YYYY-MM: the Rulebook snapshot PDF for that month."""
+    permission_classes = [IsClientUser]
+
+    def get(self, request):
+        import re
+
+        from django.http import HttpResponse
+
+        from .snapshot import snapshot_pdf
+        period = request.query_params.get('period', '')
+        if not re.fullmatch(r'\d{4}-\d{2}', period):
+            from django.utils import timezone
+            period = timezone.localdate().strftime('%Y-%m')
+        response = HttpResponse(snapshot_pdf(request.user.client.name, period), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="rulebook-snapshot-{period}.pdf"'
+        return response

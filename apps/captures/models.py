@@ -11,6 +11,8 @@ class ConsentPage(models.Model):
     first_seen_at = models.DateTimeField()
     last_seen_at = models.DateTimeField()  # the latest certificate that named it
     last_captured_at = models.DateTimeField(null=True, blank=True)
+    # The client's own mark on the wording (their note; it never changes a result).
+    client_mark = models.CharField(max_length=10, default='unmarked', choices=[('approved', 'Approved'), ('unmarked', 'Not marked'), ('rejected', 'Rejected')])
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

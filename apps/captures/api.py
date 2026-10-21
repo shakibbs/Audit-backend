@@ -46,13 +46,38 @@ def page_source(client, address: str) -> str:
     return found.most_common(1)[0][0] if found else UNKNOWN
 
 
+def page_vendor(page: ConsentPage) -> str | None:
+    """The vendor the client's CRM names on leads whose certificate came from this page (most common), if any."""
+    from apps.imports.models import CrmCreation
+    records = ConsentProof.objects.filter(client=page.client, certificate__page=page.address).values_list('source_system', 'source_record_id')[:200]
+    names = Counter(CrmCreation.objects.filter(client=page.client, source_system=s, record_id=r).values_list('vendor', flat=True).first() or ''
+                    for s, r in records)
+    names.pop('', None)
+    return names.most_common(1)[0][0] if names else None
+
+
+def wording_changed_on(page: ConsentPage):
+    """When the consent words last changed on CiV's photos (None while they never changed)."""
+    shots = list(page.captures.filter(ok=True).exclude(consent_block_sha256='').order_by('captured_at').values_list('captured_at', 'consent_block_sha256'))
+    changed, last = None, None
+    for at, digest in shots:
+        if last is not None and digest != last:
+            changed = at
+        last = digest
+    return changed
+
+
 def page_row(page: ConsentPage) -> dict:
     shots = latest(page)
     good = [s for s in shots if s.ok]
     checked = evaluate({s.viewport: s.measurements for s in good}, page.client.name) if good else None
     phone_first = sorted(good, key=lambda s: s.viewport != '390x844')
     source = page_source(page.client, page.address)
+    measured = {k: v for k, v in (checked['items'] if checked else {}).items() if ITEMS[k][1] != 'ai' and v != 'not_measured'}
     return {
+        'mark': page.client_mark, 'vendor': page_vendor(page), 'changedOn': wording_changed_on(page),
+        'checklistPassed': sum(1 for v in measured.values() if v == 'pass'), 'checklistTotal': len(measured),
+        'missing': [ITEMS[k][0] for k, v in measured.items() if v == 'fail'],
         'id': page_ref(page), 'address': page.address, 'source': source, 'sourceLabel': LABEL[source],
         'firstSeen': page.first_seen_at, 'lastSeen': page.last_seen_at,
         'leads': CertificateClaim.objects.filter(client=page.client, page=page.address).count(),
@@ -74,6 +99,24 @@ class ConsentPagesView(APIView):
     def get(self, request):
         pages = ConsentPage.objects.filter(client=request.user.client).select_related('client').order_by('-last_seen_at')[:100]
         return Response([page_row(p) for p in pages])
+
+
+class PageMarkView(APIView):
+    """PATCH {mark}: the client's own mark on a page's wording (approved / unmarked / rejected). Never changes a result."""
+    permission_classes = [IsClientUser]
+
+    def patch(self, request, ref: str):
+        if not ref.startswith('cpg-') or not ref[4:].isdigit():
+            raise Http404
+        page = ConsentPage.objects.filter(client=request.user.client, pk=int(ref[4:])).select_related('client').first()
+        if page is None:
+            raise Http404
+        mark = request.data.get('mark')
+        if mark not in ('approved', 'unmarked', 'rejected'):
+            return Response({'detail': 'Choose Approved, Not marked or Rejected.'}, status=400)
+        page.client_mark = mark
+        page.save(update_fields=['client_mark'])
+        return Response(page_row(page))
 
 
 class PagePhotoView(APIView):

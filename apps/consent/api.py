@@ -65,6 +65,7 @@ def summary(client, today=None) -> dict:
         'expiredBeforeEngagement': counted.filter(labels__contains=['pre_engagement']).count(),
         'trend': trend,
         'expiring': [{'within': label, 'count': claims.filter(cert_expires_at__lte=now + timedelta(days=days)).count()} for label, days in HORIZONS],
+        'noProofLegal': counted.filter(status='no_proof', is_legal_basis=True).count(),
         'pending': month.filter(status='pending', frozen=False).count(), 'frozen': month.filter(frozen=True).count(),
         'notNeeded': month.filter(status='not_needed').count(), 'period': start.strftime('%B %Y'), 'real': True,
     }

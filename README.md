@@ -684,3 +684,167 @@ CiV's containers, check the backend and portal answer. Results: the repo's **Act
 - The tests log in to the database as a **normal** user (not a superuser), like the server: a superuser skips the
   per-client lock and the "locked per client" tests fail. Python is pinned to 3.14 (`.python-version`), like the server.
 
+
+## Where each number came from (Module 8, step 1)
+
+`apps/provenance` (spec §5a provenance ladder). Every 30 minutes, per client, for each contacted number and owner:
+the latest CRM lead record created at or before the first outbound contact, then the first rung that matches:
+1 lead platform feed (no reader yet; built when a client uses one) · 2 **crm_field**: the record names a vendor
+(`CrmCreation.vendor`, from any field named for a vendor, provider, publisher, affiliate, supplier, lead source or
+utm_source; categories like "Web" or "Organic" ignored; cleaned of case and spaces only) · 3 vendor invoice
+(skipped: API only, Document AI later) · 4 **cert_domain**: the website in the number's certificate (own website
+when the Module 7 source is the client's form) · 5 **manual_import**: a Module 5 upload batch · 6 **untraced**, with
+the reason. `ladder.untraced(client, start, end)` gives the month's untraced list (masked label + CRM record ID) for
+the Lead Provenance page. Locked per client.
+
+### Evidence for numbers with no certificate (Module 8, step 2)
+
+`apps/provenance/evidence.py`, called from the proof collector (`apps/consent/proofs.py`) while each record is read;
+only the fact, its date and the phone code are kept. **inbound_call**: the person called the client (inbound call
+in the dialer or Twilio log) → covers live (not autodialed) calls for 30 days (draft; `inbound_contact_scope`,
+counsel B12, is TBD). **inbound_sms**: the whole text is YES, Y, START, UNSTOP or SUBSCRIBE → covers texts.
+**form_submission**: the CRM says the record came from the client's web form (HubSpot FORM, a Salesforce "Web"
+lead) and it is not part of an upload or feed → covers what any accepted proof covers. None of them is written
+consent, so a robocall or a strict-reading marketing text still needs a certificate. Evidence dated after the first
+call does not count. Purchases are the Module 6 existing-customer proofs; recordings wait for AI (Module 9).
+
+### More uploads: update uploads and dialer lists (Module 8, step 3)
+
+- **Update uploads** (`CrmUpdate`, `batches.rebuild_updates`): while reading CRM records CiV keeps only a fingerprint
+  of their opt-out, do-not-call and lead-source fields (`CrmCreation.watched_sha`, never the values) and whether the
+  record is marked opted out. A record that comes back with those fields changed is noted with who changed it
+  (Salesforce `LastModifiedById`, HubSpot `hs_updated_by_user_id`) and when; bursts by one user (same gap and size as
+  creations; a steady stream is a feed) become `system='crm_update'` batches with `updated_count` and
+  `optouts_cleared` (opted-out records the upload un-marked). No client setup (no field history needed).
+- **Dialer uploads** (`DialerListEntry`, `dialer_lists.py`, `batches.rebuild_dialer`): Vicidial `vicidial_list`
+  (SELECT only, after the last lead ID read; times in America/New_York unless set) and Convoso lead search (built from
+  the docs, **to confirm**); Five9 later. Numbers in a dialer list with no CRM record, grouped by list and time added,
+  become `system='dialer'` batches. Read before each 15-minute batch rebuild.
+- Both count for re-added STOP numbers (M34, `optouts.readded.entries`), for "no evidence found"
+  (`batches.origin` falls back to dialer lists), and as the provenance ladder's uploaded-list rung ("Update upload",
+  "Dialer upload · list 1002").
+
+### Proof requests (Module 8, step 4)
+
+`apps/provenance/requests.py` (spec §5a). After each 15-minute batch rebuild, every uploaded list not sampled yet gets
+a fixed random sample (seeded by the list, so always the same numbers) of called numbers with no evidence: 50, or 100
+when the list has over 10,000 records. Lists are keyed by `batch_key` (system | tool | user or list | start), stable
+across batch rebuilds. `GET /api/proof-requests`: every list's counts and proof rate, and each request (masked
+number, deadline 30 days). Only Admins and the company's lawyer answer: `POST /api/proof-requests/<ref>/answer`
+with a file (PDF, picture, sound, email, Word; 25 MB) and its type, or `{"none": true}`.
+**Owner decision: CiV keeps the file** (private media, no public address; opened by the company through
+`/api/proof-requests/<ref>/file` and by CiV staff in **Admin → Clients → Proof requests**; every opening logged;
+deleted after 4 years, fingerprint kept). This departs from the spec's "never store uploaded files": for counsel.
+A file makes the number's calls **WK_CLIENT_PROOF_UNCHECKED** (weak) until CiV staff check it in the admin: valid →
+a real proof dated the consent date it shows (a signed form counts as signed written consent; a recording or other
+document as prior express consent); not valid or "none" → no proof. The proof rate counts only checked-valid
+proofs. Document AI (Module 16) will suggest the check later.
+
+### Made visible (Module 8, step 5)
+
+- `GET /api/provenance` (Lead Provenance page): this month's ladder (count and share per rung; `available: false`
+  for the lead platform feed and vendor invoices), top named sources, the untraced list, every upload (numbers, with
+  evidence, STOP numbers brought back, opt-out marks cleared, proof rate), and the Module 7 checklist items most often
+  failing (counted in certificates).
+- `GET /api/evidence/<ref>` adds `cameFrom` ("CRM lead source · SolarLeads Inc"); `GET /api/data-health` adds
+  `proofRequestsWaiting` for the Overview's attention strip.
+- Admin client page: a **Lead provenance** tile (untraced share this month, proof files to check) that opens the
+  Proof requests list for that client.
+
+Gate 2 (spec): ready to test in code; passed during the pilot (200 hand-checked contacts, counsel consent items).
+
+**Restored portal features (owner request, 2026-10-21):** consent pages keep the client's own mark
+(`ConsentPage.client_mark`, `PATCH /api/consent-pages/<ref>` {mark}; never changes a result), and the page row gives
+the vendor the CRM names on its leads, when the consent words last changed on CiV's photos, "checklist X of Y" and
+the missing items. Law changes have **Domains it affects** (codes like REV, SMS) next to metrics.
+
+## Card coverage, batch 1 (existing portal cards made real)
+
+`GET /api/access-log` (the company's own access log, CiV staff shown as "CiV team"); `GET /api/contacts/<ce-id>` (one
+contact, for the contact panel); ledger rows now carry the real category (`ConsentNeed`), evidence tier (source grade
+A→1 … D→4) and record fingerprint; the number page's list checks use the STOP list (DNC scrub records wait for the
+Upload centre); `GET /api/vault` (records held, daily seals, last seal, months covered); `GET /api/settings` (company
+name, industry, states contacted, engaged since, agreements from client documents); `GET /api/revocation` (Annex C
+signed date); `GET /api/insureds/<ref>` (own company: records completeness and the reconciliation table); Source
+Registry's "Feeds domains" per kind of tool. The partly real pages (vault, settings, revocation, insureds) send only the
+fields they have; the portal fills the rest from its sample until those modules exist.
+
+## Card coverage, batch 2: the Upload centre works
+
+`apps/uploads`. `POST /api/uploads` (multipart: the source's name and the file; Admins and the company's lawyer):
+the file is kept write-once in private storage, fingerprinted (SHA-256), deleted after 4 years (fingerprint and rows
+kept), and its rows are read with loose column names (`read.py`): **internal do-not-contact list** →
+`internal_list_entry` (phone code, date added or the upload day) · **DNC check records** → `dnc_check` (checked on,
+listed yes/no, list) · **reassigned-number query logs** → `rnd_query` (yes / no / no data) · **complaint log** →
+`complaint` (received, resolved, channel; never the words) · **policies, training, contracts** → `training_record`
+(agent ID fingerprinted, trained on) or a kept document (PDF/Word). Rows with no usable phone or date are counted as
+not read. `GET /api/uploads` lists the files; Source Registry shows each upload source as current with the last file
+and the domains it feeds. Effects: the internal list and DNC checks decide the consent engine's do-not-call need
+(`needs.dnc_lists`: on the internal list from its date, or listed in a check within `dnc_check_max_age_days` → dnc
+listed; a check that says not listed covers that date → no "DNC list not supplied"); the number page's list checks use
+both; numbers in a new file are checked again.
+
+## Card coverage, batch 3: Contact Conduct
+
+`apps/metrics` (Module 10's app, started here). `GET /api/conduct` (fully real: outside-hours by state, "possible"
+count, contacts by the person's local hour, abandoned rate by campaign and the limit) and `GET /api/metrics?period=`
+(only the metrics that are real so far; the portal keeps the sample for the rest, merged by metric code). From the
+contacts CiV holds, over the chosen month or the last 30 days: **M16** out of hours (federal · state, each contact
+counted once; several possible time zones or low confidence = "possible"), **M17** over a state's frequency limit
+(per number and owner, campaigns together), **M19** robo contacts without the proof they need (strict), **M15**
+cross-border, **M31** abandoned rate from dialer result codes (rough until each dialer's codes are mapped). Calling
+hours and frequency limits are TBD in the Rulebook: the draft values are used and every number says so. **M18**
+(holiday rules have no draft) = "rule pending"; **M21** pass rate waits for CiV's test dials (Module 9), its STIR/SHAKEN
+mix is shown when the dialer gives it. Each metric carries a four-month history.
+
+## Card coverage, batch 4: Who You Contact
+
+`GET /api/who-contact` (`apps/metrics/who.py`, last 30 days) sends the checks that are real now, with the portal's own
+check names so each replaces its own row (the portal keeps its sample for checks that need a later module): **M40**
+expired customer relationship (consent results with `NP_RELATIONSHIP_LAPSED`); with uploaded DNC check records,
+**M13** national registry checked (a check within 31 days before the contact), **M39** called after the provider
+flagged the number, **M49** registry copy older than 31 days, state lists checked; with the uploaded internal list,
+**M12** called after joining it (+ the flagged numbers, masked); **M44** opt-out marks cleared in the CRM; **M47**
+consent older than 12 months; with uploaded query logs, **M11** covered by the safe harbor. Services say what was
+uploaded. Lead sources are the client's own vendors (CRM vendor names, else certificate websites) and uploaded lists;
+`PATCH /api/who-contact/<id>` {column, checked} saves the client's statement (`lead_source_check`, Admins and the
+lawyer, logged).
+
+## Card coverage, batch 5: Setup & Readiness, Plan & usage
+
+`GET /api/readiness` (`apps/onboarding/readiness.py`, partly real, merged by check name / setup id): dialer, SMS and CRM
+connections (live or not; share of calls with no dial mode), consent proof for up to 100 recent numbers, certificate
+retention, consent pages photographed, lead records traced, internal list uploaded, history depth, documents (DNC
+check records and query logs uploaded), can the audit start, numbers per month and the recommended plan (Starter to
+10,000, Growth to 50,000, Scale to 250,000, then Enterprise), a preview of consent results on those numbers, and the
+setup rows CiV can count (caller IDs, pages, vendors, campaigns — all treated as marketing — and states). Recordings
+wait for Module 9. `GET /api/settings` adds `usage`: plan, limit, distinct numbers contacted this month and the three
+before, months over the limit in a row, next plan, monthly price from the contract. `GET /api/billed-numbers`: this
+month's billed numbers as a CSV of masked labels (never the number), first contact and contacts.
+
+## Card coverage, batch 6: Overview, Lead Provenance, Vendor Ledger, top bar
+
+`/api/metrics` adds **M01** consent coverage (legal-basis contacts verified or weak; overall share in the note) and
+**M10** contacts after opt-out (strict results with `NP_AFTER_OPT_OUT`), each with a four-month history.
+`GET /api/leads` (merged): leads this month (CRM records created), consent completeness (leads whose form page passed
+every rule checklist item, among leads with a photographed page), the checklist items most often missing; signal
+levels and page match keep the sample (paid certificate data). `GET /api/vendors` (merged): the client's own vendors
+and their leads this month, "not enough data" until Module 12 (empty → nothing sent, the page keeps its rows).
+`GET /api/search`: numbers (last 4 digits or a full number, answered masked) and vendors; the portal adds pages,
+domains and metrics. The session's `updatedAt` is the last time CiV read something new. The month list stays the
+sample's until Module 10 (the score pages read it).
+
+## Card coverage, batch 7: proof elements, position lookup, hash check, Rulebook snapshot, attestation
+
+The number page's **eight proof elements** (`apps/contacts/proof_elements.py`, current owner): every contact
+verified or weak; consent page photo (Module 7); third-party certificate claimed; lead source (Module 8 ladder);
+contact log fingerprint; opt-out history (a STOP's record, or a connected texting tool); internal list uploaded;
+the client's own reassigned check (uploaded logs). Each with its tier, time and fingerprint; "not measured" when
+nothing can say. `GET /api/position?phone=&date=` (the Vault's lookup: owner, proof, page, lead source, last contact,
+opt-out history, internal list and consent status as of the end of that day; the number is never stored) and
+`GET /api/hash-check?hash=` (a recorded fingerprint, its record, time, tier and the day's seal).
+`GET /api/rulebook/snapshot?period=YYYY-MM`: the rule values in force on the month's last day as a PDF
+(`reportlab`); the Reports card downloads it. `GET /api/insureds/<ref>` adds the attestation rows the records answer
+(contacts per month, prerecorded share when the dialer says, purchased-lead and manual-import shares, evidence found,
+consent proof rate, contacts after opt-out, re-added numbers, internal-list contacts, monitoring, records
+fingerprinted); the rest keep the sample and its worst-case notes.

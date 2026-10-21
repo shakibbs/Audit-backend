@@ -52,6 +52,19 @@ def opt_out_in_force(contact, rules, variant, newer_consent_lifts=True):
     return optout
 
 
+def dnc_lists(contact, rules, variant) -> bool | None:
+    """The client's uploaded lists on the contact date: its internal do-not-contact list (from the date added), and its
+    DNC check records (a check within dnc_check_max_age_days before the contact covers that date)."""
+    from apps.uploads.models import DncCheck, InternalListEntry
+    day = contact.occurred_at.date()
+    if InternalListEntry.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, added_on__lte=day).exists():
+        return True
+    age = int(_value(rules, 'dnc_check_max_age_days', contact, variant, 31))
+    check = (DncCheck.objects.filter(client_id=contact.client_id, phone_token=contact.phone_token, checked_on__lte=day,
+                                     checked_on__gte=day - timedelta(days=age)).order_by('-checked_on', '-listed').first())
+    return None if check is None else check.listed
+
+
 def is_robocall(contact, rules, variant) -> tuple[bool, list[str]]:
     labels = []
     if contact.prerecorded_or_ai:
@@ -82,9 +95,10 @@ def profile(contact, rules: RuleSet, variant: str) -> dict:
         written = _value(rules, 'written_consent_required_by_forum', contact, variant, True)
         needs = _value(rules, 'written_consent_types', contact, variant) if written else _value(rules, 'prior_express_evidence_types', contact, variant)
         bases.append({'basis': 'robocall_marketing', 'needs': list(needs or [])})
-    if opt_out_in_force(contact, rules, variant):
+    listed = dnc_lists(contact, rules, variant)  # True: on a list · False: a check covers the date, not listed · None: no list covers it
+    if opt_out_in_force(contact, rules, variant) or listed:
         bases.append({'basis': 'dnc_listed', 'needs': [*(_value(rules, 'signed_written_consent_types', contact, variant) or []), EBR_ACTIVE]})
-    else:
+    elif listed is None:
         bases.append({'basis': 'dnc_unknown', 'needs': [ANY]})
         labels.append('dnc_list_not_supplied')
     for row in _state_rows(contact, rules, variant):
@@ -119,11 +133,32 @@ def meets(proof: ConsentProof, basis: dict, contact, robocall: bool, rules, vari
     """Whether this kind of proof can satisfy this basis for this contact (dates and checks come in the five checks)."""
     if proof.kind == ConsentProof.Kind.SELF_ASSERTED:
         return False  # a CRM box alone is never enough
+    if proof.proof_type == 'client_unchecked':
+        return True  # not read yet: weak whatever the need, until a CiV staff member checks it
     if proof.kind in (ConsentProof.Kind.EBR_PURCHASE, ConsentProof.Kind.EBR_INQUIRY):
         if basis['basis'] == 'robocall_marketing' or not ebr_covers_contact(contact, robocall, rules, variant):
             return False
         return ebr_active(proof, contact, rules, variant) and (ANY in basis['needs'] or EBR_ACTIVE in basis['needs'])
+    if proof.kind in (ConsentProof.Kind.INBOUND_CALL, ConsentProof.Kind.INBOUND_SMS, ConsentProof.Kind.FORM_SUBMISSION):
+        return evidence_meets(proof, basis, contact, robocall)
     return ANY in basis['needs'] or proof.proof_type in basis['needs']
+
+
+def evidence_meets(proof: ConsentProof, basis: dict, contact, robocall: bool) -> bool:
+    """Module 8 evidence is prior express consent at most: never written consent, so never a robocall or marketing text
+    that needs it (those bases list only written types). An incoming call covers live calls for 30 days (draft, counsel B12);
+    a YES text covers texts; the client's own form covers what any accepted proof covers."""
+    from apps.provenance.evidence import INBOUND_DAYS
+    if ANY not in basis['needs'] and proof.proof_type not in basis['needs']:
+        return False
+    since = proof.when()
+    if proof.kind == ConsentProof.Kind.INBOUND_CALL:
+        return (contact.channel == 'call' and not robocall and since is not None
+                and since <= contact.occurred_at < since + timedelta(days=INBOUND_DAYS))
+    if proof.kind == ConsentProof.Kind.INBOUND_SMS:
+        return contact.channel == 'text'
+    from .sources import CLIENT_FORM, source_of
+    return source_of(proof) == CLIENT_FORM  # a "Web" lead inside an uploaded list is not the client's form
 
 
 def work_out(contact, rules: RuleSet | None = None) -> list[ConsentNeed]:

@@ -9,11 +9,15 @@ class ConsentProof(models.Model):
         SELF_ASSERTED = 'self_asserted', 'CRM consent field only (never enough alone)'
         EBR_PURCHASE = 'ebr_purchase', 'Existing customer: purchase'
         EBR_INQUIRY = 'ebr_inquiry', 'Existing customer: inquiry'
+        INBOUND_CALL = 'inbound_call', 'The person called first'  # Module 8 evidence search
+        INBOUND_SMS = 'inbound_sms', 'The person texted YES'
+        FORM_SUBMISSION = 'form_submission', "The person used the client's own form (no certificate)"
+        CLIENT_SUPPLIED = 'client_supplied', 'Proof the client supplied for a proof request'
 
     client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='consent_proofs')
     phone_token = models.CharField(max_length=64, db_index=True)
     epoch = models.ForeignKey('contacts.PhoneEpoch', on_delete=models.SET_NULL, null=True, blank=True, related_name='proofs')
-    kind = models.CharField(max_length=14, choices=Kind.choices)
+    kind = models.CharField(max_length=16, choices=Kind.choices)
     proof_type = models.CharField(max_length=30)  # the Rulebook's word for it: web_cert, crm_flag, purchase, inquiry
     certificate = models.ForeignKey('certificates.CertificateClaim', on_delete=models.SET_NULL, null=True, blank=True, related_name='proofs')
     captured_at = models.DateTimeField(null=True, blank=True)  # when consent was given; a certificate's date comes from its claim
@@ -21,6 +25,7 @@ class ConsentProof(models.Model):
     source_system = models.CharField(max_length=30)
     source_record_id = models.CharField(max_length=200)
     lead_id = models.CharField(max_length=120, blank=True)  # links the proof to contacts carrying the same lead (timing rule)
+    proof_request = models.ForeignKey('provenance.ProofRequest', on_delete=models.CASCADE, null=True, blank=True, related_name='proofs')
     source_hint = models.CharField(max_length=30, blank=True)  # how the tool says its record was made (FORM, IMPORT, Web…): see sources.py
     source_seen_at = models.DateTimeField(null=True, blank=True)  # last weekly full check that found its record
     withdrawn_at = models.DateTimeField(null=True, blank=True)  # its record changed or was deleted: no longer used for new checks

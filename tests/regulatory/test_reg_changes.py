@@ -76,3 +76,15 @@ def test_rulebook_page_lists_rules_and_is_read_only(client, staff, rulebook):
 def test_both_pages_are_in_the_menu(client, staff):
     text = client.get('/civ-admin/').content.decode()
     assert 'Rulebook' in text and 'Regulatory changes' in text
+
+
+def test_domains_it_affects_are_kept_and_checked(rulebook):
+    from django.core.exceptions import ValidationError
+
+    from apps.regulatory.models import RegChange
+    change = RegChange(title='T', jurisdiction='US', status='proposed', effective_text='soon', summary='s', source='x',
+                       announced_on='2026-10-01', domains=['REV', 'SMS'])
+    change.full_clean()
+    change.domains = ['revocation']
+    with pytest.raises(ValidationError, match='Not a domain code'):
+        change.full_clean()

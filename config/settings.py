@@ -53,6 +53,9 @@ INSTALLED_APPS = [
     'apps.reconcile',
     'apps.consent',
     'apps.captures',
+    'apps.provenance',
+    'apps.uploads',
+    'apps.metrics',
 ]
 
 MIDDLEWARE = [
@@ -163,6 +166,9 @@ CELERY_BEAT_SCHEDULE = {
     'claim-certificates': {'task': 'apps.certificates.tasks.claim_certificates', 'schedule': 60.0},
     'consent-needs': {'task': 'apps.consent.tasks.work_out_needs', 'schedule': 60.0},  # each new contact: what it needs, its result
     'consent-recheck': {'task': 'apps.consent.tasks.keep_results_up_to_date', 'schedule': 60.0},  # queued rechecks, read certificates
+    'provenance': {'task': 'apps.provenance.tasks.rebuild_provenance', 'schedule': crontab(minute='*/30')},  # where each number came from
+    'purge-old-proof-files': {'task': 'apps.provenance.tasks.purge_old_proof_files', 'schedule': crontab(minute=50, hour=4)},
+    'purge-old-uploads': {'task': 'apps.uploads.tasks.purge_old_uploads', 'schedule': crontab(minute=55, hour=4)},
     'capture-pages': {'task': 'apps.captures.tasks.capture_pages', 'schedule': crontab(minute=20)},  # hourly; each page about once a day
     'purge-old-captures': {'task': 'apps.captures.tasks.purge_old_captures', 'schedule': crontab(minute=45, hour=4)},
     'consent-nightly': {'task': 'apps.consent.tasks.recheck_time_passed', 'schedule': crontab(minute=0, hour=3)},  # expiring certificates

@@ -22,17 +22,23 @@ class RegChangeForm(forms.ModelForm):
                                           help_text='Type to search by name or meaning; pick as many as needed')
     metrics = forms.CharField(label='Metrics it affects', required=False, help_text='Codes separated by commas, e.g. M16, M17',
                               widget=UnfoldAdminTextInputWidget)
+    domains = forms.CharField(label='Domains it affects', required=False, help_text='Codes separated by commas, e.g. REV, SMS',
+                              widget=UnfoldAdminTextInputWidget)
 
     class Meta:
         model = RegChange
         fields = ['title', 'jurisdiction', 'status', 'announced_on', 'effective_from', 'effective_text', 'summary',
-                  'rule_keys', 'metrics', 'source', 'source_url', 'review']
+                  'rule_keys', 'metrics', 'domains', 'source', 'source_url', 'review']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['rule_keys'].choices = rule_choices()
         if self.instance.pk:
             self.initial['metrics'] = ', '.join(self.instance.metrics)
+            self.initial['domains'] = ', '.join(self.instance.domains)
+
+    def clean_domains(self):
+        return [d.strip().upper() for d in self.cleaned_data['domains'].split(',') if d.strip()]
 
     def clean_metrics(self):
         return [m.strip() for m in self.cleaned_data['metrics'].split(',') if m.strip()]

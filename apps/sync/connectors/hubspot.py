@@ -17,7 +17,8 @@ from .oauth import OAuthTool
 API = 'https://api.hubapi.com'
 PAGE = 100  # HubSpot's search page size
 LAG = timedelta(minutes=2)
-CERT_WORDS = ('trustedform', 'leadid', 'jornaya', 'consent')  # certificate links and the client's own consent fields
+CERT_WORDS = ('trustedform', 'leadid', 'jornaya', 'consent',  # certificate links and the client's own consent fields
+              'vendor', 'provider', 'publisher', 'affiliate', 'supplier', 'lead_source', 'utm_source')  # who supplied the lead
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,7 @@ OBJECTS = (
     HObject('contacts', 'contacts', 'crm_record',
             ('phone', 'mobilephone', 'hs_lastmodifieddate', 'createdate', 'lifecyclestage', 'hs_lead_status',
              'hs_analytics_source', 'hs_latest_source', 'hs_email_optout',
-             'hs_object_source', 'hs_created_by_user_id',  # how and by whom it was created (imports)
+             'hs_object_source', 'hs_created_by_user_id', 'hs_updated_by_user_id',  # how and by whom it was created or changed (uploads)
              'hs_lifecyclestage_customer_date'), ('phone', 'mobilephone')),  # became a customer (existing-customer proof)
     HObject('calls', 'calls', 'crm_record',
             ('hs_lastmodifieddate', 'hs_timestamp', 'hs_call_direction', 'hs_call_disposition', 'hs_call_status',

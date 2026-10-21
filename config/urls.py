@@ -21,6 +21,14 @@ urlpatterns = [
     path('api/', include('apps.optouts.urls')),
     path('api/', include('apps.consent.urls')),
     path('api/', include('apps.captures.urls')),
+    path('api/', include('apps.provenance.urls')),
+    path('api/', include('apps.access_log.urls')),
+    path('api/', include('apps.anchoring.urls')),
+    path('api/', include('apps.clients.urls')),
+    path('api/', include('apps.reconcile.urls')),
+    path('api/', include('apps.uploads.urls')),
+    path('api/', include('apps.metrics.urls')),
+    path('api/', include('apps.onboarding.urls')),
 ]
 
 # Live notices from clients' tools: off unless SYNC_HOOKS_ENABLED (no public door; CiV asks every 2 minutes instead).

@@ -24,6 +24,7 @@ CHECK1_ORDER = ['NP_NONE', 'NP_SELF_ASSERTED', 'NP_NO_EVIDENCE_FOUND', 'NP_BEFOR
 NOT_MEASURED = ['not_measured:consent_wording', 'not_measured:phone_match', 'not_measured:page_match',
                 'not_measured:lead_trace', 'not_measured:seller_name']
 EBR = (ConsentProof.Kind.EBR_PURCHASE, ConsentProof.Kind.EBR_INQUIRY)
+UNCHECKED = 'client_unchecked'  # a proof request file not read yet
 
 
 def _value(rules, key, contact, variant, default):
@@ -47,6 +48,8 @@ def check_one(proof, basis, contact, robocall, rules, variant, optout, skew) -> 
     """Check 1 for one proof: the codes that remove it, and whether its timing is uncertain."""
     if proof.kind == ConsentProof.Kind.SELF_ASSERTED:
         return ['NP_SELF_ASSERTED'], False
+    if proof.proof_type == UNCHECKED:  # a file the client attached, not read by CiV yet: no date to check, never lifts a STOP
+        return (['NP_AFTER_OPT_OUT'] if optout else []), False
     codes = []
     timing = _timing(proof, contact, skew)
     if timing == 'after':
@@ -80,6 +83,8 @@ def judge(proof, contact, uncertain, as_of, skew, warning_days, client_start, wo
     """Checks 2–5 for one proof that passed check 1: (status, codes, labels). `wording` = the consent checklist from
     CiV's capture of the certificate's page (None = not measured)."""
     labels = ['EBR_ONLY'] if proof.kind in EBR else []
+    if proof.proof_type == UNCHECKED:
+        return S.WEAK, ['WK_CLIENT_PROOF_UNCHECKED'], labels
     claim = proof.certificate
     if proof.kind == ConsentProof.Kind.CERTIFICATE and claim is not None:
         # 2. Does it open at its source?

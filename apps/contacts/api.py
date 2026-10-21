@@ -14,6 +14,7 @@ from apps.consent.models import ConsentResult
 from apps.consent.words import check_states, label_words, portal_status, proof_text, reason_text
 
 from .calling import window
+from .proof_elements import proof_elements
 from .location import locate
 from .models import ContactEvent, PhoneEpoch
 from .normalize import mask
@@ -21,6 +22,22 @@ from .normalize import mask
 NOT_CHECKED = 'NOT_CHECKED'
 LIMIT = 200
 STATUSES = {'VERIFIED', 'WEAK', 'CONFLICTING', 'NO_PROOF', 'PENDING', 'NOT_NEEDED'}
+
+
+GRADE_TIER = {'A': 1, 'B': 2, 'C': 3, 'D': 4}  # source grade → the portal's evidence tier
+
+
+def extras(client, contacts) -> dict:
+    """Per contact: the category its consent need worked out, and its record's fingerprint (newest)."""
+    from apps.consent.models import ConsentNeed
+    from apps.ledger.models import Fingerprint
+    ids = [c.pk for c in contacts]
+    category = dict(ConsentNeed.objects.filter(contact_id__in=ids, variant='strict').values_list('contact_id', 'category'))
+    prints = {}
+    for system, record, sha in (Fingerprint.objects.filter(client=client, source_record_id__in=[c.source_record_id for c in contacts])
+                                .order_by('fetched_at').values_list('source_system', 'source_record_id', 'sha256')):
+        prints[(system, record)] = sha
+    return {c.pk: (category.get(c.pk), prints.get((c.source_system, c.source_record_id))) for c in contacts}
 
 
 def strict_results(contacts) -> dict:
@@ -52,12 +69,15 @@ def flags(c: ContactEvent, copies: int, result=None) -> list[str]:
     return out
 
 
-def ledger_row(c: ContactEvent, copies: int, result=None) -> dict:
+def ledger_row(c: ContactEvent, copies: int, result=None, extra=(None, None)) -> dict:
+    category, sha = extra
     return {'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'phoneDisplay': c.masked_label, 'phoneE164': number_ref(c.phone_token),
-            'channel': c.get_channel_display(), 'category': 'Marketing' if c.direction == 'outbound' else 'Unknown',
+            'channel': c.get_channel_display(),
+            'category': category.capitalize() if category else ('Marketing' if c.direction == 'outbound' else 'Unknown'),
             'bases': [b['basis'] for b in (result.bases if result else [])], 'status': portal_status(result),
             'code': (result.primary_code or '—') if result else '—', 'reasonText': reason_text(result), 'checks': check_states(result),
-            'proof': proof_text(result), 'tiers': [], 'flags': flags(c, copies, result), 'hash': None,
+            'proof': proof_text(result), 'tiers': [GRADE_TIER[c.source_grade]] if c.source_grade in GRADE_TIER else [],
+            'flags': flags(c, copies, result), 'hash': sha,
             'direction': c.direction, 'where': where(c), 'result': c.disposition, 'tool': c.source_system}
 
 
@@ -94,8 +114,23 @@ class ContactsView(APIView):
         copies = {}
         for g in ContactEvent.objects.filter(client=client, dedupe_group__in=groups).values_list('dedupe_group', flat=True):
             copies[g] = copies.get(g, 0) + 1
-        results = strict_results(rows)
-        return Response([ledger_row(c, copies.get(c.dedupe_group, 1), results.get(c.pk)) for c in rows])
+        results, more = strict_results(rows), extras(client, rows)
+        return Response([ledger_row(c, copies.get(c.dedupe_group, 1), results.get(c.pk), more[c.pk]) for c in rows])
+
+
+class ContactView(APIView):
+    """One contact by its portal address (the contact panel opens any contact, not only the first 200 rows)."""
+    permission_classes = [IsClientUser]
+
+    def get(self, request, ref):
+        client = request.user.client
+        if not ref.startswith('ce-') or not ref[3:].isdigit():
+            return Response({'detail': 'No such contact.'}, status=404)
+        c = ContactEvent.objects.filter(client=client, pk=int(ref[3:])).first()
+        if c is None:
+            return Response({'detail': 'No such contact.'}, status=404)
+        copies = ContactEvent.objects.filter(client=client, dedupe_group=c.dedupe_group).count() if c.dedupe_group else 1
+        return Response(ledger_row(c, copies, strict_results([c]).get(c.pk), extras(client, [c])[c.pk]))
 
 
 def seal_of(client, contacts) -> dict:
@@ -107,6 +142,34 @@ def seal_of(client, contacts) -> dict:
     return {'date': latest.day.isoformat() if latest else '', 'root': latest.root if latest else '',
             'anchored': bool(prints) and len(sealed) == len(prints), 'sealedCount': len(sealed), 'recordCount': len(prints),
             'stamped': bool(latest and latest.tsa_response)}
+
+
+def came_from(client, token: str, epoch) -> str | None:
+    """Where this owner's number came from (Module 8 provenance ladder), in words."""
+    from apps.provenance.models import Provenance
+    p = Provenance.objects.filter(client=client, phone_token=token, epoch=epoch).first()
+    if p is None:
+        return None
+    name = f' · {p.source_name}' if p.source_name else ''
+    own = ' (your own website)' if p.own_website else ''
+    return f'{p.get_basis_display()}{name}{own}' + (f' · {p.note}' if p.basis == 'untraced' and p.note else '')
+
+
+def list_checks(client, token: str) -> list[dict]:
+    """The internal do-not-contact list is CiV's STOP list (STOP texts, CRM do-not-call); DNC scrub records come from
+    the Upload centre (not supplied yet)."""
+    from apps.optouts.models import OptOutEvent
+    from apps.uploads.models import DncCheck, InternalListEntry
+    stop = OptOutEvent.objects.filter(client=client, phone_token=token).order_by('at').first()
+    entry = InternalListEntry.objects.filter(client=client, phone_token=token).order_by('added_on').first()
+    since = min([d for d in (stop.at.date() if stop else None, entry.added_on if entry else None) if d], default=None)
+    check = DncCheck.objects.filter(client=client, phone_token=token).order_by('-checked_on').first()
+    supplied = DncCheck.objects.filter(client=client).exists()
+    return [{'list': 'Internal do-not-contact list', 'onList': since is not None,
+             'label': f'on it since {since:%d %b %Y}' if since else 'your list and STOP replies'},
+            {'list': 'DNC scrub records', 'onList': check.listed if check else None,
+             'label': f'{check.list_name} · checked {check.checked_on:%d %b %Y}' if check
+             else 'not in your DNC check records' if supplied else 'DNC scrub records not supplied'}]
 
 
 class NumberView(APIView):
@@ -141,8 +204,9 @@ class NumberView(APIView):
                           'labels': [c.direction, *([f'owner {c.epoch.number}'] if c.epoch_id else []), *([] if c.is_primary else ['copy from another tool']),
                                      *label_words(results.get(c.pk))]}
                          for c in contacts],
-            'proofElements': [], 'optOuts': optouts_of(client, last.phone_token), 'listChecks': [],
+            'proofElements': proof_elements(client, last.phone_token, current, contacts, results), 'optOuts': optouts_of(client, last.phone_token), 'listChecks': list_checks(client, last.phone_token),
             'consent': consent_panel(client, last.phone_token, current, results.values()),
+            'cameFrom': came_from(client, last.phone_token, current),
             'anchor': seal_of(client, contacts), 'onHold': False,
             'where': where(last), 'locationConfidence': last.location_confidence,
             'callingWindow': window(last.recipient_state, last.time_zones, last.is_non_us),

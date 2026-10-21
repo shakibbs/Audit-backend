@@ -8,7 +8,9 @@ from .words import CHANGE_REASONS, NOT_MEASURED, portal_status
 
 WORST_FIRST = ['NO_PROOF', 'CONFLICTING', 'WEAK', 'VERIFIED']
 KIND = {'certificate': 'Consent certificate', 'self_asserted': 'CRM consent field (never enough alone)',
-        'ebr_purchase': 'Existing customer: purchase', 'ebr_inquiry': 'Existing customer: inquiry'}
+        'ebr_purchase': 'Existing customer: purchase', 'ebr_inquiry': 'Existing customer: inquiry',
+        'inbound_call': 'The person called first', 'inbound_sms': 'The person texted YES', 'form_submission': "Your own form (no certificate)",
+        'client_supplied': 'Proof you supplied (proof request)'}
 
 
 def worst_of(results) -> str:

@@ -44,6 +44,7 @@ def unfold_config(portal_url: str) -> dict:
                 {'title': 'Overview', 'items': [link('Dashboard', 'space_dashboard', 'admin:index')]},
                 {'title': 'Clients', 'separator': True, 'items': [
                     link('Client companies', 'apartment', 'admin:clients_client_changelist'),
+                    link('Proof requests', 'fact_check', 'admin:provenance_proofrequest_changelist'),
                 ]},
                 {'title': 'Rules', 'separator': True, 'items': [
                     link('Rulebook', 'menu_book', 'admin:rulebook_rulevalue_changelist'),

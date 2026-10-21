@@ -95,6 +95,10 @@ def proofs_seen(client, connection, record, phone_tokens) -> None:
             for token in tokens:
                 _save(client, token, customer_since, made, kind=ConsentProof.Kind.EBR_PURCHASE, proof_type='purchase',
                       source_system=source, source_record_id=rid, lead_id=lead_id, source_hint=hint)
+    from apps.provenance.evidence import found as evidence_in
+    for item in evidence_in(client, connection, record, row, tokens):  # no certificate needed: the person acted first
+        _save(client, item['phone_token'], item['at'], made, kind=item['kind'], proof_type=item['kind'],
+              source_system=source, source_record_id=rid, lead_id=lead_id, source_hint=hint)
     # The record came back without a proof it gave before (link removed, box unticked, number changed): withdraw it.
     withdraw(ConsentProof.objects.filter(client=client, source_system=source, source_record_id=rid).exclude(pk__in=made), 'FZ_INPUTS_CHANGED')
 

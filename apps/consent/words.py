@@ -13,6 +13,7 @@ REASONS = {
     'CF_NOT_FOUND': 'The certificate provider does not have this certificate.',
     'CF_EXPIRED': 'The certificate expired before CiV could claim it.',
     'CF_CERT_AFTER_DELIVERY': 'The certificate was made after the lead was delivered.',
+    'WK_CLIENT_PROOF_UNCHECKED': 'You attached proof for this number; CiV has not checked it yet.',
     'NP_NO_CONSENT_TEXT': 'The form page CiV captured has no words asking for permission.',
     'NP_PRETICKED': 'The consent box on the form was already ticked: not a real choice.',
     'WK_WORDING': 'The consent wording has a gap (button name, number mentioned, text size or contrast).',
@@ -94,7 +95,9 @@ def proof_text(result: ConsentResult | None) -> str:
         made = proof.when()
         return f'{proof.certificate.get_provider_display()} certificate · made {made:%d %b %Y}' if made else f'{proof.certificate.get_provider_display()} certificate'
     return {'ebr_purchase': 'Existing customer (purchase)', 'ebr_inquiry': 'Existing customer (inquiry)',
-            'self_asserted': 'CRM consent field'}.get(proof.kind, proof.kind)
+            'self_asserted': 'CRM consent field', 'inbound_call': 'The person called first',
+            'inbound_sms': 'The person texted YES', 'form_submission': "The client's own form (no certificate)",
+            'client_supplied': 'Proof you supplied'}.get(proof.kind, proof.kind)
 
 
 def label_words(result: ConsentResult | None) -> list[str]:

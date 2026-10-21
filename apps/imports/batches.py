@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from apps.tenancy.scope import all_clients, tenant
 
-from .models import CrmCreation, ImportBatch
+from .models import CrmCreation, CrmUpdate, DialerListEntry, ImportBatch
 
 TOOL_IMPORT = {'IMPORT'}
 TOOL_FEED = {'INTEGRATION', 'API', 'APP', 'EXTENSION', 'BCC_TO_CRM'}
@@ -78,13 +78,72 @@ def rebuild(client) -> int:
         return ImportBatch.objects.filter(client=client, kind=ImportBatch.Kind.BULK).count()
 
 
+def bursts(rows, who, when, gap):
+    """Consecutive rows by the same `who` with no gap over `gap` between them."""
+    run = []
+    for r in rows:
+        if run and (who(r) != who(run[-1]) or when(r) - when(run[-1]) > gap):
+            yield run
+            run = []
+        run.append(r)
+    if run:
+        yield run
+
+
+def size_kind(n: int, min_batch: int) -> str:
+    return ImportBatch.Kind.BULK if n >= min_batch else ImportBatch.Kind.HAND if n == 1 else ImportBatch.Kind.SMALL
+
+
+def rebuild_updates(client) -> int:
+    """Update uploads: one user changing the opt-out, do-not-call or lead-source fields of many records in a burst
+    (a re-uploaded sheet the CRM merged into existing records). A steady stream by one user is a feed."""
+    gap, min_batch = thresholds()
+    with tenant(client), transaction.atomic():
+        ImportBatch.objects.filter(client=client, system='crm_update').delete()
+        for source in CrmUpdate.objects.filter(client=client).values_list('source_system', flat=True).distinct():
+            since = timezone.now() - FEED_LOOKBACK
+            recent = CrmUpdate.objects.filter(client=client, source_system=source, updated_at__gte=since).exclude(updated_by='')
+            days = dict(recent.annotate(d=TruncDate('updated_at')).values('updated_by').annotate(n=Count('d', distinct=True)).values_list('updated_by', 'n'))
+            hours = dict(recent.annotate(h=ExtractHour('updated_at')).values('updated_by').annotate(n=Count('h', distinct=True)).values_list('updated_by', 'n'))
+            feeds = {u for u in days if days[u] >= FEED_DAYS and hours.get(u, 0) >= FEED_HOURS}
+            rows = list(CrmUpdate.objects.filter(client=client, source_system=source).order_by('updated_by', 'updated_at', 'pk'))
+            for run in bursts(rows, lambda r: r.updated_by, lambda r: r.updated_at, gap):
+                kind = ImportBatch.Kind.FEED if run[0].updated_by in feeds else size_kind(len(run), min_batch)
+                batch = ImportBatch.objects.create(client=client, system='crm_update', source_system=source, created_by=run[0].updated_by,
+                                                   starts=run[0].updated_at, ends=run[-1].updated_at, kind=kind, updated_count=len(run),
+                                                   optouts_cleared=sum(1 for r in run if r.cleared_optout))
+                CrmUpdate.objects.filter(pk__in=[r.pk for r in run]).update(batch=batch)
+        return ImportBatch.objects.filter(client=client, system='crm_update', kind=ImportBatch.Kind.BULK).count()
+
+
+def rebuild_dialer(client) -> int:
+    """Dialer uploads: numbers put into a dialer list with no CRM record, grouped by list and time added."""
+    gap, min_batch = thresholds()
+    with tenant(client), transaction.atomic():
+        ImportBatch.objects.filter(client=client, system='dialer').delete()
+        in_crm = set()
+        for tokens in CrmCreation.objects.filter(client=client).values_list('phone_tokens', flat=True):
+            in_crm.update(tokens)
+        rows = [e for e in DialerListEntry.objects.filter(client=client).order_by('source_system', 'list_id', 'added_at', 'pk')
+                if e.phone_token not in in_crm]
+        for run in bursts(rows, lambda e: (e.source_system, e.list_id), lambda e: e.added_at, gap):
+            batch = ImportBatch.objects.create(client=client, system='dialer', source_system=run[0].source_system, list_id=run[0].list_id,
+                                               starts=run[0].added_at, ends=run[-1].added_at, created_count=len(run),
+                                               kind=size_kind(len(run), min_batch))
+            DialerListEntry.objects.filter(pk__in=[e.pk for e in run]).update(batch=batch)
+        return ImportBatch.objects.filter(client=client, system='dialer', kind=ImportBatch.Kind.BULK).count()
+
+
 def rebuild_all() -> None:
     from apps.clients.models import Client
     with all_clients():
         ids = set(CrmCreation.objects.values_list('client_id', flat=True).distinct())
+        ids |= set(DialerListEntry.objects.values_list('client_id', flat=True).distinct())
     from apps.optouts.readded import check_batches
     for client in Client.objects.filter(pk__in=ids):
         rebuild(client)
+        rebuild_updates(client)
+        rebuild_dialer(client)
         with tenant(client):
             check_batches(client)  # M34: opted-out numbers that came back in an upload
 
@@ -93,4 +152,8 @@ def origin(client, phone_token: str, at) -> ImportBatch | None:
     """Where this number came from at a given time: the batch of the latest CRM record created before `at` that holds it."""
     record = (CrmCreation.objects.filter(client=client, phone_tokens__contains=[phone_token], created_at__lte=at, batch__isnull=False)
               .select_related('batch').order_by('-created_at').first())
-    return record.batch if record else None
+    if record:
+        return record.batch
+    entry = (DialerListEntry.objects.filter(client=client, phone_token=phone_token, added_at__lte=at, batch__isnull=False)
+             .select_related('batch').order_by('-added_at').first())  # put straight into the dialer, no CRM record
+    return entry.batch if entry else None

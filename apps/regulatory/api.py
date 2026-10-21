@@ -45,7 +45,7 @@ def change_row(change: RegChange, read: set[int], reviews: dict[int, RuleUpdateR
                                      'at': mine.reviewed_at} if mine else None})
     return {'id': f'rc-{change.pk}', 'title': change.title, 'jurisdiction': change.jurisdiction, 'status': STATUS[change.status],
             'date': change.announced_on, 'effective': change.effective_text, 'summary': change.summary,
-            'settings': change.rule_keys, 'metrics': change.metrics, 'domains': [], 'confirmed': change.pk in read,
+            'settings': change.rule_keys, 'metrics': change.metrics, 'domains': change.domains, 'confirmed': change.pk in read,
             'source': change.source, 'sourceUrl': change.source_url or None,
             'checkedByCounsel': change.review == RegChange.Review.CHECKED, 'updates': updates}
 

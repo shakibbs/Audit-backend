@@ -13,6 +13,13 @@ from .connector import CONNECTORS, connector_for
 from .health import state
 from .models import SyncCursor
 
+# Which audit domains each kind of tool feeds (the Source Registry's "Feeds domains" column).
+FEEDS = {'dialer': ['CON', 'DLR', 'PRV', 'CTF', 'IDD', 'SHK', 'REV', 'REC', 'IDN', 'XBD'],
+         'sms': ['CON', 'SMS', 'CTF', 'REV', 'REC', 'IDN', 'XBD'],
+         'crm': ['CON', 'LPV', 'MNA', 'IDN', 'REV', 'REC'],
+         'certificates': ['CON', 'WEB', 'LPV', 'RET'],
+         'lead_feed': ['LPV', 'VND', 'AFF', 'WEB']}
+
 # Files the client uploads on Source Registry (Upload centre). Shown as before; their uploads are tracked elsewhere.
 UPLOAD_ROWS = [
     ('Internal do-not-contact list', None), ('Policies, training, contracts', None), ('Complaint log', None),
@@ -43,7 +50,21 @@ def tool_row(connection, cursor) -> dict:
         access = f'Connected by API · read every {every} minutes'
     return {'id': f'conn-{connection.pk}', 'name': connection.tool.name + (f' ({connection.label})' if connection.label else ''),
             'tier': TIER.get(connection.kind, 3), 'access': access, 'lastSync': when(cursor.last_heartbeat_at if cursor else None),
-            'status': status, 'feeds': [], 'revocable': True, 'acceptsUpload': False, 'blocks': blocks}
+            'status': status, 'feeds': FEEDS.get(connection.kind, []), 'revocable': True, 'acceptsUpload': False, 'blocks': blocks}
+
+
+UPLOAD_FEEDS = {'Internal do-not-contact list': ['IDN'], 'Policies, training, contracts': ['GOV', 'VND'], 'Complaint log': ['INC'],
+                'DNC check records': ['NDN', 'SDN'], 'Reassigned-number query logs': ['RND']}
+
+
+def upload_row(client, i: int, name: str, blocks) -> dict:
+    """An Upload centre source: supplied once a file for it has been uploaded (Batch 2 of the card coverage pass)."""
+    from apps.uploads.models import Source, UploadedFile
+    key = next((k for k, label in Source.choices if label == name), None)
+    last = UploadedFile.objects.filter(client=client, source=key).first() if key else None
+    return {'id': f'upload-{i}', 'name': name, 'tier': 4, 'access': 'Upload', 'lastSync': when(last.received_at) if last else '—',
+            'status': 'current' if last else 'not_supplied', 'feeds': UPLOAD_FEEDS.get(name, []), 'revocable': False, 'acceptsUpload': True,
+            'blocks': None if last else blocks}
 
 
 class SourcesView(APIView):
@@ -53,8 +74,7 @@ class SourcesView(APIView):
         connections = request.user.client.connections.all()
         cursors = {c.connection_id: c for c in SyncCursor.objects.filter(connection__in=connections)}
         rows = [tool_row(c, cursors.get(c.pk)) for c in connections]
-        rows += [{'id': f'upload-{i}', 'name': name, 'tier': 4, 'access': 'Upload', 'lastSync': '—', 'status': 'not_supplied',
-                  'feeds': [], 'revocable': False, 'acceptsUpload': True, 'blocks': blocks} for i, (name, blocks) in enumerate(UPLOAD_ROWS, 1)]
+        rows += [upload_row(request.user.client, i, name, blocks) for i, (name, blocks) in enumerate(UPLOAD_ROWS, 1)]
         return Response(rows)
 
 
@@ -75,8 +95,14 @@ class DataHealthView(APIView):
             'lastChangeAt': last,  # None until something has been read
             'sources': {'live': sum(r['status'] == 'current' for r in rows), 'stale': sum(r['status'] == 'stale' for r in rows),
                         'notSupplied': sum(r['status'] == 'not_supplied' for r in rows), 'total': len(rows)},
-            **records_completeness(client), 'conversationReview': None,
+            **records_completeness(client), 'conversationReview': None, 'proofRequestsWaiting': proof_requests_waiting(client),
         })
+
+
+def proof_requests_waiting(client) -> int:
+    """Module 8: proof requests the company has not answered yet (shown on the Overview's attention strip)."""
+    from apps.provenance.models import ProofRequest
+    return ProofRequest.objects.filter(client=client, answer='').count()
 
 
 def records_completeness(client) -> dict:

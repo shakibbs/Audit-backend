@@ -60,3 +60,24 @@ def test_the_admin_client_page_has_a_consent_pages_tab_with_photos(photographed,
     shot = PageCapture.objects.first()
     photo = client.get(f'/civ-admin/clients/client/{company.pk}/consent-pages/{shot.pk}/photo/')
     assert photo.status_code == 200 and photo['Content-Type'] == 'image/png'
+
+
+def test_restored_wording_parts_mark_checklist_count_missing_and_changed_date(photographed, company, member_user, fake):  # noqa: F811
+    from apps.captures.capture import capture_page
+    from apps.captures.models import ConsentPage
+    from tests.captures.test_checklist import form
+    fake.answer = Shot(True, png=b'png', text='x', measurements=form(text='By clicking Get My Quote, I agree that SunPath Residential Solar may text me at the number provided.'))
+    capture_page(ConsentPage.objects.get(), FakeBrowser(), now=timezone.now() + timedelta(days=1))  # the words changed
+    api = browser_for(member_user)
+    page = api.get('/api/consent-pages').json()[0]
+    assert page['changedOn'] and page['checklistTotal'] == 9 and page['checklistPassed'] == 9 and page['missing'] == []
+    assert page['mark'] == 'unmarked'
+    ref = page['id']
+    assert api.call('patch', f'/api/consent-pages/{ref}', {'mark': 'rejected'}).json()['mark'] == 'rejected'
+    assert api.call('patch', f'/api/consent-pages/{ref}', {'mark': 'maybe'}).status_code == 400
+
+
+def test_the_vendor_named_in_the_crm_shows_on_the_page(photographed, company, member_user):
+    from apps.imports.models import CrmCreation
+    CrmCreation.objects.create(client=company, source_system='hubspot', record_id='contacts:1', created_at=timezone.now(), vendor='SolarLeads Inc')
+    assert browser_for(member_user).get('/api/consent-pages').json()[0]['vendor'] == 'SolarLeads Inc'

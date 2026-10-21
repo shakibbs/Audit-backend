@@ -8,6 +8,7 @@ from django.db import models
 from .wording import banned_words
 
 METRIC_CODE = re.compile(r'^M\d{2}[a-z]?$')
+DOMAIN_CODE = re.compile(r'^[A-Z]{2,4}$')
 
 
 class RegChange(models.Model):
@@ -30,6 +31,7 @@ class RegChange(models.Model):
     summary = models.TextField(help_text='Plain words, shown to clients')
     rule_keys = models.JSONField('rules it touches', default=list, blank=True)
     metrics = models.JSONField('metrics it affects', default=list, blank=True)
+    domains = models.JSONField('domains it affects', default=list, blank=True)  # domain codes, e.g. REV, SMS
     source = models.CharField(max_length=200, help_text='e.g. Oregon HB 3865, FCC order of 30 Sep 2026')
     source_url = models.URLField(blank=True)
     review = models.CharField(max_length=20, choices=Review.choices, default=Review.TO_CHECK)
@@ -54,6 +56,8 @@ class RegChange(models.Model):
             errors['rule_keys'] = f'Not in the Rulebook: {", ".join(unknown)}'
         if bad := [m for m in self.metrics if not METRIC_CODE.match(m)]:
             errors['metrics'] = f'Not a metric code (like M10): {", ".join(bad)}'
+        if bad := [d for d in self.domains if not DOMAIN_CODE.match(d)]:
+            errors['domains'] = f'Not a domain code (like REV): {", ".join(bad)}'
         for field in ('title', 'summary', 'effective_text'):
             if words := banned_words(getattr(self, field)):
                 errors[field] = f'Clients may not see these words: {", ".join(words)}'
