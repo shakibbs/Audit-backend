@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'apps.provenance',
     'apps.uploads',
     'apps.metrics',
+    'apps.scoring',
+    'apps.litigation',
     'apps.conversations',
 ]
 
@@ -172,6 +174,8 @@ CELERY_BEAT_SCHEDULE = {
     'purge-old-uploads': {'task': 'apps.uploads.tasks.purge_old_uploads', 'schedule': crontab(minute=55, hour=4)},
     'conversation-review': {'task': 'apps.conversations.tasks.review_conversations', 'schedule': 60.0},  # off until an AI is chosen
     'conversation-exam': {'task': 'apps.conversations.tasks.run_exams', 'schedule': crontab(minute=10, hour=2)},  # the AI's exam (step 4)
+    'webrecon-litigation': {'task': 'apps.litigation.tasks.read_webrecon', 'schedule': crontab(minute=30, hour=5, day_of_week=1)},  # Mondays
+    'metric-snapshots': {'task': 'apps.scoring.tasks.snapshot_metrics', 'schedule': crontab(minute=0, hour=4)},  # Module 10 step 1
     'optout-mark-check': {'task': 'apps.optouts.tasks.check_marks', 'schedule': 300.0},  # urgent within 15 min of an opt-out
     'capture-pages': {'task': 'apps.captures.tasks.capture_pages', 'schedule': crontab(minute=20)},  # hourly; each page about once a day
     'purge-old-captures': {'task': 'apps.captures.tasks.purge_old_captures', 'schedule': crontab(minute=45, hour=4)},

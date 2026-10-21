@@ -1,5 +1,6 @@
 """Client API: the metrics that are real so far (Contact Conduct: M15–M19, M21, M31) and the Contact Conduct charts.
-/api/metrics sends only these; the portal keeps its sample for the others until Module 10."""
+/api/metrics sends only these; the portal keeps its sample for the others. A month with a saved copy (Module 10) is read
+from it."""
 import re
 
 from rest_framework.response import Response
@@ -23,6 +24,11 @@ class MetricsView(APIView):
 
     def get(self, request):
         client, period = request.user.client, period_of(request)
+        if period:
+            from apps.scoring.snapshots import saved_metrics
+            saved = saved_metrics(client, period)
+            if saved is not None:
+                return Response(saved)  # the month's saved copy (Module 10)
         return Response(conduct_metrics(client, period) + overview_metrics(client, period))
 
 

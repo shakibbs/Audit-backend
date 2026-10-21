@@ -928,3 +928,68 @@ contacted after the deadline. Not measured until there is data. Shown in the por
   **M48** contacts after a "wrong number" reply, **M45** contacts after naming an attorney (a 4th answer in the same AI
   request, `ConversationReview.attorney_at`; trusted reviews only; complaint-log demand letters not counted yet). Shown
   once the AI has read anything; before that the sample rows stay.
+
+## Metrics + scoring (Module 10)
+
+### Monthly snapshots (step 1)
+
+`apps/scoring`. Every night at 04:00 UTC (`metric-snapshots`), each client's metrics (`conduct_metrics`,
+`overview_metrics`, M38) for every open month are counted and saved (`snapshot_run` + `metric_snapshot`, locked), each
+with its state: measured / not yet measured / worst case / rule pending. Owner decisions 2026-10-21: a month **locks 5
+days after it ends**; a locked month is **never overwritten** — on Sundays it is re-checked and, only if the results
+changed (late records, a rule change), saved as a **new version marked revised**, the old one kept; the month picker
+lists **every month since the client's start date**, newest first (`/api/session` → `periods`, with `revisedOn`).
+`/api/metrics?period=YYYY-MM` reads the saved month (history from the saved months) and counts live only when the month
+was never saved.
+
+### Metric scores 0–100 (step 2)
+
+`apps/scoring/scores.py`: each saved metric gets `score` (100 = best). Shares where higher is better (M01, M42…) → the
+share; problem counts → per 10,000 outbound contacts in the month (`snapshot_run.contacts`): 0 → 100, up to 5 → 50,
+more → 0; own bands for M08 (hours: ≤24 → 100, ≤72 → 50, else or NEVER → 0), M09 (share not honored: 0 → 100, ≤10 % →
+50), M31 (abandoned %: ≤1 → 100, ≤3 → 50), M32, M35. Bands are the Rulebook's **draft** `metric_score_bands` (the
+Exposure Indicator v2.2 metric bands are not on file; owner decision 2026-10-21) and can change without code. Not yet
+measured / rule pending → no score (left out); worst case → 0.
+
+### Factors and D (step 3)
+
+`apps/scoring/extra.py` adds to each saved month the metrics measured elsewhere: M12 internal list (worst case when
+the list was never uploaded), M34 re-added numbers, M11 reassigned checks (worst case "not checked" without query
+logs), M41, M42, M45, M48. `apps/scoring/factors.py` (Exposure Indicator v2.2): F1–F6 = 100 − the weighted mean of the
+factor's metric scores (higher = worse; M10 and M34 twice). Any contact after an opt-out (M10) or internal-list entry
+(M12) holds F3 / F2 at **75 or worse** (`heldBy`). **D** = 0.28·F1 + 0.20·F2 + 0.17·F3 + 0.16·F4 + 0.11·F5 + 0.08·F6.
+Owner decisions 2026-10-21: a factor with no scored metric is **pending**, left out with its weight spread over the
+measured ones, and D is **partial**; display-only metrics (M38, M41, M42, M45, M48) are never scored. Saved on
+`snapshot_run.score`.
+
+### Exposure and grade (step 4)
+
+`apps/scoring/exposure.py`: **Exposure = min(100, D × Venue × Targeting × Volume)**, grade A < 25 · B 25–39 · C 40–48 ·
+D 49–66 · F 67+. Draft values in the Rulebook (`exposure_multipliers`, owner decision 2026-10-21): **Venue** from the
+states of the people contacted (FL, OK, MD, WA, TX, CT, VA, GA, NJ, UT, IN, MS, KY: none 1.00 · 1–2 1.10 · 3–5 1.20 ·
+6+ or 10 %+ into FL/OK/WA/TX/CT 1.30, cap 1.35); **Volume** from the real outbound contacts of the 12 months to the
+month's end (≤100k 0.90 · ≤500k 1.00 · ≤1M 1.10 · more 1.20, 1.30 with both calls and texts); **Targeting** 1.00 until
+lawsuit data (step 4b). Caps hold the grade at C or worse: the **hard cap** (legal-basis contacts with no proof above
+`hard_cap_share`; "rule pending" while TBD) and the **coverage cap** (waits for M36). Saved on `snapshot_run.score.exposure`.
+
+### Litigation numbers from WebRecon (step 4b)
+
+`apps/litigation` (owner decision 2026-10-21: WebRecon now, no key; CourtListener for company-level lawsuits later).
+Every Monday 05:30 UTC (`webrecon-litigation`) the post list is read from WebRecon's sitemap and each monthly
+litigation-statistics post is read once (the newest two again), at most 24 a run, a second apart; their robots.txt
+allows it. Saved per month (`litigation_month`, public, not per client): TCPA lawsuits and class actions in the month,
+TCPA year to date, the % changes, repeat plaintiffs. A post that can't be read is kept as `read_ok = false`, so a site
+redesign shows up. `GET /api/litigation` feeds the insurer's Litigation Intelligence page (merged by card id:
+filings this year, class actions in the latest month, repeat plaintiffs, and that month's class actions by year);
+costs, claim types and the study stay as they are. Targeting stays 1.00 until CourtListener.
+
+### In the portal (step 5)
+
+`apps/scoring/portal.py`, one engine (owner decision 2026-10-21): a **domain score** is the mean of its metrics' 0–100
+scores (pass ≥ 90, warn 60–89, fail < 60 for its bars; REV / IDN held at D after a contact after a stop / internal-list
+entry); the **Audit Score** is the mean of the measured domains (NDN, SDN shown but never counted), graded by the
+Rulebook's `grade_bands`; the **factor map** reads `exposure.inside` (F1–F6, pending = null, multipliers) on
+`/api/insureds/<ref>`. `GET /api/score` and `GET /api/domains` (`?period=`, else the latest saved month) feed the
+Overview and the Audit Scorecard: history and previous month from the saved months, the three caps (hard cap "rule
+pending" while TBD, contact-after-stop, coverage "not measured yet"), `partial` ("3 of 6 factors measured") and
+`draftBands`. The portal's Exposure leaves pending factors out and spreads their weight.

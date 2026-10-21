@@ -50,7 +50,7 @@ def browser_for(user):
 
 def test_rulebook_page_counts_note_and_no_banned_names(rulebook, member_user):
     data = browser_for(member_user).get('/api/rulebook').json()
-    assert (data['set'], data['proposed'], data['tbd']) == (70, 56, 21)
+    assert (data['set'], data['proposed'], data['tbd']) == (70, 58, 21)
     assert data['versionStatus'] == 'provisional' and 'not yet confirmed by a lawyer' in data['note']
     keys = {s['key'] for s in data['settings']}
     assert 'direct_contact_cap_grade' in keys and not any('violation' in k for k in keys)

@@ -22,7 +22,7 @@ def rule(d, key):
 def test_spec_v3_loads_as_provisional_with_state_rows():
     version, result = load(V3)
     assert result == 'loaded' and version.status == 'provisional' and version.version == '3.0'
-    assert RuleValue.objects.filter(version=version, jurisdiction='US').count() == 147
+    assert RuleValue.objects.filter(version=version, jurisdiction='US').count() == 149
     fl = RuleValue.objects.get(key='calling_hours', jurisdiction='FL')
     assert fl.status == 'tbd' and fl.provisional == {'start': '08:00', 'end': '20:00'} and fl.counsel_item == 'A6'
     deadline = RuleValue.objects.get(key='optout_deadline_business_days', jurisdiction='US')

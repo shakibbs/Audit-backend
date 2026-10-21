@@ -27,4 +27,10 @@ def session_data(user: ClientUser | None) -> dict:
         'engagementMode': 'counsel_directed' if client.counsel_directed else 'direct',
         'plan': client.get_plan_display(),
         **updated_at(client),
+        'periods': periods_of(client),
     }
+
+
+def periods_of(client) -> list[dict]:
+    from apps.scoring.snapshots import periods
+    return periods(client)

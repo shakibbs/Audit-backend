@@ -61,19 +61,21 @@ def unprocessed(client, start, end, now=None) -> dict:
         rules = RuleSet()
     except NoRulebook:
         rules = None
-    done = not_marked = contacted = 0
+    done = not_marked = contacted = failed = 0
     for event in _optouts(client, start, end):
         deadline = deadline_of(event, rules)
         if deadline is None or deadline > now:
             continue  # deadline not passed yet
         done += 1
-        not_marked += any(c.missed for c in event.mark_checks.all())
-        contacted += ContactEvent.objects.filter(client=client, phone_token=event.phone_token, is_primary=True, direction='outbound',
-                                                 occurred_at__gt=deadline).exists()
+        missed = any(c.missed for c in event.mark_checks.all())
+        after = ContactEvent.objects.filter(client=client, phone_token=event.phone_token, is_primary=True, direction='outbound',
+                                            occurred_at__gt=deadline).exists()
+        not_marked, contacted, failed = not_marked + missed, contacted + after, failed + (missed or after)
     if not done:
         return {'code': 'M09', 'value': None, 'display': 'Not measured', 'note': '', 'notMeasured': 'No opt-out past its deadline yet',
                 'source': SOURCE}
     return {'code': 'M09', 'value': None, 'display': f'{not_marked:,} · {contacted:,}', 'm09a': not_marked, 'm09b': contacted,
+            'pastDeadline': done, 'notHonored': failed,
             'note': f'M09a not marked in a tool · M09b contacted after · of {done:,} opt-out{"" if done == 1 else "s"} past the deadline',
             'notMeasured': None, 'source': SOURCE}
 

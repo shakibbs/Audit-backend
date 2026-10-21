@@ -76,8 +76,12 @@ class OwnInsuredView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request, ref: str):
+        from apps.scoring.portal import exposure_reading
         client = request.user.client
         out = attestation(client)
+        reading = exposure_reading(client)  # Module 10: the factor map and Exposure from the saved scores
+        if reading:
+            out['exposure'] = {'inside': reading}
         month = PeriodIntegrity.objects.filter(client=client).first()  # latest month checked
         if month is not None:
             out['completeness'] = month.completeness

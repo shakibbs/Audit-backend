@@ -23,6 +23,8 @@ urlpatterns = [
     path('api/', include('apps.captures.urls')),
     path('api/', include('apps.provenance.urls')),
     path('api/', include('apps.access_log.urls')),
+    path('api/', include('apps.litigation.urls')),
+    path('api/', include('apps.scoring.urls')),
     path('api/', include('apps.anchoring.urls')),
     path('api/', include('apps.clients.urls')),
     path('api/', include('apps.reconcile.urls')),
