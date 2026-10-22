@@ -56,11 +56,13 @@ def test_five9(creds: dict) -> tuple[str, str]:
 
     from apps.sync.connectors.five9 import Five9, Five9Error, zone
     try:
-        zone(creds.get('secret', ''))
+        zone(creds.get('setting') or creds.get('secret', ''))
     except Five9Error:
-        return Status.FAILED, 'Enter the Five9 report time zone in "API secret", e.g. America/New_York.'
+        return Status.FAILED, 'Enter the Five9 report time zone in "Time zone or region", e.g. America/New_York.'
 
     class Probe:  # just enough of a connection for the adapter
+        setting = creds.get('setting', '')
+
         def get_credentials(self):
             return creds
     try:
@@ -136,4 +138,5 @@ def run_test(connection: Connection) -> tuple[str, str]:
     tester = TESTERS.get(connection.provider)
     if tester is None:
         return Status.UNTESTED, f'Key saved. A live test for {connection.tool.name} comes with its connector.'
-    return tester(connection.get_credentials())
+    # The visible Time zone / region box goes along with the keys (never stored with them).
+    return tester({**connection.get_credentials(), 'setting': connection.setting})

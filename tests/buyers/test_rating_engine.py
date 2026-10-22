@@ -99,3 +99,14 @@ def test_another_insurer_never_sees_the_settings(company):
     with buyer(falcon):
         assert RatingEngine.objects.count() == 1
     assert underwriter(other).get('/api/rating-engine').json()['url'] == ''
+
+
+def test_a_refused_send_gives_a_plain_message_not_a_web_page(company, monkeypatch):
+    """Bug fix 2026-10-23: the other server's raw web page was shown to the insurer."""
+    from apps.buyers.engines import JsonPost
+    monkeypatch.setattr(engines, 'check_address', lambda url: None)
+    monkeypatch.setattr(engines, '_post', lambda url, body, headers: (405, '<!doctype html><html><title>405 Method Not Allowed</title></html>'))
+    ok, status, detail = JsonPost().send('https://rate.falconrisk.com/in', 'k', {'sha256': 'x'})
+    assert not ok and status == 405 and detail.startswith('That address does not accept the sheet.') and '<' not in detail
+    monkeypatch.setattr(engines, '_post', lambda url, body, headers: (401, ''))
+    assert JsonPost().send('https://rate.falconrisk.com/in', 'k', {})[2] == 'Your rating engine refused the key. Check the key you saved.'

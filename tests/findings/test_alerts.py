@@ -1,5 +1,5 @@
 """Module 11 step 3: alerts gathered from what CiV already knows; updated, not repeated; lasting ones resolve;
-reviewed by anyone who can see them; lawyer-only mode; kept forever."""
+reviewed by anyone in the company; kept forever."""
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -63,17 +63,11 @@ def test_unmarked_stop_and_incomplete_month(company):
     assert found['incomplete-2026-09'].detail.startswith('CiV holds about 92%')
 
 
-def test_review_and_lawyer_only_mode(company, admin_user, member_user, signed_in, api):
+def test_every_member_sees_alerts_and_can_review_them(company, admin_user, member_user, signed_in, api):
+    """Owner, 2026-10-22: no lawyer-only mode; every user of the company sees alerts and findings."""
     Connection.objects.create(client=company, provider='vicidial', status=Status.STALE)
     refresh(company)
-    company.counsel_directed = True
-    company.save()
-    assert signed_in(member_user).get('/api/alerts').json() == []  # a Member in lawyer-only mode sees none
-    assert api.get('/api/actions').json() == []
-    company.counsel_directed = False
-    company.save()
-    row = api.get('/api/alerts').json()[0]
-    assert row['routedTo'] == 'all'
+    row = signed_in(member_user).get('/api/alerts').json()[0]
     reviewed = api.call('post', f"/api/alerts/{row['id']}/review").json()
     assert reviewed['reviewed'] and reviewed['reviewedBy'] == member_user.name
     assert Alert.objects.get().reviewed

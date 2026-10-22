@@ -13,8 +13,6 @@ class Client(models.Model):
     brand_names = models.TextField(blank=True, help_text='The company and brand names its consent forms use, one per line')  # Module 7 seller check
     plan = models.CharField(max_length=20, choices=Plan.choices, default=Plan.GROWTH)
     start_date = models.DateField()
-    # Counsel-directed by default: findings and alerts go only to users marked as the client's lawyer.
-    counsel_directed = models.BooleanField('lawyer-only mode', default=True)
     # 0–4, from connected tools; set by the connections module, never typed in.
     access_level = models.PositiveSmallIntegerField(default=0, editable=False)
     class Status(models.TextChoices):

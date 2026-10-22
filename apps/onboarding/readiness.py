@@ -101,6 +101,10 @@ def readiness(client) -> dict:
             'setup': setup_rows(client, month)}
 
 
+# The Setup & Readiness checklist rows (the portal's ids).
+SETUP_ITEMS = ('outcomes', 'caller-ids', 'pages', 'vendors', 'campaigns', 'states', 'optout-methods')
+
+
 def setup_rows(client, month) -> list[dict]:
     """The setup checklist rows CiV can count itself (the others keep the client's own ticks)."""
     pages = ConsentPage.objects.filter(client=client).count()
@@ -119,6 +123,16 @@ def setup_rows(client, month) -> list[dict]:
         rows.append({'id': 'campaigns', 'done': True, 'count': f'{campaigns} campaigns · all treated as marketing'})
     if states:
         rows.append({'id': 'states', 'done': True, 'count': f'{states} states'})
+    # Every other row is the Admin's own tick, saved per company (owner, 2026-10-23); never the sample's.
+    from .models import SetupMark
+    counted = {r['id'] for r in rows}
+    marks = {m.item: m for m in SetupMark.objects.filter(client=client)}
+    for item in SETUP_ITEMS:
+        if item in counted:
+            continue
+        m = marks.get(item)
+        rows.append({'id': item, 'done': bool(m and m.done),
+                     'count': f"Marked {'done' if m.done else 'not done'} by {m.by} on {m.at:%-d %b %Y}" if m else 'Not marked yet'})
     return rows
 
 

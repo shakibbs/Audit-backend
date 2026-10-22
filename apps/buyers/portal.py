@@ -8,8 +8,10 @@ from rest_framework.views import APIView
 from apps.access_log.models import AccessEntry
 from apps.access_log.recorder import record
 
+from apps.accounts.permissions import IsClientUser
+
 from .authentication import IsBuyerUser
-from .models import AttestationSnapshot
+from .models import AttestationSnapshot, BuyerUser
 
 NOT_MEASURED = ('marketingShare', 'smsShare', 'optOutMedianHours', 'optOutFailShare', 'rndExposure',
                 'litigatorContacts', 'unknownCallerIds')
@@ -57,10 +59,29 @@ def as_buyer(response: Response) -> Response:
     return response
 
 
+def own_sheet(client) -> AttestationSnapshot:
+    """A client previewing its insurer's view (owner decision 2026-10-22): its own newest sheet, made now if none yet."""
+    snap = AttestationSnapshot.objects.filter(client=client).order_by('-period', '-version').first()
+    if snap is None:
+        from .attestation import save
+        snap = save(client, timezone.localdate().replace(day=1)) or AttestationSnapshot.objects.filter(client=client).first()
+    return snap
+
+
+def previewing(user) -> bool:
+    from apps.accounts.models import ClientUser
+    return isinstance(user, ClientUser) and user.view == 'underwriter'
+
+
 class InsuredsView(APIView):
-    permission_classes = [IsBuyerUser]
+    """An insurer's portfolio; a client user in the Underwriter view gets only its own company, as its insurer sees it."""
+    permission_classes = [IsBuyerUser | IsClientUser]
 
     def get(self, request):
+        if previewing(request.user):
+            return as_buyer(Response([insured(own_sheet(request.user.client))]))
+        if not isinstance(request.user, BuyerUser):
+            return Response({'detail': 'Switch to the Underwriter view to see this.'}, status=403)
         rows = sorted((insured(s) for s in newest()), key=lambda i: i['name'].lower())
         return as_buyer(Response(rows))
 

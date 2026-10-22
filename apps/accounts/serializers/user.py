@@ -1,4 +1,5 @@
 """Rows of the Users page: people with access, then pending invites."""
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import ClientUser, Invite, Role
@@ -15,7 +16,8 @@ def user_row(user: ClientUser) -> dict:
 def invite_row(invite: Invite) -> dict:
     return {
         'id': f'inv-{invite.pk}', 'name': invite.name, 'email': invite.email, 'role': invite.role,
-        'isCounsel': invite.is_counsel, 'status': 'invited', 'lastSeen': None,
+        'isCounsel': invite.is_counsel, 'status': 'expired' if invite.expires_at <= timezone.now() else 'invited', 'lastSeen': None,
+        'sentAt': invite.sent_at.isoformat(),
     }
 
 

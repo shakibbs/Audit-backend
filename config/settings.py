@@ -147,10 +147,19 @@ REST_FRAMEWORK = {
     'UNAUTHENTICATED_USER': None,
 }
 
-# Emails print in the terminal until a real email service is chosen.
-MAILERS = {'default': {'BACKEND': os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')}}
+# Email: Gmail (owner decision 2026-10-22) once GMAIL_USER and GMAIL_APP_PASSWORD are in .env (an app password from
+# the Google account's security page, never the normal password). Until then emails print in the terminal.
+GMAIL_USER = os.environ.get('GMAIL_USER', '')
+if GMAIL_USER and os.environ.get('GMAIL_APP_PASSWORD'):
+    MAILERS = {'default': {'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+                           'OPTIONS': {'host': 'smtp.gmail.com', 'port': 587, 'use_tls': True, 'timeout': 20,
+                                       'username': GMAIL_USER, 'password': os.environ['GMAIL_APP_PASSWORD']}}}
+else:
+    MAILERS = {'default': {'BACKEND': os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')}}
 # Links in emails point at the portal.
 PORTAL_URL = os.environ.get('PORTAL_URL', 'http://localhost:3000')
+# The admin panel's own address, for links in emails sent without a page open (staff welcome links).
+ADMIN_URL = os.environ.get('ADMIN_URL', 'http://localhost:8000').rstrip('/')
 # Admin panel look and menu.
 UNFOLD = unfold_config(PORTAL_URL)
 
@@ -216,7 +225,8 @@ SYNC_BATCH_SIZE = int(os.environ.get('SYNC_BATCH_SIZE', '500'))
 ANCHOR_TSA_URLS = env_list('ANCHOR_TSA_URLS', 'https://freetsa.org/tsr,http://ts.ssl.com')
 ANCHOR_OTS_CALENDARS = env_list('ANCHOR_OTS_CALENDARS', 'https://a.pool.opentimestamps.org,https://b.pool.opentimestamps.org')
 
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'CiV <no-reply@complyiv.com>')
+# Gmail sends only as its own account (or an alias added in Gmail), so the sender defaults to that address.
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'Comply iV <{GMAIL_USER}>' if GMAIL_USER else 'CiV <no-reply@complyiv.com>')
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

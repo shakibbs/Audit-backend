@@ -151,3 +151,26 @@ def test_modify_or_new_is_checked(rulebook, fields, message):
     update = RuleUpdate(reg_change=law, jurisdiction='OR', value=1, shown='x', status='set', effective_from=date(2026, 1, 1), **fields)
     with pytest.raises(ValidationError, match=message):
         update.full_clean()
+
+
+def test_a_waiting_draft_and_its_law_change_can_be_deleted(rulebook, staff, client):
+    """Owner decision 2026-10-23: a draft made by mistake can go; approved ones stay on record."""
+    from apps.regulatory.models import LawItem
+    draft = oregon_update()
+    law = draft.reg_change
+    item = LawItem.objects.create(source='federal_register', ref='QA-1', kind='Rule', title='QA', published_on=date(2026, 1, 1),
+                                  url='https://example.com', state='used', reg_change=law)
+    confirm = client.get(f'/civ-admin/regulatory/regchange/{law.pk}/delete/')
+    assert confirm.status_code == 200 and 'protected' not in confirm.content.decode().lower()
+    assert client.post(f'/civ-admin/regulatory/regchange/{law.pk}/delete/', {'post': 'yes'}).status_code == 302
+    assert not RegChange.objects.filter(pk=law.pk).exists() and not RuleUpdate.objects.filter(pk=draft.pk).exists()
+    item.refresh_from_db()
+    assert item.state == 'new'  # back in "New law items"
+
+
+def test_a_law_change_with_an_approved_update_cannot_be_deleted(rulebook, staff, client):
+    update = oregon_update()
+    approve(update, staff)
+    law = update.reg_change
+    assert client.post(f'/civ-admin/regulatory/regchange/{law.pk}/delete/', {'post': 'yes'}).status_code == 403
+    assert RegChange.objects.filter(pk=law.pk).exists()

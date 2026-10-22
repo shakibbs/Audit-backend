@@ -24,17 +24,18 @@ class Provider:
     account_label: str = ''  # what "account ID" means for this tool, if it needs one
     key_label: str = 'API key'
     secret_label: str = ''  # what "secret" means for this tool, if it needs one
+    setting_label: str = ''  # a plain, visible setting (time zone, region): not a secret, editable later (2026-10-23)
 
 
 # Every tool a client may connect. Clients use different systems, so all stay available; a tool is read only once
 # its adapter exists (apps/sync/connectors). Until then it shows "Saved, not tested". Order = order in the dropdown.
 PROVIDERS = {
     # Dialers
-    'five9': Provider('Five9', Kind.DIALER, 'api_key', account_label='Username (reports only)', key_label='Password', secret_label='Report time zone (e.g. America/New_York)'),
-    'convoso': Provider('Convoso', Kind.DIALER, 'api_key', key_label='Auth token', secret_label='Account time zone (e.g. America/New_York)'),
+    'five9': Provider('Five9', Kind.DIALER, 'api_key', account_label='Username (reports only)', key_label='Password', setting_label='Report time zone (e.g. America/New_York)'),
+    'convoso': Provider('Convoso', Kind.DIALER, 'api_key', key_label='Auth token', setting_label='Account time zone (e.g. America/New_York)'),
     'ringcentral': Provider('RingCentral', Kind.DIALER, 'oauth'),
-    'vicidial': Provider('Vicidial', Kind.DIALER, 'api_key', account_label='Database server (host:port/database)', key_label='Read-only database user', secret_label='Password'),
-    'genesys': Provider('Genesys Cloud', Kind.DIALER, 'api_key', account_label='Client ID', key_label='Client secret', secret_label='Region (e.g. mypurecloud.com)'),
+    'vicidial': Provider('Vicidial', Kind.DIALER, 'api_key', account_label='Database server (host:port/database)', key_label='Read-only database user', secret_label='Password', setting_label='Server time zone (e.g. America/New_York)'),
+    'genesys': Provider('Genesys Cloud', Kind.DIALER, 'api_key', account_label='Client ID', key_label='Client secret', setting_label='Region (e.g. mypurecloud.com)'),
     'nice_cxone': Provider('NICE CXone', Kind.DIALER, 'oauth'),
     'talkdesk': Provider('Talkdesk', Kind.DIALER, 'oauth'),
     'readymode': Provider('ReadyMode', Kind.DIALER, 'api_key', account_label='Account domain', key_label='API key'),

@@ -48,5 +48,5 @@ def test_admin_pages_and_tile(client):
     client.force_login(StaffUser.objects.create_superuser(email='team@complyiv.com', name='Team', password=PASSWORD))
     page = client.get('/civ-admin/rulebook/rulevalue/check/').content.decode()
     assert 'Needs a decision' in page and 'autodialed_modes' in page and 'Not confirmed by a lawyer' in page
-    assert 'Every value this rule has had' in client.get('/civ-admin/rulebook/rulevalue/history/calling_hours/').content.decode()
+    assert 'Every value this rule has had' in client.get('/civ-admin/rulebook/rulevalue/rule-history/calling_hours/').content.decode()
     assert 'Rules needing a decision' in client.get('/civ-admin/').content.decode()

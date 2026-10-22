@@ -40,7 +40,8 @@ class Convoso(Connector):
         super().__init__(connection)
         creds = connection.get_credentials()
         self.token = creds.get('key', '')
-        self.tz = zone(creds.get('secret') or 'America/New_York')
+        # The visible Time zone box; older connections kept it in the hidden secret box.
+        self.tz = zone(getattr(connection, 'setting', '') or creds.get('secret') or 'America/New_York')
 
     def _get(self, path: str, params: dict) -> dict:
         # POST keeps the token out of URLs and server logs.

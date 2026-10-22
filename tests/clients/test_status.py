@@ -15,8 +15,8 @@ def staff_client(client):
 
 def save(staff_client, company, status, reason=''):
     data = {'name': company.name, 'industry': 'Solar', 'plan': 'growth', 'start_date': '2026-10-01',
-            'status': status, 'status_reason': reason, 'counsel_directed': 'on'}
-    for prefix in ('connections', 'users', 'invites', 'contract', 'documents'):
+            'status': status, 'status_reason': reason}
+    for prefix in ('connections', 'users', 'invites', 'invites-2', 'contract', 'documents'):
         data.update({f'{prefix}-TOTAL_FORMS': 0, f'{prefix}-INITIAL_FORMS': 0, f'{prefix}-MIN_NUM_FORMS': 0, f'{prefix}-MAX_NUM_FORMS': 1000})
     response = staff_client.post(f'/civ-admin/clients/client/{company.pk}/change/', data)
     assert response.status_code == 302, response.content.decode()[:1500]

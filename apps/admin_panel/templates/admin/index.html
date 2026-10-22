@@ -35,7 +35,7 @@
             </div>
             {% if clients %}
                 <div style="overflow-x: auto;"><table class="tbl">
-                    <thead><tr><th>Company</th><th>Plan</th><th>Users</th><th>Access</th><th>Lawyer-only</th><th>Started</th></tr></thead>
+                    <thead><tr><th>Company</th><th>Plan</th><th>Users</th><th>Access</th><th>Started</th></tr></thead>
                     <tbody>
                         {% for c in clients %}
                             <tr>
@@ -43,7 +43,7 @@
                                 <td>{{ c.plan }}</td>
                                 <td class="mono">{{ c.users }}</td>
                                 <td style="white-space: nowrap;">{% if c.level %}<span class="pill pill-teal">Level {{ c.level }}</span>{% else %}<span class="pill pill-gray">Level 0</span>{% endif %}</td>
-                                <td>{% if c.counsel %}<span class="pill pill-teal">On</span>{% else %}<span class="pill pill-gray">Off</span>{% endif %}</td>
+                                
                                 <td class="mono tiny" style="white-space: nowrap;">{{ c.start|date:"d M Y" }}</td>
                             </tr>
                         {% endfor %}

@@ -19,9 +19,10 @@ class BuyerOrg(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'insurer or acquirer'
+        verbose_name_plural = 'insurers and acquirers'  # same words as the staff menu (2026-10-23)
         db_table = 'buyer_org'
         ordering = ['name']
-        verbose_name = 'insurer or acquirer'
 
     def __str__(self) -> str:
         return f'{self.name} ({self.get_kind_display()})'
@@ -73,6 +74,9 @@ class BuyerLink(models.Model):
     def active(self, today) -> bool:
         return self.revoked_at is None and (self.ends_on is None or today <= self.ends_on)
 
+    def __str__(self):
+        return f'{self.client} → {self.org}'
+
 
 class BuyerInvite(models.Model):
     """A client's invite to a person at its insurer or acquirer who has no account yet: they set a password from the
@@ -89,6 +93,9 @@ class BuyerInvite(models.Model):
 
     class Meta:
         db_table = 'buyer_invite'
+
+    def __str__(self):
+        return f'Invite to {self.email} (from {self.client})'
 
 
 class Statement(models.Model):

@@ -1,5 +1,6 @@
 """Module 15: the insurer's rating engine settings and the "Send to rating engine" button. Buyers only; the key is
 locked when saved and never sent back. The monthly send runs on the 6th, after the month's sheet is locked."""
+import re
 from datetime import timedelta
 
 from django.utils import timezone
@@ -16,7 +17,9 @@ from .portal import as_buyer, newest
 
 def view(org) -> dict:
     engine = RatingEngine.objects.filter(org=org).first()
-    sends = [{'at': s.sent_at, 'company': s.company, 'ok': s.ok, 'detail': s.detail, 'by': s.by} for s in RatingSend.objects.filter(org=org)[:10]]
+    # Older sends may have saved the other server's web page: shown without its code (2026-10-23).
+    clean = lambda text: re.sub(r'\s+', ' ', re.sub(r'<[^>]*>', ' ', text)).strip()  # noqa: E731
+    sends = [{'at': s.sent_at, 'company': s.company, 'ok': s.ok, 'detail': clean(s.detail), 'by': s.by} for s in RatingSend.objects.filter(org=org)[:10]]
     if engine is None:
         return {'url': '', 'keyHint': '', 'monthly': False, 'sends': sends}
     return {'url': engine.url, 'keyHint': engine.key_hint, 'monthly': engine.monthly, 'adapter': engine.get_adapter_display(), 'sends': sends}
@@ -61,7 +64,8 @@ class SendView(APIView):
         if snap is None:
             return as_buyer(Response({'detail': 'This company does not share with you.'}, status=404))
         row = send(engine, snap, request.user.name)
-        return as_buyer(Response({'ok': row.ok, 'detail': row.detail}, status=200 if row.ok else 502))
+        # The plain message on screen; the history keeps the short technical answer too (2026-10-23).
+        return as_buyer(Response({'ok': row.ok, 'detail': row.detail.split(' Technical answer:')[0]}, status=200 if row.ok else 502))
 
 
 def send_monthly(today=None) -> int:

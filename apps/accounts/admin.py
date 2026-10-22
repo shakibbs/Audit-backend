@@ -2,6 +2,7 @@
 from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import format_html
+from django.forms.models import BaseInlineFormSet
 from unfold.admin import TabularInline
 
 from apps.admin_panel.base import CivModelAdmin
@@ -63,12 +64,15 @@ class InviteAdmin(CivModelAdmin):
 class ClientUserInline(TabularInline):
     """Users tab on a client company's page: add and edit the client's people here.
 
-    A new person gets an email link to set their own password; passwords are never typed in the admin panel.
+    New people are invited from the "Invite someone" tab; passwords are never typed in the admin panel.
     """
     model = ClientUser
     tab = True
     extra = 0
     can_delete = False  # turn someone off with "Is active" instead; their history stays
+
+    def has_add_permission(self, request, obj=None):
+        return False  # new people are invited (Invite someone tab) and choose their own password
     show_change_link = True
     verbose_name = 'user'
     verbose_name_plural = 'Users'
@@ -110,13 +114,13 @@ def send_password_link(request, user: ClientUser) -> None:
 
 
 class InviteInline(TabularInline):
-    """Invites tab on a client company's page."""
+    """Invites tab on a client company's page: every invite, whether the person joined, and a Resend button."""
     model = Invite
     tab = True
     extra = 0
     can_delete = False
     verbose_name_plural = 'Invites'
-    fields = ('email', 'name', 'role', 'sent_at', 'expires_at', 'used_at')
+    fields = ('email', 'name', 'role', 'is_counsel', 'state_shown', 'sent_at', 'expires_at', 'row_actions')
     readonly_fields = fields
 
     def has_add_permission(self, request, obj=None):
@@ -124,3 +128,59 @@ class InviteInline(TabularInline):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    @admin.display(description='Status')
+    def state_shown(self, invite):
+        from apps.accounts.invites import state
+        found = state(invite)
+        color = {'Joined': 'green', 'Sent': 'amber', 'Expired': 'red'}[found]
+        return format_html('<span class="civ"><span class="pill pill-{}">{}</span></span>', color, found)
+
+    # Posts the page's form to the action URL (no nested forms), like the Users tab.
+    @admin.display(description='Actions')
+    def row_actions(self, invite):
+        if not invite.pk or invite.used_at:
+            return '-'
+        url = reverse('admin:clients_client_invite_resend', args=[invite.client_id, invite.pk])
+        return format_html('<button type="submit" class="civ-btn" formaction="{}" formnovalidate>Resend invitation</button>', url)
+
+
+class NewInviteFormSet(BaseInlineFormSet):
+    """Marks the "Invite someone" tab, so saving sends invitations instead of saving rows as they are."""
+
+
+class NewInviteInline(TabularInline):
+    """Invite someone tab: name, email, role and the lawyer tick box; each person gets an invitation link (7 days)."""
+    model = Invite
+    formset = NewInviteFormSet
+    tab = True
+    extra = 0
+    can_delete = False
+    verbose_name = 'invitation'
+    verbose_name_plural = 'Invite someone'
+    fields = ('name', 'email', 'role', 'is_counsel')
+
+    def get_queryset(self, request):
+        return Invite.objects.none()  # only new rows here; sent invites are on the Invites tab
+
+
+def invite_by_staff(request, client, *, email: str, name: str, role: str, is_counsel: bool = False):
+    """CiV staff invite a person to a client company; the invite and who sent it go into the company's log."""
+    from apps.accounts.invites import invite
+    try:
+        made = invite(client, email=email, name=name, role=role, is_counsel=is_counsel)
+    except ValueError as error:
+        messages.error(request, f'{email}: {error}')
+        return None
+    record('invite_sent', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
+           client_id=client.pk, object=made.email)
+    messages.info(request, f'Invitation sent to {made.email}.')
+    return made
+
+
+def save_new_invites(request, client, formset) -> None:
+    formset.new_objects, formset.changed_objects, formset.deleted_objects = [], [], []  # read by the admin's change message
+    for form in formset.forms:
+        if form.has_changed() and form.cleaned_data and not form.cleaned_data.get('DELETE'):
+            d = form.cleaned_data
+            invite_by_staff(request, client, email=d['email'], name=d.get('name', ''), role=d['role'], is_counsel=d.get('is_counsel', False))

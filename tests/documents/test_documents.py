@@ -27,8 +27,8 @@ def staff_client(client):
 
 def save_page(staff_client, company, row, existing=None):
     data = {'name': company.name, 'industry': 'Solar', 'plan': 'growth', 'start_date': '2026-10-01',
-            'status': company.status, 'counsel_directed': 'on'}
-    for prefix in ('connections', 'users', 'invites', 'contract'):
+            'status': company.status}
+    for prefix in ('connections', 'users', 'invites', 'invites-2', 'contract'):
         data.update({f'{prefix}-TOTAL_FORMS': 0, f'{prefix}-INITIAL_FORMS': 0, f'{prefix}-MIN_NUM_FORMS': 0, f'{prefix}-MAX_NUM_FORMS': 1000})
     data.update({'documents-TOTAL_FORMS': 1, 'documents-INITIAL_FORMS': 1 if existing else 0,
                  'documents-MIN_NUM_FORMS': 0, 'documents-MAX_NUM_FORMS': 1000})

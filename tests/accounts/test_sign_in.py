@@ -18,7 +18,7 @@ def test_sign_in_returns_user_and_company(api, admin_user):
     assert body['name'] == 'Dana Reyes' and body['initials'] == 'DR'
     assert body['role'] == 'admin'
     assert body['clientName'] == 'SunPath Residential Solar'
-    assert body['engagementMode'] == 'counsel_directed'
+    assert 'engagementMode' not in body  # no lawyer-only mode (owner, 2026-10-22)
     assert AccessEntry.objects.filter(action='sign_in', actor_id=admin_user.pk).exists()
 
 

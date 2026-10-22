@@ -2,7 +2,6 @@
 email's domain (created the first time), the company starts sharing with it at once, and a person with no account yet
 gets an invite link (7 days) to set a password. Emails are not delivered yet (console), like client invites."""
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
@@ -23,10 +22,25 @@ def domain_of(email: str) -> str:
     return email if domain in FREE_MAIL else domain
 
 def send(invite: BuyerInvite, token: str) -> None:
-    link = f'{settings.PORTAL_URL}/sign-in?invite={token}'
-    send_mail(f'{invite.client.name} shares its CiV risk attestation with you',
-              f'Hello {invite.name or ""},\n\n{invite.client.name} has shared its Comply iV risk attestation with {invite.org.name}.\n'
-              f'Use this link within 7 days to choose your password:\n{link}', None, [invite.email])
+    from apps.accounts.mailer import send as mail
+    mail(invite.email, f'{invite.client.name} shares its CiV risk attestation with you', name=invite.name or invite.email,
+         heading=f'{invite.client.name} shares its risk attestation',
+         lines=[f'{invite.client.name} has shared its Comply iV risk attestation with {invite.org.name}.',
+                'Click the button to choose your password and open the insurer view. The link works once, for 7 days.'],
+         button='Choose your password', link=f'{settings.PORTAL_URL}/sign-in?invite={token}')
+
+
+def send_access_notice(user: BuyerUser, client, link: BuyerLink) -> None:
+    """An insurer or acquirer who already has an account is told that one more company now shares with them."""
+    from apps.accounts.mailer import send as mail
+    until = f' until {link.ends_on:%-d %b %Y}' if link.ends_on else ''
+    mail(user.email, f'{client.name} now shares its CiV risk attestation with you', name=user.name,
+         heading=f'{client.name} now shares with {user.org.name}',
+         lines=[f'{client.name} has given {user.org.name} access to its Comply iV risk attestation{until}.',
+                'It is in your Portfolio now. Sign in with your email and password to see it.'],
+         button='Sign in to see it', link=f'{settings.PORTAL_URL}/sign-in',
+         note='If you did not expect this, you can ignore this email; the company can stop sharing at any time.')
+
 
 @transaction.atomic
 def share(client, by: str, name: str, email: str, kind: str, ends_on, person: str = '') -> tuple[BuyerLink, bool]:
@@ -61,6 +75,8 @@ def share(client, by: str, name: str, email: str, kind: str, ends_on, person: st
                                             expires_at=timezone.now() + INVITE_LIFETIME)
         send(invite, token)
         invited = True
+    else:
+        send_access_notice(person_user, client, link)  # already has a password: a confirmation instead of an invite
     return link, invited
 
 def open_invite(token: str) -> BuyerInvite | None:
@@ -77,3 +93,24 @@ def accept(invite: BuyerInvite, password: str) -> BuyerUser:
         invite.save(update_fields=['used_at'])
     return user
 
+
+
+def send_password_link(user: BuyerUser) -> None:
+    """CiV staff send an insurer or acquirer person a link (1 hour) to choose a new password. The link starts with "b-"
+    so the portal's new-password page knows it is a buyer account."""
+    from apps.accounts.mailer import send as mail
+    from apps.accounts.tokens import buyer_reset_tokens, encode_uid
+    link = f'{settings.PORTAL_URL}/sign-in?reset=b-{encode_uid(user.pk)}.{buyer_reset_tokens.make_token(user)}'
+    mail(user.email, 'Choose a new CiV password', name=user.name, heading='Choose a new password',
+         lines=['CiV sent you this link to choose a new password for the insurer view. It works for 1 hour.'],
+         button='Choose a new password', link=link, note='If you did not ask for this, you can ignore this email; your password stays the same.')
+
+
+def resend(invite: BuyerInvite) -> BuyerInvite:
+    """A fresh 7-day link for an insurer person who has not joined yet; the old link stops working."""
+    token, token_hash = new_invite_token()
+    now = timezone.now()
+    BuyerInvite.objects.filter(pk=invite.pk).update(token_hash=token_hash, sent_at=now, expires_at=now + INVITE_LIFETIME)
+    invite.refresh_from_db()
+    send(invite, token)
+    return invite

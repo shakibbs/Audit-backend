@@ -1,25 +1,24 @@
-"""The two emails the login system sends: password reset and invite."""
+"""The login system's emails: password link and invitation (for a client's Admin added by CiV, or a person invited by
+the client's Admin)."""
 from django.conf import settings
-from django.core.mail import send_mail
 
-from apps.accounts.models import ClientUser, Invite
+from apps.accounts.mailer import send
+from apps.accounts.models import ClientUser, Invite, Role
 
 
 def send_reset(user: ClientUser, uid: str, token: str) -> None:
-    link = f'{settings.PORTAL_URL}/sign-in?reset={uid}.{token}'
-    send_mail(
-        'Choose a new CiV password',
-        f'Hello {user.name},\n\nUse this link within 1 hour to choose a new password:\n{link}\n\n'
-        'If you did not ask for this, you can ignore this email.',
-        None, [user.email],
-    )
+    send(user.email, 'Choose a new CiV password', name=user.name, heading='Choose a new password',
+         lines=['Use the button below within 1 hour to choose a new password for the CiV portal.'],
+         button='Choose a new password', link=f'{settings.PORTAL_URL}/sign-in?reset={uid}.{token}',
+         note='If you did not ask for this, you can ignore this email; your password stays the same.')
 
 
 def send_invite(invite: Invite, token: str) -> None:
-    link = f'{settings.PORTAL_URL}/sign-in?invite={token}'
-    send_mail(
-        f'You are invited to the CiV portal for {invite.client.name}',
-        f'Hello {invite.name},\n\nYou have been invited to the CiV portal for {invite.client.name}.\n'
-        f'Use this link within 7 days to choose your password:\n{link}',
-        None, [invite.email],
-    )
+    role = 'an Admin' if invite.role == Role.ADMIN else 'a Member'
+    lawyer = " and the company's lawyer" if invite.is_counsel else ''
+    send(invite.email, f'You are invited to the CiV portal for {invite.client.name}', name=invite.name or invite.email,
+         heading=f'Welcome to CiV, {invite.client.name}',
+         lines=[f'You have been invited to the CiV compliance portal for {invite.client.name}, as {role}{lawyer}.',
+                'Click the button to choose your own password. The link works once, for 7 days.'],
+         button='Choose your password', link=f'{settings.PORTAL_URL}/sign-in?invite={token}',
+         note='Nobody at CiV will ever ask you for your password.')

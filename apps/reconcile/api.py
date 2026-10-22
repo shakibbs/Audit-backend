@@ -82,6 +82,9 @@ class OwnInsuredView(APIView):
         if isinstance(request.user, BuyerUser):
             from apps.buyers.portal import one
             return one(request, ref)
+        from apps.buyers.portal import as_buyer, insured, own_sheet, previewing
+        if previewing(request.user):  # its own company exactly as its insurer sees it: real data only
+            return as_buyer(Response(insured(own_sheet(request.user.client))))
         from apps.scoring.portal import exposure_reading
         client = request.user.client
         out = attestation(client)

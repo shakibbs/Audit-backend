@@ -59,10 +59,28 @@ class JsonPost:
         try:
             status, text = _post(url, body, headers)
         except (urllib.error.URLError, TimeoutError, OSError) as e:
-            return False, None, f'Could not reach it: {getattr(e, "reason", e)}'[:300]
+            return False, None, 'Your rating engine could not be reached. Check the address, or try again later.'
         if 200 <= status < 300:
             return True, status, 'Accepted by the rating engine'
-        return False, status, f'The rating engine answered {status}' + (f': {text.strip()[:200]}' if text.strip() else '')
+        return False, status, plain(status, text)
+
+
+def plain(status: int, text: str) -> str:
+    """A short message the insurer understands (2026-10-23), never the other server's web page; a cleaned, short copy
+    of its answer is kept for their IT team."""
+    import re
+    if status in (401, 403):
+        message = 'Your rating engine refused the key. Check the key you saved.'
+    elif status == 404:
+        message = 'Nothing was found at that address. Check the address you saved.'
+    elif status == 405:
+        message = 'That address does not accept the sheet. Use the receiving address from your rating engine\'s settings.'
+    elif status >= 500:
+        message = f'Your rating engine had a problem (error {status}). Try again later.'
+    else:
+        message = f'Your rating engine did not accept the sheet (error {status}).'
+    words = re.sub(r'\s+', ' ', re.sub(r'<[^>]*>', ' ', text or '')).strip()
+    return message + (f' Technical answer: {words[:120]}' if words else '')
 
 
 ADAPTERS = {JsonPost.name: JsonPost()}

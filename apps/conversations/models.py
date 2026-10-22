@@ -46,10 +46,16 @@ class ConversationReview(models.Model):
     reviewed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'AI answer'
+        verbose_name_plural = 'AI answers'  # same words as the staff menu (2026-10-23)
         db_table = 'conversation_review'
         constraints = [models.UniqueConstraint(fields=['client', 'channel', 'phone_token', 'thread_end_at'], name='one_review_per_thread_end')]
         indexes = [models.Index(fields=['client', 'result', 'reviewed_at'])]
         ordering = ['-reviewed_at']
+
+    def __str__(self):
+        # No phone code or words: the channel, company, date and result only.
+        return f"{self.channel.capitalize()} review · {self.client} · {self.thread_end_at:%-d %b %Y} · {self.get_result_display()}"
 
 
 class ExamRun(models.Model):
@@ -68,19 +74,31 @@ class ExamRun(models.Model):
     note = models.CharField(max_length=200, blank=True)  # e.g. "a real mistake was reported"
 
     class Meta:
+        verbose_name = 'AI exam result'
+        verbose_name_plural = 'AI exam results'  # same words as the staff menu (2026-10-23)
         db_table = 'conversation_exam_run'
         ordering = ['-ran_at']
+
+    def __str__(self):
+        return f"{self.channel.capitalize()} exam · {self.model} · {self.ran_at:%-d %b %Y} · {'passed' if self.passed else 'not passed'}"
 
 
 class ExamCase(models.Model):
     """An extra exam question CiV staff add (e.g. written after a real mistake). Made-up words, never client data."""
     channel = models.CharField(max_length=6, choices=[('text', 'Text'), ('call', 'Call')])
     turns = models.JSONField(help_text='[{"who": "customer" or "business", "text": "...", "at": seconds (calls)}]')
-    expected = models.CharField(max_length=16, choices=[(r, r) for r in ('opted_out', 'wrong_number', 'opted_back_in', 'partial_request', 'none')])
+    expected = models.CharField(max_length=16, choices=[('opted_out', 'Opted out'), ('wrong_number', 'Wrong number'), ('opted_back_in', 'Allowed contact again'),
+                                                         ('partial_request', 'Partial request'), ('none', 'None')])
     moment = models.PositiveIntegerField(null=True, blank=True, help_text='Which turn decides (0 = first), for stops')
     note = models.CharField(max_length=200, blank=True)
     added_by = models.CharField(max_length=120, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'extra exam question'
+        verbose_name_plural = 'extra exam questions'  # same words as the staff menu (2026-10-23)
         db_table = 'conversation_exam_case'
+
+    def __str__(self):
+        first = next((t.get('text', '') for t in self.turns if t.get('who') == 'customer'), '') if isinstance(self.turns, list) else ''
+        return f"{self.get_channel_display()} question: “{first[:40]}” → {self.get_expected_display().lower()}"

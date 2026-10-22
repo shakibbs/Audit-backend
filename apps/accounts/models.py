@@ -16,8 +16,11 @@ class ClientUser(AbstractBaseUser):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=150)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.MEMBER)
-    # Marks the client's lawyer; in lawyer-only mode, findings and alerts go only to these users.
+    # Marks the client's lawyer: only lawyers review rule drafts and suggest law changes; lawyers and Admins sign
+    # statements, decide findings, upload and export evidence (owner, 2026-10-22). Every user sees every page.
     is_counsel = models.BooleanField('is our lawyer', default=False)
+    # Owner decision 2026-10-22: each person's own "View as" choice; Underwriter shows their own company as their insurer sees it.
+    view = models.CharField(max_length=12, choices=[('owner', 'Owner'), ('underwriter', 'Underwriter')], default='owner')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

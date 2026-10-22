@@ -23,7 +23,7 @@ pytestmark = pytest.mark.django_db
 
 # The only addresses a buyer may use; everything else under /api/ belongs to clients.
 BUYER_READS = {'session', 'insureds', 'insureds/<ref>', 'litigation', 'rating-engine', 'health', 'invites/check'}
-BUYER_WRITES = {'session/sign-in', 'session/sign-out', 'invites/accept', 'rating-engine', 'rating-engine/send', 'session/reset'}
+BUYER_WRITES = {'session/sign-in', 'session/sign-out', 'invites/accept', 'rating-engine', 'rating-engine/send'}
 
 
 def api_routes() -> list[str]:

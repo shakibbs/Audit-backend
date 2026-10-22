@@ -45,7 +45,10 @@ def test_a_live_dialer_and_calls_make_it_ready(company):
     rows = {c['name']: c for c in data['checks']}
     assert data['canStart'] and rows['Dialer connection']['state'] == 'partial' and '20%' in rows['Dialer connection']['detail']
     assert rows['Consent proof']['detail'] == '0 of 5 found' and data['numbersPerMonth'] == 5 and data['recommendedPlan'] == 'Starter'
-    assert {s['id']: s['count'] for s in data['setup']} == {'caller-ids': '1 caller IDs', 'campaigns': '1 campaigns · all treated as marketing', 'states': '1 states'}
+    assert {s['id']: s['count'] for s in data['setup']} == {'caller-ids': '1 caller IDs', 'campaigns': '1 campaigns · all treated as marketing', 'states': '1 states',
+                                                            # rows CiV cannot count: the Admin's own tick, never the sample's (2026-10-23)
+                                                            'outcomes': 'Not marked yet', 'pages': 'Not marked yet', 'vendors': 'Not marked yet',
+                                                            'optout-methods': 'Not marked yet'}
 
 
 def test_documents_and_preview(company):

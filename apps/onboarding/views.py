@@ -20,10 +20,10 @@ def toggle_step(request, client_id, step):
     tick = OnboardingTick.objects.filter(client=client, step=step).first()
     if tick:
         tick.delete()
-        action, text = 'onboarding_step_undone', f'"{label}" marked as not done.'
+        action, text = 'onboarding_step_undone', f'Marked not done: {label}.'
     else:
         OnboardingTick.objects.create(client=client, step=step, done_by=request.user)
-        action, text = 'onboarding_step_done', f'"{label}" done.'
+        action, text = 'onboarding_step_done', f'Marked done: {label}.'
     record(action, request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
            client_id=client.pk, object=label)
     messages.info(request, text)

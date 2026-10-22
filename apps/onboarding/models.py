@@ -17,3 +17,17 @@ class OnboardingTick(models.Model):
 
     def __str__(self):
         return f'{self.client} · {self.step}'
+
+
+class SetupMark(models.Model):
+    """A client Admin's own tick on a Setup & Readiness checklist row (owner decision 2026-10-23: saved per company,
+    not in the portal's sample). Rows CiV counts itself (caller IDs, pages, vendors, …) are worked out live instead."""
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='setup_marks')
+    item = models.CharField(max_length=40)  # the checklist row's id, e.g. outcomes, optout-methods
+    done = models.BooleanField(default=False)
+    by = models.CharField(max_length=150)
+    at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'setup_mark'
+        constraints = [models.UniqueConstraint(fields=['client', 'item'], name='one_mark_per_setup_item')]

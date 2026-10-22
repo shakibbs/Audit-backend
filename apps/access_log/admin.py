@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from apps.access_log.labels import action_label
+from apps.access_log.labels import who as who_of
 from apps.access_log.models import AccessEntry
 from apps.admin_panel.base import CivModelAdmin
 from apps.clients.models import Client
@@ -21,10 +22,9 @@ class AccessEntryAdmin(CivModelAdmin):
     def when(self, entry):
         return format_html('<span class="civ"><span class="mono tiny">{}</span></span>', entry.at.strftime('%d %b %Y · %H:%M'))
 
-    # Before sign-in there is no actor, so the email that was tried is shown.
     @admin.display(description='Who')
     def who(self, entry):
-        return entry.actor_label or entry.object or entry.get_actor_kind_display()
+        return who_of(entry)
 
     @admin.display(description='What', ordering='action')
     def what(self, entry):
@@ -33,7 +33,11 @@ class AccessEntryAdmin(CivModelAdmin):
 
     @admin.display(description='Object')
     def object_shown(self, entry):
-        return entry.object if entry.actor_label else ''
+        return entry.object or '-'
+
+    # One entry's page in plain words: no raw action code, actor kind, actor id or company number (2026-10-23).
+    fields = ('when', 'who', 'what', 'object_shown', 'company', 'ip_address')
+    readonly_fields = fields
 
     # One query for all company names on the page, not one per row.
     def changelist_view(self, request, extra_context=None):
@@ -42,7 +46,10 @@ class AccessEntryAdmin(CivModelAdmin):
 
     @admin.display(description='Company')
     def company(self, entry):
-        return getattr(self, 'company_names', {}).get(entry.client_id, '')
+        names = getattr(self, 'company_names', None)
+        if names is None:  # one entry's own page
+            return Client.objects.filter(pk=entry.client_id).values_list('name', flat=True).first() or '-'
+        return names.get(entry.client_id, '')
 
     # Lets a client page link to its own entries: ?client_id__exact=<id>
     def lookup_allowed(self, lookup, value, request=None):

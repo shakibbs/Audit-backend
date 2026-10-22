@@ -67,7 +67,7 @@ class ConnectionInline(StackedInline):
     show_change_link = False
     verbose_name = 'connection'
     verbose_name_plural = 'Connections'
-    fields = ('provider', 'label', 'account', 'key', 'secret', 'status_shown', 'sync_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
+    fields = ('provider', 'label', 'account', 'key', 'secret', 'setting', 'status_shown', 'sync_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
     readonly_fields = ('status_shown', 'sync_shown', 'key_saved', 'last_checked_at', 'last_message', 'row_actions')
 
     @admin.display(description='Status')
@@ -76,7 +76,7 @@ class ConnectionInline(StackedInline):
 
     @admin.display(description='Sync')
     def sync_shown(self, connection):
-        """What the sync engine knows: Live / Catching up / Stale / Never read, last read, records read, last problem."""
+        """What the sync engine knows: Live / Catching up / Stale / Not read yet, last read, records read, last problem."""
         return sync_summary(connection)
 
     @admin.display(description='Saved key')
@@ -106,7 +106,7 @@ def key_guide_html() -> str:
                        '<ul style="margin:6px 0 0 18px;list-style:disc">{}</ul></details>', guide)
 
 
-SYNC_PILL = {'live': ('green', 'Live'), 'catching_up': ('amber', 'Catching up'), 'stale': ('red', 'Stale'), 'never': ('gray', 'Never read')}
+SYNC_PILL = {'live': ('green', 'Live'), 'catching_up': ('amber', 'Catching up'), 'stale': ('red', 'Stale'), 'never': ('gray', 'Not read yet')}
 
 
 def sync_summary(connection):
@@ -123,7 +123,7 @@ def sync_summary(connection):
     cursor = SyncCursor.objects.filter(connection=connection).first()
     color, label = SYNC_PILL[state(cursor)]
     if cursor is None:
-        detail = 'waiting for the client to click Allow' if connection.tool.auth == 'oauth' else 'read once the connection works'
+        detail = 'waiting for the client to click Allow' if connection.tool.auth == 'oauth' else 'CiV starts reading as soon as the connection test passes'
     else:
         last = f'last read {timesince(cursor.last_heartbeat_at)} ago' if cursor.last_heartbeat_at else 'not read yet'
         detail = f'{last} · {cursor.records_delivered:,} records read'

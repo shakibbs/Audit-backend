@@ -18,6 +18,13 @@ class ClientResetTokenGenerator(PasswordResetTokenGenerator):
 reset_tokens = ClientResetTokenGenerator()
 
 
+class BuyerResetTokenGenerator(PasswordResetTokenGenerator):
+    key_salt = 'civ.buyers.BuyerResetTokenGenerator'  # an insurer's link never works for a client account
+
+
+buyer_reset_tokens = BuyerResetTokenGenerator()
+
+
 def encode_uid(pk: int) -> str:
     return urlsafe_base64_encode(force_bytes(pk))
 

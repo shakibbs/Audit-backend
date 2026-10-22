@@ -38,8 +38,18 @@ class DocumentInline(StackedInline):
         if not document.pk:
             return 'When you click Save'
         who = document.uploaded_by.name if document.uploaded_by else 'CiV'
-        size = f' · {document.size / 1024:,.0f} KB' if document.size else ''
+        size = f' · {readable_size(document.size)}' if document.size else ''
         return f'{who} · {document.uploaded_at:%d %b %Y %H:%M} UTC{size}'
+
+
+
+def readable_size(n: int) -> str:
+    """193 bytes · 1.2 KB · 3.4 MB (a small file no longer shows as "0 KB", 2026-10-23)."""
+    if n < 1024:
+        return f'{n} bytes'
+    if n < 1024 * 1024:
+        return f'{n / 1024:.1f} KB'
+    return f'{n / 1024 / 1024:.1f} MB'
 
 
 def save_documents(request, formset) -> None:

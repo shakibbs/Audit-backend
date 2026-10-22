@@ -29,3 +29,17 @@ class StaffUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.name} <{self.email}>'
+
+
+class StaffWelcome(models.Model):
+    """A new CiV team member's link to choose their own password (owner decision 2026-10-22: no password is ever typed
+    for someone else). Works once, for 7 days; only a hash of the link is kept."""
+    user = models.ForeignKey(StaffUser, on_delete=models.CASCADE, related_name='welcomes')
+    token_hash = models.CharField(max_length=64, unique=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'staff_welcome'
+        ordering = ['-sent_at']

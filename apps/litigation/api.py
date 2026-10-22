@@ -45,7 +45,8 @@ class LitigationView(APIView):
 
     def get(self, request):
         from apps.buyers.models import BuyerUser
-        if isinstance(request.user, BuyerUser):
+        from apps.buyers.portal import previewing
+        if isinstance(request.user, BuyerUser) or previewing(request.user):
             from apps.buyers.portal import as_buyer
             return as_buyer(Response(page()))
         return Response(page())

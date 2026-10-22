@@ -50,3 +50,6 @@ class SyncGap(models.Model):
         db_table = 'sync_gap'
         ordering = ['-found_at']
         verbose_name = 'missed record'
+
+    def __str__(self):
+        return f'Missed record · {self.source_system} · {self.client} · found {self.found_at:%-d %b %Y}'

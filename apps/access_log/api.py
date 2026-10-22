@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import ClientUser
-from apps.accounts.permissions import IsClientUser
+from apps.accounts.permissions import IsClientAdmin
 
 from .labels import action_label
 from .models import AccessEntry
@@ -13,7 +13,7 @@ LIMIT = 300
 
 
 class AccessLogView(APIView):
-    permission_classes = [IsClientUser]
+    permission_classes = [IsClientAdmin]  # Users & Access is Admin only (owner, 2026-10-23)
 
     def get(self, request):
         client = request.user.client

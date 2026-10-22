@@ -166,3 +166,12 @@ button.civ-btn { border: 0; cursor: pointer; }
 #result_list tbody tr { cursor: pointer; }
 #result_list tbody tr:hover td, #result_list tbody tr:hover th { background: var(--surface-3) !important; }
 .civ .pill-blue { background: rgba(47, 107, 255, 0.12); color: #2f6bff; }
+
+/* Phones (2026-10-23): wide tables scroll inside their own box, so the page itself never scrolls sideways. */
+@media (max-width: 640px) {
+  #content table, .civ table { display: block; max-width: 100%; overflow-x: auto; }
+  #tabs-wrapper { max-width: 100%; }
+  #tabs-wrapper > div { min-width: 0; max-width: 100%; overflow-x: auto; }
+  #content fieldset { min-width: 0; max-width: 100%; }  /* form sections otherwise stretch to fit long words */
+  #content .form-rows { overflow-wrap: anywhere; }
+}

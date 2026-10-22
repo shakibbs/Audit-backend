@@ -220,7 +220,8 @@ class LawItem(models.Model):
     # and the earlier proposed item it follows. Hints for CiV staff only.
     rule_keys = models.JSONField(default=list, blank=True)
     level = models.CharField(max_length=6, default='Low')  # High · Medium · Low
-    stage = models.CharField(max_length=10, default='proposed')  # proposed · final · in_force
+    stage = models.CharField(max_length=10, default='proposed', choices=[('proposed', 'Proposed (not law yet)'), ('final', 'Final (not in force yet)'),
+                                                                         ('in_force', 'In force')])
     dockets = models.JSONField(default=list, blank=True)
     follows = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='followed_by')
     text_url = models.URLField(max_length=500, blank=True)  # the document's full text (read in memory for High items)
@@ -234,6 +235,8 @@ class LawItem(models.Model):
     reg_change = models.ForeignKey(RegChange, on_delete=models.SET_NULL, null=True, blank=True, related_name='law_items')  # step 4
 
     class Meta:
+        verbose_name = 'new law item'
+        verbose_name_plural = 'new law items'  # same words as the staff menu (2026-10-23)
         db_table = 'law_item'
         constraints = [models.UniqueConstraint(fields=['source', 'ref'], name='one_law_item_per_source_ref')]
         ordering = ['-published_on']

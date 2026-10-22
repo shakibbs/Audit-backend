@@ -42,9 +42,6 @@ class ActionsView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        from apps.alerts.api import can_see
-        if not can_see(request.user):
-            return Response([])  # lawyer-only mode: Admins and the company's lawyer only (as the portal)
         from apps.scoring.portal import impact
         today, client = timezone.localdate(), request.user.client
         rows = ranked(client)

@@ -41,7 +41,7 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 | `config/` | Settings (read from `.env`), routes, health check, date formats |
 | `apps/staff` | CiV team accounts (`AUTH_USER_MODEL`) |
 | `apps/access_log` | Who did what, when. The database refuses edits and deletes |
-| `apps/clients` | Client companies, lawyer-only mode, data access level 0–4 |
+| `apps/clients` | Client companies, data access level 0–4 |
 | `apps/accounts` | Client users, invites, and the login API (sign-in, sign-out, session, reset, invites, users) |
 | `apps/connections` | Each client's tools (dialer, texting, certificates, lead feed, CRM): keys locked with Fernet, test, connect links, access level |
 | `apps/admin_panel` | Admin panel look (Unfold theme styled like the portal), menu, dashboard, light/dark toggle |
@@ -66,7 +66,7 @@ upgraded; 12+ characters; 5 wrong tries in 15 minutes locks the email for 15 min
 |---|---|---|
 | `GET /api/session` | anyone | Who is signed in; sets the CSRF cookie |
 | `POST /api/session/sign-in` · `sign-out` | anyone · signed in | Email + password |
-| `POST /api/session/reset` · `reset/confirm` | anyone | Reset link (1 hour) and new password |
+| `POST /api/session/reset/confirm` | anyone with a link | New password from a link CiV staff sent (1 hour); no "forgot password" request (removed 2026-10-23) |
 | `GET /api/invites/check` · `POST /api/invites/accept` | anyone with the link | Invite link (7 days) |
 | `GET /api/users` · `POST /api/users` | signed in · Admin | List people · send an invite |
 | `PATCH` / `DELETE /api/users/<id>` | Admin | Change role or lawyer mark · turn off access |
@@ -1023,8 +1023,8 @@ contacts after an opt-out (one alert per day, updated), opted-out numbers brough
 wording changed, certificates expiring within 30 days, a tool stopped syncing, a month marked incomplete data. The same
 open problem updates its alert (count, time) instead of making a new one; lasting conditions (unmarked stop, expiring
 certificates, stale tool, incomplete month) **resolve by themselves**; events stay until reviewed; nothing is deleted.
-`GET /api/alerts`, `POST /api/alerts/al-<id>/review` (anyone who can see it; logged). Lawyer-only mode: alerts and
-findings reach only Admins and the company's lawyer (the API returns an empty list to others, as the portal locks it).
+`GET /api/alerts`, `POST /api/alerts/al-<id>/review` (anyone at the company; logged). Every user of
+the company sees alerts and findings (owner, 2026-10-22: lawyer-only mode removed).
 
 ### Projected score (step 4)
 
@@ -1286,3 +1286,51 @@ for that kind (`docai/exam.py`: ≥50 examples, 95 % right, re-run every 30 days
 least 90 % sure; earlier answers are applied after a pass. Calls: the Module 9 review now also returns
 `{"consent": turn}`; spoken consent is only a flag (`conversation_review.consent_check = waiting`) for the client's
 lawyer or an Admin to confirm. Example exam files hold a few cases; CiV adds hand-checked ones.
+
+## Users, invitations and email (2026-10-22)
+
+Owner decisions: email through **Gmail** (`GMAIL_USER` + `GMAIL_APP_PASSWORD` in `.env`, an app password; without
+them emails print in the terminal), and nobody ever types a password for someone else.
+- **New client** (admin panel → Add client company): the form asks for the client Admin's name and email; on save
+  that person gets an invitation link and becomes the company's Admin when they choose a password.
+- **Client page → "Invite someone"** tab: name, email, role and the "is our lawyer" tick box; the **Invites** tab shows
+  Sent / Joined / Expired with **Resend invitation** (new link, the old one stops). The Users tab no longer adds people.
+- **Portal → Users & Access**: a client Admin invites members the same way (with the lawyer tick box).
+- **CiV team** (admin panel → staff): name and email only; the person gets a welcome link to
+  `/civ-admin/welcome/?token=…`, chooses a password, then signs in; "Send a new welcome link" action (`staff_welcome`).
+- **Insurers**: a new person gets the same invitation (portal welcome page, insurer view); an insurer who already has an account gets a confirmation email instead ("<company> now shares its CiV risk attestation with you", sign-in button).
+- Links: a random 256-bit token, only its SHA-256 kept, one use, 7 days (password reset: signed, 1 hour). Emails share
+  one design (`apps/accounts/mailer.py`, `templates/emails/base.html`) with a plain-text copy. `ADMIN_URL` gives the
+  panel's address when no page is open.
+- **Passwords (owner, 2026-10-22):** no "Forgot your password?" on the portal's sign-in page. CiV staff send a
+  password link instead: client people (client page → Users → *Send password link*), insurer and acquirer people
+  (Insurers → a buyer → *Send password link*; the link starts `b-`, 1 hour) and staff (Staff list → *Send a password
+  link*). Everyone changes their own password: `POST /api/session/password` {current, password} for client users,
+  lawyers and insurers (portal → account menu → *My account*; wrong current passwords count toward the sign-in lock;
+  other devices are signed out), and the panel's own *Change password* for staff.
+- **View as (owner, 2026-10-22):** each client user (Admin, Member, lawyer) has their own Owner / Underwriter switch,
+  saved on their account (`client_user.view`, `POST /api/session/view-as`); nobody else's screen changes and it needs
+  a sign-in. In the Underwriter view a client sees only its own company with real data, as its insurer sees it
+  (`/api/insureds`, `/api/insureds/<ref>`, `/api/litigation`, no sample). Insurers are always on the Underwriter view
+  and cannot switch.
+- **Roles (owner, 2026-10-22):** no lawyer-only mode — every client user sees every page. Only a user marked as the
+  company's lawyer reviews rule drafts and suggests law changes; Admins and the lawyer sign statements, decide
+  findings, upload, export evidence and set legal holds; only Admins invite, change roles and share with insurers.
+  **Users & Access and Settings are Admin only (2026-10-23):** `/api/access-log`, `/api/settings` and `/api/buyer-links`
+  refuse others; `GET /api/users` gives non-Admins names only (to assign a finding).
+- **Staff panel sign-in lock (owner, 2026-10-23):** like the portal, 5 wrong passwords for one email within 15 minutes
+  lock it for 15 minutes, even with the right password (`apps/staff/login.py`, `admin.site.login_form`). Wrong tries are
+  logged as "Failed staff sign-in"; a portal lock and a staff lock are counted separately.
+- **Staff access (owner, 2026-10-23):** every new CiV staff member gets full access (superuser) for now; per-person
+  permissions come later.
+- **Setup checklist and alert emails (owner, 2026-10-23):** the Setup & Readiness checklist ticks are saved per company
+  (`setup_mark`, `PATCH /api/setup/<item>`, Admin only); rows CiV counts itself stay automatic, the rest say "Not
+  marked yet" until the Admin ticks them. Settings → Notifications choices are saved per company (`alert_email_choice`,
+  `PATCH /api/settings/email/notifications`, Admin only). When an alert first appears, or comes back after being
+  resolved, the company's active **Admins only** get one email (`apps/alerts/emails.py`) if that type is chosen
+  (defaults: all on except Vendor score drop); a mail problem never stops alerts. Emails print in the terminal until
+  Gmail is set.
+- **Invites (owner, 2026-10-23):** a waiting invite is never replaced silently — inviting the same email again says
+  "already has an invite … Use Resend, or Cancel it" (portal and staff panel); expired invites stay in Users & Access
+  as "Invite expired" with **Resend invite** (`POST /api/users/inv-<id>/resend`, Admin only, new 7-day link); the
+  email reads "as a Member and the company's lawyer".

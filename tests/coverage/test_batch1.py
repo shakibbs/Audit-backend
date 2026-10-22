@@ -35,14 +35,14 @@ def call(company):
     return c
 
 
-def test_access_log_shows_the_companys_own_entries(company, member_user, other_company):
+def test_access_log_shows_the_companys_own_entries(company, member_user, admin_user, other_company):
     record('sign_in', actor_kind='client_user', actor_id=member_user.pk, actor_label=member_user.email, client_id=company.pk)
     record('proof_reviewed', actor_kind='staff', actor_id=1, actor_label='team@complyiv.com', client_id=company.pk, object='(916) •••-0001')
     record('sign_in', actor_kind='client_user', actor_id=999, client_id=other_company.pk)
-    rows = browser_for(member_user).get('/api/access-log').json()
+    rows = browser_for(admin_user).get('/api/access-log').json()  # Admin only since 2026-10-23
     pairs = [(r['actor'], r['action']) for r in rows]
-    assert ('CiV team', 'Proof checked') in pairs and pairs.count(('Sam Lee', 'Signed in')) == 2  # recorded + this test's sign-in
-    assert all(r['actor'] in ('CiV team', 'Sam Lee') for r in rows)  # never another company's entries
+    assert ('CiV team', 'Proof checked') in pairs and ('Sam Lee', 'Signed in') in pairs
+    assert all(r['actor'] in ('CiV team', 'Sam Lee', admin_user.name) for r in rows)  # never another company's entries
 
 
 def test_ledger_rows_have_real_category_tier_and_fingerprint_and_one_contact_opens(call, member_user):
@@ -69,9 +69,9 @@ def test_vault_numbers_are_real(call, company, member_user):
     assert vault['coverage'][0]['state'] in ('before', 'covered', 'partial') and 'deletedUnderRetention' not in vault  # sample keeps it
 
 
-def test_settings_facts_and_agreements_and_annex_c(call, company, member_user):
+def test_settings_facts_and_agreements_and_annex_c(call, company, admin_user):
     ClientDocument.objects.create(client=company, kind='annex_c', signed_on=date(2026, 9, 1), title='Annex C')
-    api = browser_for(member_user)
+    api = browser_for(admin_user)  # Settings is Admin only since 2026-10-23
     settings = api.get('/api/settings').json()
     assert settings['company']['name'] == company.name and settings['company']['states'] == ['CA'] and 'forum' not in settings['company']
     assert {a['name']: a['status'] for a in settings['agreements']}['Annex C · test opt-outs'] == 'signed'

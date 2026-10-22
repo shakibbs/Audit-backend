@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access_log.recorder import record
-from apps.accounts.permissions import IsClientUser
+from apps.accounts.permissions import IsClientAdmin, IsClientUser
 
 from .models import BuyerLink, BuyerOrg
 
@@ -27,7 +27,7 @@ def log(request, action: str, obj: str) -> None:
 
 
 class LinksView(APIView):
-    permission_classes = [IsClientUser]
+    permission_classes = [IsClientAdmin]  # Settings → Insurer sharing is Admin only (owner, 2026-10-23)
 
     def get(self, request):
         today = timezone.localdate()

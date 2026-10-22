@@ -3,6 +3,7 @@ High — a stop a tool never marked (Module 9), contacts after an opt-out, opted
 Medium — consent wording changed, certificates expiring within 30 days, a tool stopped syncing, a month with
 incomplete data, a vendor score that fell 10 points or more (Module 12). Conditions that last (a stale tool, an unmarked stop, an incomplete month) resolve by themselves;
 events (contacts after an opt-out on a day) stay until reviewed."""
+import logging
 from datetime import timedelta
 
 from django.utils import timezone
@@ -89,6 +90,15 @@ def gather(client, now) -> dict[str, dict]:
     return out
 
 
+def email(alert) -> None:
+    """The company's Admins are emailed when an alert appears, if they chose email for its type (2026-10-23)."""
+    from .emails import send
+    try:
+        send(alert)
+    except Exception:  # a mail problem never stops alerts; the alert is in the portal either way
+        logging.getLogger(__name__).exception('Alert email failed for alert %s', alert.pk)
+
+
 def refresh(client, now=None) -> int:
     """Raise or update this client's alerts; resolve lasting ones no longer found. Returns how many are open."""
     now = now or timezone.now()
@@ -97,12 +107,15 @@ def refresh(client, now=None) -> int:
         lasting, at = f.pop('lasting'), f.pop('at', now)
         row = Alert.objects.filter(client=client, key=key).first()
         if row is None:
-            Alert.objects.create(client=client, key=key, first_at=at, at=at, **f)
+            email(Alert.objects.create(client=client, key=key, first_at=at, at=at, **f))
         elif any(getattr(row, k) != v for k, v in f.items()) or row.resolved_at:
+            back = row.resolved_at is not None  # came back after being resolved: email again
             for k, v in f.items():
                 setattr(row, k, v)
             row.at, row.resolved_at = now, None
             row.save()
+            if back:
+                email(row)
     gone = Alert.objects.filter(client=client, resolved_at__isnull=True).exclude(key__in=found)
     lasting_prefixes = ('unmarked-', 'certs-expiring', 'stale-', 'incomplete-')
     for row in gone:

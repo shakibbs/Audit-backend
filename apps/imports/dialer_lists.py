@@ -60,7 +60,7 @@ def read_convoso(connection) -> int:
 def tool_zone(connection):
     from zoneinfo import ZoneInfo
     try:
-        return ZoneInfo(connection.get_credentials().get('time_zone') or 'America/New_York')
+        return ZoneInfo(getattr(connection, 'setting', '') or connection.get_credentials().get('time_zone') or 'America/New_York')
     except Exception:
         return ZoneInfo('America/New_York')
 

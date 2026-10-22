@@ -28,8 +28,8 @@ class RuleUpdateInline(TabularInline):
     fields = ('key', 'new_key', 'new_meaning', 'jurisdiction', 'value', 'shown', 'status', 'effective_from', 'state', 'lawyers', 'decide')
     readonly_fields = ('state', 'lawyers', 'decide')
 
-    def has_delete_permission(self, request, obj=None):
-        return False  # a rejected update stays on record
+    # Owner decision 2026-10-23: a draft made by mistake can be deleted while it is still waiting; an approved one
+    # (in the Rulebook) or a rejected one stays on record (refused in RegChangeAdmin.save_formset).
 
     @admin.display(description="Clients' lawyers")
     def lawyers(self, update):
@@ -98,6 +98,17 @@ class RegChangeAdmin(CivModelAdmin):
                actor_id=request.user.pk, actor_label=request.user.email, object=change.title[:254])
 
     def save_formset(self, request, form, formset, change):
+        if formset.model is RuleUpdate:
+            for f in formset.deleted_forms:
+                if not f.instance.pk:
+                    continue
+                if f.instance.state != RuleUpdate.State.WAITING:
+                    f.cleaned_data['DELETE'] = False  # kept: the save below no longer deletes it
+                    self.message_user(request, f'Not deleted: {f.instance} is {f.instance.get_state_display().lower()} and stays on record.',
+                                      messages.WARNING)
+                else:
+                    record('rule_update_deleted', request=request, actor_kind='staff', actor_id=request.user.pk,
+                           actor_label=request.user.email, object=str(f.instance)[:254])
         for update in formset.save(commit=False):
             if not update.pk:
                 update.proposed_by = request.user.email
@@ -128,7 +139,27 @@ class RegChangeAdmin(CivModelAdmin):
             self.message_user(request, f'Not approved: {error}', messages.ERROR)
         return back
 
+    def has_delete_permission(self, request, obj=None):
+        """A law change can go while none of its rule updates is approved (its waiting and rejected drafts go with it)."""
+        if obj is not None and obj.rule_updates.filter(state=RuleUpdate.State.APPROVED).exists():
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def get_deleted_objects(self, objs, request):
+        # Rule updates are protected from being lost by accident; delete_model removes this change's drafts first.
+        deleted, counts, perms, _ = super().get_deleted_objects(objs, request)
+        return deleted, counts, perms, []
+
+    def delete_queryset(self, request, queryset):
+        for change in queryset:
+            if self.has_delete_permission(request, change):
+                self.delete_model(request, change)
+
     def delete_model(self, request, change):
+        if change.rule_updates.filter(state=RuleUpdate.State.APPROVED).exists():
+            return
+        change.law_items.update(state='new')  # the law item it came from goes back to "New"
+        change.rule_updates.all().delete()
         record('reg_change_removed', request=request, actor_kind='staff', actor_id=request.user.pk,
                actor_label=request.user.email, object=change.title[:254])
         super().delete_model(request, change)
@@ -164,7 +195,7 @@ class LawItemAdmin(CivModelAdmin):
     eyebrow = 'Rules'
     page_sub = ('New FCC rules and proposed rules from the Federal Register that mention calling or texting, found every '
                 'morning. Open the source; if it changes a rule, add it under Regulatory changes. Otherwise dismiss it.')
-    list_display = ('level_shown', 'published_on', 'stage', 'title_shown', 'rules_shown', 'state')
+    list_display = ('level_shown', 'published_on', 'stage_shown', 'title_shown', 'rules_shown', 'state')
     list_filter = ('state', 'level', 'stage', 'kind', 'source')
     search_fields = ('title', 'summary', 'ref')
     readonly_fields = [f.name for f in LawItem._meta.fields if f.name != 'state']
@@ -181,7 +212,7 @@ class LawItemAdmin(CivModelAdmin):
 
     @admin.display(description='Stage')
     def stage_shown(self, item):
-        return {'proposed': 'Proposed (not law yet)', 'final': 'Final (not in force yet)', 'in_force': 'In force'}.get(item.stage, item.stage)
+        return item.get_stage_display()
 
     @admin.display(description='Law change')
     def make_change_button(self, item):

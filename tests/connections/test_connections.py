@@ -23,7 +23,7 @@ def staff_client(client):
 
 def company_fields(company=None, **over):
     return {'name': company.name if company else 'New Solar Co', 'industry': 'Solar', 'plan': 'growth',
-            'start_date': '2026-10-01', 'status': 'onboarding', 'counsel_directed': 'on', **over}
+            'start_date': '2026-10-01', 'status': 'onboarding', **over}
 
 
 def management(prefix, total, initial=0):
@@ -42,8 +42,9 @@ def connection_row(i, connection=None, **fields):
 
 def save_page(staff_client, company, rows, initial=0):
     """Posts the client page the way the browser does: company fields + every tab's form data."""
-    data = {**company_fields(company), **management('connections', len(rows), initial),
-            **management('users', 0), **management('invites', 0), **management('contract', 0), **management('documents', 0)}
+    data = {**company_fields(company), **({} if company else {'admin_name': 'Dana Ruiz', 'admin_email': 'dana@newsolar.com'}),
+            **management('connections', len(rows), initial),
+            **management('users', 0), **management('invites', 0), **management('invites-2', 0), **management('contract', 0), **management('documents', 0)}
     for row in rows:
         data.update(row)
     url = f'/civ-admin/clients/client/{company.pk}/change/' if company else '/civ-admin/clients/client/add/'

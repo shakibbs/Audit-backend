@@ -16,8 +16,17 @@ NEUTRAL = {
 }
 
 
-def link(title: str, icon: str, url: str) -> dict:
-    return {'title': title, 'icon': icon, 'link': reverse_lazy(url)}
+def link(title: str, icon: str, url: str, active=None) -> dict:
+    item = {'title': title, 'icon': icon, 'link': reverse_lazy(url)}
+    if active is not None:
+        item['active'] = active
+    return item
+
+
+def rulebook_list_active(request) -> bool:
+    """The Rulebook link is lit on the rule pages, not on Rulebook check (2026-10-23)."""
+    path = request.path
+    return path.startswith('/civ-admin/rulebook/rulevalue/') and not path.startswith('/civ-admin/rulebook/rulevalue/check/')
 
 
 def unfold_config(portal_url: str) -> dict:
@@ -50,7 +59,7 @@ def unfold_config(portal_url: str) -> dict:
                     link('Insurers and acquirers', 'shield', 'admin:buyers_buyerorg_changelist'),
                 ]},
                 {'title': 'Rules', 'separator': True, 'items': [
-                    link('Rulebook', 'menu_book', 'admin:rulebook_rulevalue_changelist'),
+                    link('Rulebook', 'menu_book', 'admin:rulebook_rulevalue_changelist', rulebook_list_active),
                     link('Rulebook check', 'rule', 'admin:rulebook_rulevalue_check'),
                     link('Regulatory changes', 'gavel', 'admin:regulatory_regchange_changelist'),
                     link('New law items', 'travel_explore', 'admin:regulatory_lawitem_changelist'),
@@ -63,7 +72,6 @@ def unfold_config(portal_url: str) -> dict:
                 ]},
                 {'title': 'CiV team', 'separator': True, 'items': [
                     link('CiV staff', 'badge', 'admin:staff_staffuser_changelist'),
-                    link('Permission groups', 'admin_panel_settings', 'admin:auth_group_changelist'),
                 ]},
                 {'title': 'Records', 'separator': True, 'items': [
                     link('Access log', 'history', 'admin:access_log_accessentry_changelist'),

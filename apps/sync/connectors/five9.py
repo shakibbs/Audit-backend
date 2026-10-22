@@ -61,7 +61,8 @@ class Five9(Connector):
         super().__init__(connection)
         creds = connection.get_credentials()
         self.user, self.password = creds.get('account', ''), creds.get('key', '')
-        self.tz = zone(creds.get('secret') or 'America/New_York')
+        # The visible Time zone box; older connections kept it in the hidden secret box.
+        self.tz = zone(getattr(connection, 'setting', '') or creds.get('secret') or 'America/New_York')
 
     # --- SOAP ----------------------------------------------------------------------------------------------
     def soap(self, method: str, inner: str) -> ET.Element:

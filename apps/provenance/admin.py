@@ -32,7 +32,7 @@ class ReviewForm(forms.ModelForm):
 
 @admin.register(ProofRequest)
 class ProofRequestAdmin(CivModelAdmin):
-    eyebrow = 'Records'
+    eyebrow = 'Clients'  # where it sits in the menu
     page_sub = ('Numbers from uploaded lists that CiV asked clients to prove. Open the file, then mark it valid with the '
                 'consent date it shows, or not valid. Until checked, the calls stay "Weak".')
     form = ReviewForm

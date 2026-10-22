@@ -20,6 +20,8 @@ class Connection(models.Model):
     provider = models.CharField('tool', max_length=30, choices=PROVIDER_CHOICES)
     kind = models.CharField(max_length=20, choices=Kind.CHOICES, editable=False)
     label = models.CharField(max_length=100, blank=True, help_text='Optional, e.g. "Main dialer" when a client has two.')
+    # A plain setting the tool needs (time zone or region): visible and editable, never a secret (2026-10-23).
+    setting = models.CharField('time zone or region', max_length=100, blank=True)
     # Locked key, account ID and secret. Never shown again after saving.
     credentials = models.TextField(blank=True, editable=False)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NOT_CONNECTED, editable=False)

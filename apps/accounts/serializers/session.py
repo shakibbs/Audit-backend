@@ -23,8 +23,8 @@ def session_data(user: ClientUser | None) -> dict:
         'signedIn': True,
         'userId': str(user.pk), 'name': user.name, 'initials': initials(user.name), 'email': user.email,
         'role': user.role, 'isCounsel': user.is_counsel,
+        'view': user.view, 'orgKind': 'client', 'canSwitchView': True,  # each person's own view (owner, 2026-10-22)
         'clientId': str(client.pk), 'clientName': client.name, 'vertical': client.industry,
-        'engagementMode': 'counsel_directed' if client.counsel_directed else 'direct',
         'plan': client.get_plan_display(),
         **updated_at(client),
         'periods': periods_of(client),

@@ -92,3 +92,17 @@ def test_the_invite_link_opens_for_someone_not_signed_in(company, admin_user, si
         b = Browser()
         assert b.get(f'/api/invites/check?token={token}').json()['clientName'] == 'Falcon Risk'
         assert b.post('/api/invites/accept', {'token': token, 'password': PASSWORD}, content_type='application/json').json()['view'] == 'underwriter'
+
+
+def test_an_insurer_with_an_account_gets_a_confirmation_email(company, other_company, admin_user, other_admin, signed_in):
+    """Owner decision 2026-10-22: no second invitation, but an email that one more company now shares with them."""
+    from django.test import Client as Browser
+    share(signed_in(admin_user))
+    token = token_from_mail()
+    Browser().post('/api/invites/accept', {'token': token, 'password': PASSWORD}, content_type='application/json')
+    mail.outbox.clear()
+    made = share(signed_in(other_admin), email='j.merchant@falconrisk.com').json()
+    assert made['invited'] is False and len(mail.outbox) == 1
+    sent = mail.outbox[0]
+    assert sent.to == ['j.merchant@falconrisk.com'] and other_company.name in sent.subject and 'invite=' not in sent.body
+    assert '/sign-in' in sent.body and 'Portfolio' in sent.body

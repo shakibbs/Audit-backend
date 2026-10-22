@@ -34,4 +34,5 @@ class AccessEntry(models.Model):
         raise PermissionError('Access log rows cannot be deleted.')
 
     def __str__(self):
-        return f'{self.at:%Y-%m-%d %H:%M} {self.actor_label} {self.action}'
+        from .labels import action_label
+        return f'{self.at:%-d %b %Y · %H:%M} · {action_label(self.action)[0]}'

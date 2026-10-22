@@ -19,3 +19,14 @@ document.addEventListener('click', function (event) {
   if (event.ctrlKey || event.metaKey) window.open(link.href, '_blank');
   else window.location.href = link.href;
 });
+
+// Date-only fields (start date, contract dates…) get no "You are N hours ahead" note: it only means something for a
+// time of day (2026-10-23). Django adds the note when the page loads, so it is removed just after.
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    document.querySelectorAll('.timezonewarning').forEach(function (note) {
+      var box = note.parentNode;
+      if (box && box.querySelector('input.vDateField') && !box.querySelector('input.vTimeField')) note.remove();
+    });
+  }, 0);
+});

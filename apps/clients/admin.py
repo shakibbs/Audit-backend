@@ -6,9 +6,10 @@ from django.utils.formats import date_format
 from django.utils.html import format_html
 
 from apps.access_log.labels import action_label
+from apps.access_log.labels import who as who_of
 from apps.access_log.models import AccessEntry
 from apps.accounts import admin_views as user_views
-from apps.accounts.admin import ClientUserInline, InviteInline, save_users
+from apps.accounts.admin import ClientUserInline, InviteInline, NewInviteFormSet, NewInviteInline, invite_by_staff, save_new_invites, save_users
 from apps.accounts.models import ClientUser
 from apps.admin_panel.base import CivModelAdmin
 from apps.billing.admin import ContractInline, save_contract
@@ -31,6 +32,27 @@ from apps.provenance.admin import provenance_tile
 from apps.conversations.admin import ai_tile
 
 
+class NeedsAttention(admin.SimpleListFilter):
+    """What the Dashboard tiles open (2026-10-23): companies with waiting invites, failed connections or a renewal soon."""
+    title = 'needs attention'
+    parameter_name = 'attention'
+
+    def lookups(self, request, model_admin):
+        return [('invites', 'Waiting invites'), ('connections', 'Failed or stale connections'), ('renewals', 'Renewing within 30 days')]
+
+    def queryset(self, request, queryset):
+        from django.utils import timezone
+
+        from apps.billing.models import renewals_within
+        if self.value() == 'invites':
+            return queryset.filter(invites__used_at__isnull=True, invites__expires_at__gt=timezone.now()).distinct()
+        if self.value() == 'connections':
+            return queryset.filter(connections__status__in=[Status.FAILED, Status.STALE]).distinct()
+        if self.value() == 'renewals':
+            return queryset.filter(pk__in=renewals_within(30).values('client_id'))
+        return queryset
+
+
 @admin.register(Client)
 class ClientAdmin(CivModelAdmin):
     eyebrow = 'Clients'
@@ -40,12 +62,12 @@ class ClientAdmin(CivModelAdmin):
     form = ClientForm
     list_display = ('name', 'status_shown', 'industry', 'plan', 'onboarding_shown', 'access_shown', 'users_shown', 'connections_shown', 'renews_shown')
     list_display_links = ('name',)
-    list_filter = ('status', 'plan', 'counsel_directed', 'access_level')
+    list_filter = (NeedsAttention, 'status', 'plan', 'access_level')
     search_fields = ('name', 'industry', 'users__email', 'users__name')  # find a person's company by their email
     readonly_fields = ('access_shown', 'status_since', 'created_at')
-    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, ConsentPageInline]
+    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, NewInviteInline, ConsentPageInline]
     fieldsets = (
-        (None, {'fields': ('name', 'industry', 'plan', 'start_date', 'status', 'status_reason', 'status_since', 'counsel_directed', 'access_shown', 'created_at')}),
+        (None, {'fields': ('name', 'industry', 'plan', 'start_date', 'status', 'status_reason', 'status_since', 'access_shown', 'created_at')}),
     )
 
     # A new company has no people yet: show only the Connections tab beside its details.
@@ -71,12 +93,19 @@ class ClientAdmin(CivModelAdmin):
         since = client.status_changed_at or client.created_at
         return date_format(since, 'j M Y · H:i') + ' UTC' if since else '-'
 
+    def get_fieldsets(self, request, obj=None):
+        if obj:
+            return self.fieldsets
+        return (*self.fieldsets, ("Client's Admin", {'fields': ('admin_name', 'admin_email')}))
+
     def save_model(self, request, obj, form, change):
         old = form.initial.get('status', '') if change else ''
         changed = stages.prepare(obj, old)
         super().save_model(request, obj, form, change)
         if changed:
             stages.record_change(request, obj, old, form.cleaned_data.get('status_reason', ''))
+        if not change:  # the new client's first Admin gets an invitation link
+            invite_by_staff(request, obj, email=form.cleaned_data['admin_email'], name=form.cleaned_data['admin_name'], role='admin')
 
     @admin.display(description='Renews', ordering='contract__renewal_date')
     def renews_shown(self, client):
@@ -113,6 +142,8 @@ class ClientAdmin(CivModelAdmin):
             save_documents(request, formset)
         elif formset.model is ClientUser:
             save_users(request, formset)
+        elif isinstance(formset, NewInviteFormSet):
+            save_new_invites(request, form.instance, formset)
         else:
             super().save_formset(request, form, formset, change)
 
@@ -137,7 +168,7 @@ class ClientAdmin(CivModelAdmin):
                     'status_pill': stages.status_pill(client),
                     'contract': getattr(client, 'contract', None),
                     'status_history': StatusChange.objects.filter(client=client).select_related('changed_by')[:20],
-                    'activity': [(e.at, e.actor_label or e.object, *action_label(e.action), e.object if e.actor_label else '')
+                    'activity': [(e.at, who_of(e), *action_label(e.action), e.object)
                                  for e in AccessEntry.objects.filter(client_id=client.pk).order_by('-at')[:10]],
                     'activity_url': reverse('admin:access_log_accessentry_changelist') + f'?client_id__exact={client.pk}',
                 })
@@ -158,6 +189,8 @@ class ClientAdmin(CivModelAdmin):
             path('<int:client_id>/completeness/', site.admin_view(completeness_page), name='clients_client_completeness'),
             path('<int:client_id>/users/<int:user_id>/password-link/', site.admin_view(user_views.password_link),
                  name='clients_client_user_password_link'),
+            path('<int:client_id>/invites/<int:invite_id>/resend/', site.admin_view(user_views.resend_invite),
+                 name='clients_client_invite_resend'),
             *super().get_urls(),
         ]
 

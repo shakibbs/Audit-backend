@@ -31,5 +31,10 @@ class Report(models.Model):
     purged_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        verbose_name = 'client report'
+        verbose_name_plural = 'client reports'  # same words as the staff menu (2026-10-23)
         db_table = 'client_report'
         ordering = ['-made_at']
+
+    def __str__(self):
+        return ' · '.join(x for x in (self.name, f'{self.period:%b %Y}' if self.period else '', str(self.client)) if x)
