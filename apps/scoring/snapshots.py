@@ -61,7 +61,9 @@ def measure(client, period: date) -> list[dict]:
     base, table = sent.count(), bands(period)
     for metric in found:
         metric.pop('history', None)  # history comes from the saved months
-        metric['score'] = score(metric, state_of(metric), base, table)  # step 2 (a band change shows up as a change too)
+        # step 2 (a band change shows up as a change too). A month with no contacts is not scored at all: nothing was
+        # audited yet, so neither a top grade nor a worst case (owner QA, 2026-10-23).
+        metric['score'] = score(metric, state_of(metric), base, table) if base else None
     return found
 
 

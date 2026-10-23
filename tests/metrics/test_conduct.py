@@ -1,5 +1,5 @@
 """Card coverage, batch 3: Contact Conduct from real contacts (draft calling hours and limits, said so)."""
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 

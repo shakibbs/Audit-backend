@@ -25,6 +25,7 @@ def conflict(client, topic: str) -> tuple[str | None, str]:
     from apps.uploads.models import DncCheck, InternalListEntry
     since = timezone.now() - timedelta(days=90)
     results = ConsentResult.objects.filter(client=client, variant='strict', frozen=False, contact__occurred_at__gte=since)
+    nothing = (None, 'Not measured yet: no checked contacts in the last 90 days')
     if topic == Statement.Topic.DNC:
         return (None, 'CiV reads your DNC check records') if DncCheck.objects.filter(client=client).exists() \
             else ('No DNC check records supplied, so CiV cannot see the checks', '')
@@ -33,8 +34,13 @@ def conflict(client, topic: str) -> tuple[str | None, str]:
             return 'Internal do-not-call list not supplied', ''
         from apps.scoring.extra import internal_list
         from apps.contacts.models import ContactEvent
-        n = internal_list(client, ContactEvent.objects.filter(client=client, direction='outbound', is_primary=True, occurred_at__gte=since))['value']
+        sent = ContactEvent.objects.filter(client=client, direction='outbound', is_primary=True, occurred_at__gte=since)
+        if not sent.exists():
+            return nothing
+        n = internal_list(client, sent)['value']
         return (f'{n:,} contact{"" if n == 1 else "s"} after the number joined your internal list (90 days)', '') if n else (None, 'Matches what CiV measured')
+    if topic in (Statement.Topic.OPTOUTS, Statement.Topic.CONSENT) and not results.exclude(status__in=['pending', 'not_needed']).exists():
+        return nothing
     if topic == Statement.Topic.OPTOUTS:
         n = results.filter(codes__contains=['NP_AFTER_OPT_OUT']).count()
         return (f'{n:,} contact{"" if n == 1 else "s"} after an opt-out (90 days)', '') if n else (None, 'Matches what CiV measured')
@@ -77,8 +83,9 @@ def build(client, period: date) -> dict:
     from apps.reconcile.api import attestation, rows
     from apps.reconcile.models import PeriodIntegrity
     from apps.vendors.models import VendorMonth
-    from apps.scoring.snapshots import latest
-    run = latest(client, period)
+    from apps.scoring.models import SnapshotRun
+    # the month's saved scores, or the newest month before it while this one is not scored yet
+    run = SnapshotRun.objects.filter(client=client, period__lte=period).order_by('-period', '-version').first()
     score = (run.score if run else {}) or {}
     exposure = score.get('exposure') or {}
     coverage = score.get('coverage') or {}

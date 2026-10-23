@@ -1,8 +1,10 @@
 """Client API: the Upload centre. GET lists the company's files; POST (multipart: source name + file) keeps the file
 write-once, fingerprints it and reads its rows. Admins and the company's lawyer upload; everyone at the company sees the list."""
 import hashlib
+import logging
 from pathlib import Path
 
+from django.db import transaction
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,6 +14,8 @@ from apps.accounts.permissions import IsClientUser
 
 from .models import Source, UploadedFile
 from .read import read
+
+log = logging.getLogger('civ.uploads')
 
 MAX_BYTES = 50 * 1024 * 1024
 CSV = {'.csv', '.txt'}
@@ -43,13 +47,25 @@ class UploadsView(APIView):
         if Path(upload.name).suffix.lower() not in allowed or upload.size > MAX_BYTES:
             return Response({'detail': 'Use a CSV file of 50 MB or less (policies and contracts may also be PDF or Word).'}, status=400)
         content = upload.read()
-        saved = UploadedFile(client=user.client, source=source, original_name=upload.name[:255], sha256=hashlib.sha256(content).hexdigest(),
-                             uploaded_by=user)
+        if not content.strip():
+            return Response({'detail': 'That file is empty.'}, status=400)
+        sha = hashlib.sha256(content).hexdigest()
+        before = UploadedFile.objects.filter(client=user.client, source=source, sha256=sha).first()
+        if before is not None:  # the same file again would count its rows twice (QA 2026-10-23)
+            return Response({'detail': f'This file was already uploaded on {before.received_at:%-d %b %Y}.'}, status=400)
+        saved = UploadedFile(client=user.client, source=source, original_name=upload.name[:255], sha256=sha, uploaded_by=user)
         upload.seek(0)
-        saved.file.save(upload.name, upload, save=False)
-        saved.save()
-        saved.rows_read, saved.rows_rejected = read(saved, content)
-        saved.save(update_fields=['rows_read', 'rows_rejected'])
+        try:
+            with transaction.atomic():  # a file that cannot be read is not kept
+                saved.file.save(upload.name, upload, save=False)
+                saved.save()
+                saved.rows_read, saved.rows_rejected = read(saved, content)
+                saved.save(update_fields=['rows_read', 'rows_rejected'])
+        except Exception:
+            log.exception('Upload could not be read: %s', upload.name)
+            if saved.file:
+                saved.file.delete(save=False)
+            return Response({'detail': 'CiV could not read this file. Check it is a normal CSV with one row per line.'}, status=400)
         from .effects import after_upload
         after_upload(saved)
         record('upload_received', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,

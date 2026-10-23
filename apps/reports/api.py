@@ -1,5 +1,4 @@
-"""Client API (Module 11 step 5): GET /api/reports — the report history (the report types stay as the portal shows
-them); POST /api/reports {name, period} — "Generate": the period audit report, the Rulebook snapshot and the metric export
+"""Client API (Module 11 step 5): GET /api/reports — the report types and the report history; POST /api/reports {name, period} — "Generate": the period audit report, the Rulebook snapshot and the metric export
 are made now; the evidence file, certification pack and litigation package come with Module 14 (recorded as not
 available yet); GET /api/reports/period?period=YYYY-MM — that month's report PDF (made if there is none yet);
 GET /api/reports/rep-<id>/file — a past report. Every download is logged."""
@@ -15,6 +14,29 @@ from apps.accounts.permissions import IsClientUser
 
 from .make import METRICS, PERIOD, RULEBOOK, latest_or_make, make_metrics, make_period, make_rulebook
 from .models import Report
+from apps.refs import number
+
+
+# The Reports & Exports cards: id, name, what it holds, format, add-on.
+TYPES = [
+    ('period', PERIOD, 'Scorecard, domains, metrics and action queue for the selected month.', 'PDF', False),
+    ('evidence', 'Evidence file export', 'Per phone number: every contact, its consent decision, proof elements, tiers and hashes. Made from the bulk export below.', 'PDF + JSON', False),
+    ('certification', 'Certification pack', 'Hash manifest, capture description and custodian certification template. Made from the bulk export below.', 'ZIP', False),
+    ('litigation', 'Litigation evidence package', 'Court-ready export for up to 25 named numbers with a chain-of-custody report.', 'Add-on', True),
+    ('metrics', METRICS, 'Every measured metric with its value, note and data completeness.', 'CSV', False),
+    ('rulebook', RULEBOOK, 'Every rule value in force for the period, with effective dates.', 'PDF', False),
+]
+NAMES = {name for _, name, _, _, _ in TYPES}
+
+
+def types() -> list[dict]:
+    return [{'id': i, 'name': n, 'description': d, 'format': f, 'addOn': a} for i, n, d, f, a in TYPES]
+
+
+def allowed_month(client, period) -> bool:
+    """From the client's first month to this one: no reports for months before CiV started or still to come."""
+    from django.utils import timezone
+    return client.start_date.replace(day=1) <= period <= timezone.localdate().replace(day=1)
 
 
 def row(r: Report) -> dict:
@@ -47,13 +69,15 @@ class ReportsView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        return Response({'runs': [row(r) for r in Report.objects.filter(client=request.user.client)[:100]]})
+        return Response({'types': types(), 'runs': [row(r) for r in Report.objects.filter(client=request.user.client)[:100]]})
 
     def post(self, request):
-        user, name = request.user, (request.data.get('name') or '').strip()
-        period = month_from(request.data.get('period') or '')
-        if not name or period is None:
+        user, name = request.user, str(request.data.get('name') or '').strip()
+        period = month_from(str(request.data.get('period') or ''))
+        if name not in NAMES or period is None:
             return Response({'detail': 'Choose a report and a month.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not allowed_month(user.client, period):
+            return Response({'detail': 'Choose a month from your start date to this month.'}, status=status.HTTP_400_BAD_REQUEST)
         if name == PERIOD:
             report = make_period(user.client, period, user.name, request)
         elif name == RULEBOOK:
@@ -72,6 +96,8 @@ class PeriodReportView(APIView):
         period = month_from(request.query_params.get('period') or '')
         if period is None:
             return Response({'detail': 'Give the month as YYYY-MM.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not allowed_month(request.user.client, period):
+            return Response({'detail': 'Choose a month from your start date to this month.'}, status=status.HTTP_400_BAD_REQUEST)
         report = latest_or_make(request.user.client, period, request.user.name, request)
         if report.status != Report.Status.READY:
             return Response({'detail': 'This report was held back for a wording check; CiV has been told.'}, status=status.HTTP_409_CONFLICT)
@@ -83,7 +109,7 @@ class ReportFileView(APIView):
 
     def get(self, request, ref: str):
         pk = ref.removeprefix('rep-')
-        r = Report.objects.filter(client=request.user.client, pk=int(pk) if pk.isdigit() else 0, status=Report.Status.READY,
+        r = Report.objects.filter(client=request.user.client, pk=(number(pk) or 0), status=Report.Status.READY,
                                   purged_at__isnull=True).exclude(file='').first()
         if r is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)

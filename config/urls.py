@@ -1,12 +1,13 @@
 """Top-level routes: the CiV admin panel and the client API are kept apart."""
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 
 from django.conf import settings
 
 from apps.staff.welcome import welcome as staff_welcome
 from apps.sync.views import hook as sync_hook
 
+from config.api_guard import not_found
 from config.health import health
 from config.root_redirect import root_redirect
 
@@ -40,6 +41,9 @@ urlpatterns = [
     path('api/', include('apps.metrics.urls')),
     path('api/', include('apps.onboarding.urls')),
 ]
+
+# Any other /api address: a JSON "Not found" (never Django's list of routes).
+urlpatterns.append(re_path(r'^api/', not_found))
 
 # Live notices from clients' tools: off unless SYNC_HOOKS_ENABLED (no public door; CiV asks every 2 minutes instead).
 if settings.SYNC_HOOKS_ENABLED:

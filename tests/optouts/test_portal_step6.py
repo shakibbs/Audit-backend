@@ -70,7 +70,8 @@ def test_revocation_page_from_real_opt_outs(company, member_user, signed_in, too
 
 def test_revocation_page_before_any_check_says_not_measured(company, member_user, signed_in):
     page = signed_in(member_user).get('/api/revocation').json()
-    assert page['medianHours'] is None and page['p90'] is None and 'rows' not in page and 'systems' not in page
+    assert page['medianHours'] is None and page['p90'] is None and page['rows'] == [] and page['systems'] == []
+    assert all(w['dialer'] is None and w['messaging'] is None for w in page['wording'])  # no stop word checked yet
 
 
 def test_opt_outs_table_shows_each_tool(company, member_user, signed_in, tools):
@@ -116,6 +117,6 @@ def test_who_contact_m41_m42_m48_m45(company, tools):
     assert areas['lit']['M45']['result'] == '1 of 1'
 
 
-def test_who_contact_leaves_ai_checks_to_the_sample_before_any_ai(company):
-    areas = {a['id']: a for a in who_contact(company)['areas']}
-    assert 'lit' not in areas and all(c['metric'] not in ('M41', 'M42', 'M48') for a in areas.values() for c in a['checks'])
+def test_who_contact_ai_checks_say_not_measured_before_any_ai(company):
+    checks = {c['metric']: c for a in who_contact(company)['areas'] for c in a['checks']}
+    assert all(checks[m]['result'] == 'Not measured' for m in ('M41', 'M42', 'M45', 'M48'))

@@ -1,6 +1,6 @@
 """Setup & Readiness from what CiV really has: each readiness check (names as the portal shows them), the start
 decision, numbers per month and the recommended plan, a preview of consent results on recent numbers, and the setup
-checklist rows CiV can count. Recordings wait for Module 9; checks it cannot judge are left out (the portal keeps them)."""
+checklist with its fixed labels. Recordings wait for Module 9; a check CiV cannot judge yet is left out."""
 from collections import Counter
 from datetime import timedelta
 
@@ -47,6 +47,7 @@ def readiness(client) -> dict:
     numbers = month.values('phone_token').distinct().count()
     checks = [connection_check(client, Kind.DIALER, 'Dialer connection', 'dialer'), connection_check(client, Kind.SMS, 'SMS connection', 'texting tool'),
               connection_check(client, Kind.CRM, 'CRM connection', 'CRM')]
+    connected = any(c['state'] == 'ready' for c in checks[:2])  # a dialer or texting tool really read lately, not only saved
     calls = month.filter(channel='call')
     if calls.exists():
         missing = round(100 * calls.filter(dial_mode='').count() / calls.count())
@@ -94,15 +95,31 @@ def readiness(client) -> dict:
                         'Upload them in Source Registry.' if missing_docs else None))
     results = Counter(ConsentResult.objects.filter(client=client, variant='strict', contact__phone_token__in=sample, frozen=False)
                       .exclude(status__in=['pending', 'not_needed']).values_list('status', flat=True))
-    connected = any(c['state'] != 'missing' for c in checks[:2])
     return {'runOn': now.date().isoformat(), 'sampleNumbers': len(sample), 'checks': checks, 'canStart': connected,
             'numbersPerMonth': numbers, 'recommendedPlan': plan_for(numbers),
-            **({'preview': [{'status': s.upper(), 'count': results.get(s, 0)} for s in ('verified', 'weak', 'conflicting', 'no_proof')]} if results else {}),
-            'setup': setup_rows(client, month)}
+            'preview': [{'status': s.upper(), 'count': results.get(s, 0)} for s in ('verified', 'weak', 'conflicting', 'no_proof')] if results else [],
+            'notMeasured': not_supplied(client), 'setup': setup_rows(client, month)}
 
 
-# The Setup & Readiness checklist rows (the portal's ids).
-SETUP_ITEMS = ('outcomes', 'caller-ids', 'pages', 'vendors', 'campaigns', 'states', 'optout-methods')
+def not_supplied(client) -> list[str]:
+    """Metrics held at worst case or left unmeasured because an upload is missing."""
+    have = set(UploadedFile.objects.filter(client=client).values_list('source', flat=True))
+    rows = ((Source.RND_QUERIES, 'M11 Pre-Contact Reassigned Checks'), (Source.INTERNAL_LIST, 'M12 Internal List Contacts'),
+            (Source.DNC_CHECKS, 'M13 DNC Scrub Record Check'))
+    return [label for source, label in rows if source not in have]
+
+
+# The Setup & Readiness checklist rows: id → (label, what it asks for).
+SETUP_LABELS = {
+    'outcomes': ('Outcome mapping', 'Which dialer outcomes mean “stop calling”'),
+    'caller-ids': ('Caller IDs', 'Every number you show when calling'),
+    'pages': ('Consent pages', 'Every address where you or your affiliates collect consent'),
+    'vendors': ('Lead vendors and sub-IDs', 'Names and sub-IDs of every vendor and affiliate'),
+    'campaigns': ('Campaign categories', 'Mark each campaign as marketing or informational'),
+    'states': ('States and brands', 'States you call and the brand names you use'),
+    'optout-methods': ('Designated opt-out methods', 'Whether you designate an exclusive opt-out method, and where it is disclosed'),
+}
+SETUP_ITEMS = tuple(SETUP_LABELS)
 
 
 def setup_rows(client, month) -> list[dict]:
@@ -133,7 +150,12 @@ def setup_rows(client, month) -> list[dict]:
         m = marks.get(item)
         rows.append({'id': item, 'done': bool(m and m.done),
                      'count': f"Marked {'done' if m.done else 'not done'} by {m.by} on {m.at:%-d %b %Y}" if m else 'Not marked yet'})
-    return rows
+    order = {item: i for i, item in enumerate(SETUP_ITEMS)}
+    return [{**r, 'label': SETUP_LABELS[r['id']][0], 'detail': SETUP_LABELS[r['id']][1]} for r in sorted(rows, key=lambda r: order[r['id']])]
+
+
+USAGE_RULE = ('If numbers contacted exceed the plan limit two months in a row, the plan moves up from the next month. '
+              'There are no overage charges.')
 
 
 def usage(client) -> dict:
@@ -158,10 +180,8 @@ def usage(client) -> dict:
         else:
             break
     names = [p for p, _ in PLANS] + ['Enterprise']
-    out = {'plan': plan, 'used': history[-1]['used'], 'history': history, 'overLimitMonths': over,
-           'nextPlan': names[names.index(plan) + 1] if plan in names[:-1] else None}
-    if limit:
-        out['limit'] = limit
+    out = {'plan': plan, 'used': history[-1]['used'], 'history': history, 'overLimitMonths': over, 'limit': limit, 'monthlyPrice': None,
+           'nextPlan': names[names.index(plan) + 1] if plan in names[:-1] else None, 'rule': USAGE_RULE}
     contract = Contract.objects.filter(client=client).first()
     if contract and contract.price is not None:  # the card says "<price> a month"
         per = {'monthly': 1, 'quarterly': 3, 'yearly': 12}.get(contract.billing_period, 1)

@@ -49,7 +49,8 @@ def test_expired_customer_relationship(company):
 def test_dnc_rows_wait_for_check_records_then_become_real(company):
     call(company, 'p1')
     call(company, 'p2')
-    assert set(checks(company, 'dnc')) == {'Expired customer relationship used'}  # the rest keep "not supplied"
+    before = checks(company, 'dnc')  # no DNC check records yet: every DNC row says "Not measured"
+    assert all(before[n]['result'] == 'Not measured' for n in before if n != 'Expired customer relationship used')
     up = upload(company, Source.DNC_CHECKS)
     DncCheck.objects.create(client=company, upload=up, phone_token='p1', checked_on=TODAY - timedelta(days=5), listed=True, list_name='national')
     DncCheck.objects.create(client=company, upload=up, phone_token='p2', checked_on=TODAY - timedelta(days=60), listed=False, list_name='CA')
@@ -57,7 +58,7 @@ def test_dnc_rows_wait_for_check_records_then_become_real(company):
     assert rows['National registry checked']['result'] == '50% of contacts'
     assert rows['Called after your provider flagged the number']['result'] == '1 contact'
     assert rows['Registry copy older than 31 days']['result'] == '1 contact'
-    assert rows['State lists checked (CA, AZ, TX, FL, NV)']['result'] == 'Checked: CA'
+    assert rows['State lists checked']['result'] == 'Checked: CA'
     assert area(company, 'dnc')['flags'][0]['known'] == 'Flagged by your DNC check (national)'
 
 
@@ -100,8 +101,10 @@ def test_services_say_what_was_uploaded(company):
     assert services['Internal do-not-contact list']['note'].startswith('Uploaded') and services['DNC check records']['note'] == 'Not supplied · blocks M13'
 
 
-def test_nothing_real_yet_sends_no_empty_lists(company):
-    """An empty list would wipe the portal's rows for checks that are not built yet (the page crashed on it)."""
+def test_nothing_real_yet_says_not_measured(company):
+    """Owner, 2026-10-23: every area and check comes from the backend; with no data each check says "Not measured"."""
     data = who_contact(company)
-    assert all(a.get('checks') for a in data['areas']) and all(a.get('flags', [1]) for a in data['areas'])
-    assert 'rnd' not in [a['id'] for a in data['areas']]  # no consent ages and no query logs yet: the sample stays
+    assert [a['id'] for a in data['areas']] == ['dnc', 'idn', 'rnd', 'lit'] and all(a['title'] and a['law'] for a in data['areas'])
+    assert all(isinstance(a['flags'], list) and a['checks'] for a in data['areas'])
+    rnd = {c['metric']: c for c in next(a for a in data['areas'] if a['id'] == 'rnd')['checks']}
+    assert rnd['M11']['result'] == 'Not measured' and rnd['M47']['result'] == 'Not measured'

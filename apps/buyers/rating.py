@@ -11,6 +11,8 @@ from apps.connections.crypto import lock
 
 from .authentication import IsBuyerUser
 from .engines import check_address, send
+from apps.refs import number, yes
+
 from .models import AttestationSnapshot, BuyerLink, RatingEngine, RatingSend
 from .portal import as_buyer, newest
 
@@ -35,13 +37,15 @@ class RatingEngineView(APIView):
         org = request.user.org
         url = str(request.data.get('url', '')).strip()
         key = str(request.data.get('key', '')).strip()
+        if len(url) > 500 or len(key) > 500:
+            return as_buyer(Response({'detail': 'That address or key is too long.'}, status=400))
         problem = check_address(url) if url else 'Enter the address of your rating engine.'
         if problem:
             return as_buyer(Response({'detail': problem}, status=400))
         engine = RatingEngine.objects.filter(org=org).first() or RatingEngine(org=org)
         if not key and not engine.key:
             return as_buyer(Response({'detail': 'Enter the key your rating engine gave you.'}, status=400))
-        engine.url, engine.monthly, engine.updated_by = url, bool(request.data.get('monthly')), request.user.name
+        engine.url, engine.monthly, engine.updated_by = url, yes(request.data.get('monthly')), request.user.name
         if key:
             engine.key, engine.key_hint = lock({'key': key}), key[-4:]
         engine.save()
@@ -60,7 +64,7 @@ class SendView(APIView):
         if engine is None:
             return as_buyer(Response({'detail': 'Add your rating engine address and key first.'}, status=400))
         pk = str(request.data.get('insured', '')).removeprefix('c-')
-        snap = newest().filter(client_id=pk).first() if pk.isdigit() else None  # only a company sharing right now
+        snap = newest().filter(client_id=number(pk)).first() if number(pk) else None  # only a company sharing right now
         if snap is None:
             return as_buyer(Response({'detail': 'This company does not share with you.'}, status=404))
         row = send(engine, snap, request.user.name)

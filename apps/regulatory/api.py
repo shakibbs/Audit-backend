@@ -10,6 +10,7 @@ from apps.accounts.models import ClientUser
 from apps.accounts.permissions import IsClientUser
 
 from .models import ClientSuggestion, RegChange, RegChangeRead, RuleUpdate, RuleUpdateReview
+from apps.refs import number
 
 STATUS = {'in_force': 'in force', 'court_ruling': 'court ruling', 'adopted': 'adopted', 'proposed': 'proposed'}
 STATE = {'waiting': 'draft', 'approved': 'approved'}
@@ -29,7 +30,7 @@ def log(request, action: str, obj: str) -> None:
 
 def pk_of(row_id: str, prefix: str) -> int | None:
     rest = row_id.removeprefix(prefix)
-    return int(rest) if row_id.startswith(prefix) and rest.isdigit() else None
+    return number(rest) if row_id.startswith(prefix) else None
 
 
 def change_row(change: RegChange, read: set[int], reviews: dict[int, RuleUpdateReview]) -> dict:

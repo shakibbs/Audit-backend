@@ -14,7 +14,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from apps.alerts.models import Alert
 from apps.findings.build import ranked
-from apps.scoring.portal import FAMILIES, score_page
+from apps.scoring.portal import score_page
 from apps.scoring.snapshots import latest
 
 TEAL, LINE = colors.HexColor('#0e8a78'), colors.HexColor('#dde6e3')

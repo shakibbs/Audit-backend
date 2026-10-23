@@ -16,6 +16,7 @@ from apps.reports.words import banned_words
 
 from .file import build
 from .pdf import render
+from apps.refs import number, text, yes
 
 
 class EvidenceFileView(APIView):
@@ -82,7 +83,10 @@ class BundleView(APIView):
         user = request.user
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can export evidence files.'}, status=status.HTTP_403_FORBIDDEN)
-        typed = [str(n) for n in (request.data.get('numbers') or []) if str(n).strip()]
+        numbers = request.data.get('numbers')
+        if not isinstance(numbers, list):
+            return Response({'detail': 'Paste at least one phone number.'}, status=status.HTTP_400_BAD_REQUEST)
+        typed = [str(n)[:40] for n in numbers if isinstance(n, (str, int)) and str(n).strip()]
         if not typed:
             return Response({'detail': 'Paste at least one phone number.'}, status=status.HTTP_400_BAD_REQUEST)
         if len(typed) > MAX_NUMBERS:
@@ -94,7 +98,7 @@ class BundleView(APIView):
             record('evidence_file_blocked', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,
                    client_id=user.client_id, object=f'bulk · {", ".join(bad)}'[:254])
             return Response({'detail': 'These files were held back for a wording check; CiV has been told.'}, status=status.HTTP_409_CONFLICT)
-        pack = bool(request.data.get('pack'))
+        pack = yes(request.data.get('pack'))
         content = zip_bundle(user.client, files, missing, pack)
         sha = hashlib.sha256(content).hexdigest()
         record('evidence_bundle_downloaded', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email, client_id=user.client_id,
@@ -125,10 +129,10 @@ class HoldsView(APIView):
         user = request.user
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can place a hold.'}, status=status.HTTP_403_FORBIDDEN)
-        reason = str(request.data.get('reason') or '').strip()
+        reason = text(request.data.get('reason'), 300)
         if not reason:
             return Response({'detail': 'Say why (e.g. the case name).'}, status=status.HTTP_400_BAD_REQUEST)
-        made = place(user.client, str(request.data.get('scope') or ''), str(request.data.get('target') or ''), reason, user.name)
+        made = place(user.client, text(request.data.get('scope'), 20), text(request.data.get('target'), 120), reason, user.name)
         if isinstance(made, str):
             return Response({'detail': made}, status=status.HTTP_400_BAD_REQUEST)
         record('legal_hold_placed', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,
@@ -145,7 +149,7 @@ class ReleaseHoldView(APIView):
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can release a hold.'}, status=status.HTTP_403_FORBIDDEN)
         pk = ref.removeprefix('lh-')
-        hold = LegalHold.objects.filter(client=user.client, pk=int(pk) if pk.isdigit() else 0, released_at__isnull=True).first()
+        hold = LegalHold.objects.filter(client=user.client, pk=(number(pk) or 0), released_at__isnull=True).first()
         if hold is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         hold.released_by, hold.released_at = user.name, timezone.now()

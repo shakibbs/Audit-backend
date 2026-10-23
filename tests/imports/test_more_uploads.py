@@ -11,7 +11,7 @@ from apps.contacts.normalize import codes_for
 from apps.imports import dialer_lists
 from apps.imports.batches import rebuild_dialer, rebuild_updates
 from apps.imports.creations import creation_seen
-from apps.imports.models import CrmCreation, CrmUpdate, DialerListEntry, ImportBatch
+from apps.imports.models import CrmCreation, CrmUpdate, ImportBatch
 from apps.optouts.models import OptOutEvent, ReaddedNumber
 from apps.optouts.readded import check_batches
 from apps.provenance.ladder import rebuild as trace

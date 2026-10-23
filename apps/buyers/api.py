@@ -14,6 +14,7 @@ from apps.access_log.recorder import record
 from apps.accounts.permissions import IsClientAdmin, IsClientUser
 
 from .models import BuyerLink, BuyerOrg
+from apps.refs import day, number, text
 
 
 def link_row(link: BuyerLink, today) -> dict:
@@ -40,17 +41,16 @@ class LinksView(APIView):
         if not user.is_admin:
             return Response({'detail': 'Only an Admin can share your data with an insurer.'}, status=status.HTTP_403_FORBIDDEN)
         kind = request.data.get('kind') or BuyerOrg.Kind.INSURER
-        if kind not in BuyerOrg.Kind.values:
+        if not isinstance(kind, str) or kind not in BuyerOrg.Kind.values:
             return Response({'detail': 'Choose insurer or acquirer.'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            ends = date.fromisoformat(request.data['endsOn']) if request.data.get('endsOn') else None
-        except ValueError:
+        ends = day(request.data.get('endsOn')) if request.data.get('endsOn') else None
+        if request.data.get('endsOn') and ends is None:
             return Response({'detail': 'Give the end date as YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
         if ends and ends < timezone.localdate():
             return Response({'detail': 'The end date has passed.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            link, invited = share(user.client, user.name, str(request.data.get('name') or ''), str(request.data.get('email') or ''), kind, ends,
-                                  str(request.data.get('person') or ''))
+            link, invited = share(user.client, user.name, text(request.data.get('name'), 150), text(request.data.get('email'), 254).lower(), kind, ends,
+                                  text(request.data.get('person'), 150))
         except ValueError as problem:
             return Response({'detail': str(problem)}, status=status.HTTP_400_BAD_REQUEST)
         log(request, 'buyer_link_granted', f'{link.org.name} · {request.data.get("email")}' + (f' until {ends}' if ends else '') + (' · invite sent' if invited else ''))
@@ -65,7 +65,7 @@ class RevokeView(APIView):
         if not user.is_admin:
             return Response({'detail': 'Only an Admin can stop sharing.'}, status=status.HTTP_403_FORBIDDEN)
         pk = ref.removeprefix('bl-')
-        link = BuyerLink.objects.filter(client=user.client, pk=int(pk) if pk.isdigit() else 0, revoked_at__isnull=True).select_related('org').first()
+        link = BuyerLink.objects.filter(client=user.client, pk=(number(pk) or 0), revoked_at__isnull=True).select_related('org').first()
         if link is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         link.revoked_by, link.revoked_at = user.name, timezone.now()
@@ -89,16 +89,19 @@ class StatementsView(APIView):
         user = request.user
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can sign a statement.'}, status=status.HTTP_403_FORBIDDEN)
-        text = ' '.join(str(request.data.get('text') or '').split())
+        said = text(request.data.get('text'), 500)
         topic = request.data.get('topic') or Statement.Topic.OTHER
-        if topic not in Statement.Topic.values:
+        if not isinstance(topic, str) or topic not in Statement.Topic.values:
             return Response({'detail': 'Choose what the statement is about.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not text:
-            text = Statement.Topic(topic).label if topic != Statement.Topic.OTHER else ''
-        if not text:
+        if not said:
+            said = Statement.Topic(topic).label if topic != Statement.Topic.OTHER else ''
+        if not said:
             return Response({'detail': 'Write the statement.'}, status=status.HTTP_400_BAD_REQUEST)
-        s = Statement.objects.create(client=user.client, topic=topic, text=text[:500], signed_by=user.name)
+        if Statement.objects.filter(client=user.client, topic=topic, text=said, withdrawn_at__isnull=True).exists():
+            return Response({'detail': 'This statement is already signed.'}, status=status.HTTP_400_BAD_REQUEST)
+        s = Statement.objects.create(client=user.client, topic=topic, text=said, signed_by=user.name)
         log(request, 'statement_signed', f'{s.get_topic_display()} · {s.text}')
+        refresh_sheet(user.client)
         return Response({'id': f'st-{s.pk}'}, status=status.HTTP_201_CREATED)
 
 
@@ -111,10 +114,17 @@ class WithdrawStatementView(APIView):
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can withdraw a statement.'}, status=status.HTTP_403_FORBIDDEN)
         pk = ref.removeprefix('st-')
-        s = Statement.objects.filter(client=user.client, pk=int(pk) if pk.isdigit() else 0, withdrawn_at__isnull=True).first()
+        s = Statement.objects.filter(client=user.client, pk=(number(pk) or 0), withdrawn_at__isnull=True).first()
         if s is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         s.withdrawn_at = timezone.now()
         s.save(update_fields=['withdrawn_at'])
         log(request, 'statement_withdrawn', s.text)
+        refresh_sheet(user.client)
         return Response({'id': ref, 'withdrawn': True})
+
+
+def refresh_sheet(client) -> None:
+    """A signed or withdrawn statement reaches the insurer at once: this month's sheet is saved again."""
+    from .attestation import save
+    save(client, timezone.localdate().replace(day=1))

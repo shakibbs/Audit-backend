@@ -13,6 +13,7 @@ from apps.accounts.permissions import IsClientUser
 
 from .models import ProofRequest
 from .requests import answer, rates
+from apps.refs import number
 
 MAX_BYTES = 25 * 1024 * 1024
 ALLOWED = {'.pdf', '.jpg', '.jpeg', '.png', '.heic', '.mp3', '.wav', '.m4a', '.eml', '.msg', '.txt', '.doc', '.docx'}
@@ -27,9 +28,9 @@ def row(r: ProofRequest) -> dict:
 
 
 def own(request, ref: str) -> ProofRequest:
-    if not ref.startswith('pr-') or not ref[3:].isdigit():
+    if not ref.startswith('pr-') or number(ref[3:]) is None:
         raise Http404
-    found = ProofRequest.objects.filter(client=request.user.client, pk=int(ref[3:])).select_related('answered_by').first()
+    found = ProofRequest.objects.filter(client=request.user.client, pk=number(ref[3:])).select_related('answered_by').first()
     if found is None:
         raise Http404
     return found
@@ -158,9 +159,10 @@ class ProvenanceView(APIView):
 
 
 class LeadsView(APIView):
-    """Lead Provenance's first cards that are real now: leads this month, consent completeness (leads whose form page
-    passed every rule checklist item, among leads with a photographed page) and the items most often missing. Signal
-    levels and page match need paid certificate data: left out (the portal keeps its sample)."""
+    """Lead Provenance's first cards: leads this month (CRM records and uploaded vendor lead files), consent
+    completeness (leads whose form page passed every rule checklist item, among leads with a photographed page) and the
+    items most often missing. Signal levels and page match need lead-inspection data CiV does not read yet: sent as
+    None and empty lists, so the portal says "Not measured"."""
     permission_classes = [IsClientUser]
 
     def get(self, request):
@@ -173,7 +175,11 @@ class LeadsView(APIView):
         from apps.imports.models import CrmCreation
         client = request.user.client
         start, end = month_bounds(timezone.localdate())
-        out = {'inspected': CrmCreation.objects.filter(client=client, created_at__date__gte=start, created_at__date__lte=end).count()}
+        from apps.vendors.models import VendorLead
+        inspected = (CrmCreation.objects.filter(client=client, created_at__date__gte=start, created_at__date__lte=end).count()
+                     + VendorLead.objects.filter(client=client, received_at__date__gte=start, received_at__date__lte=end).count())
+        out = {'inspected': inspected, 'few': None, 'some': None, 'high': None, 'completeness': None, 'pageMatch': None,
+               'signals': [], 'missing': []}
         passed = judged = 0
         for page in ConsentPage.objects.filter(client=client).select_related('client'):
             good = [s for s in latest(page) if s.ok]
@@ -186,9 +192,7 @@ class LeadsView(APIView):
                 passed += leads
         if judged:
             out['completeness'] = round(100 * passed / judged, 1)
-        missing = missing_items(client)
-        if missing:
-            out['missing'] = missing
+        out['missing'] = missing_items(client)
         return Response(out)
 
 
@@ -207,8 +211,8 @@ class VendorsView(APIView):
 
 
 class SearchView(APIView):
-    """Numbers (last 4 digits or a full number, masked in the answer) and vendors. Pages, domains and metrics are
-    searched in the portal."""
+    """Numbers (last 4 digits or a full number, masked in the answer), vendors (CRM and uploaded lead files), domains,
+    metrics and the portal's pages."""
     permission_classes = [IsClientUser]
 
     def get(self, request):
@@ -227,7 +231,27 @@ class SearchView(APIView):
                     seen.add(token)
                     hits.append({'kind': 'number', 'id': number_ref(token), 'label': label, 'hint': 'Evidence file'})
         if len(q) >= 2:
-            for name in CrmCreation.objects.filter(client=client, vendor__icontains=q).values_list('vendor', flat=True).distinct()[:5]:
-                from apps.vendors.rates import vendor_key
+            from apps.metrics.catalog import DOMAINS, METRICS
+            from apps.vendors.models import VendorLead
+            from apps.vendors.rates import vendor_key
+            needle = q.lower()
+            names = list(CrmCreation.objects.filter(client=client, vendor__icontains=q).values_list('vendor', flat=True).distinct()[:5])
+            names += [n for n in VendorLead.objects.filter(client=client, vendor__icontains=q).values_list('vendor', flat=True).distinct()[:5] if n not in names]
+            for name in names[:5]:
                 hits.append({'kind': 'vendor', 'id': vendor_id(f'{vendor_key(name)}|'), 'label': name, 'hint': 'Vendor'})  # opens its Vendor Ledger row
+            hits += [{'kind': 'domain', 'id': c, 'label': row[0], 'hint': f'Domain {c}'} for c, row in DOMAINS.items()
+                     if needle in c.lower() or needle in row[0].lower()]
+            hits += [{'kind': 'metric', 'id': c, 'label': row[0], 'hint': f'Metric {c}'} for c, row in METRICS.items()
+                     if needle in c.lower() or needle in row[0].lower()]
+            hits += [{'kind': 'page', 'id': path, 'label': label, 'hint': 'Page'} for path, label in CLIENT_PAGES if needle in label.lower()]
         return Response(hits[:10])
+
+
+# The client portal's pages, for the search box (account pages included).
+CLIENT_PAGES = [('/', 'Overview'), ('/scorecard', 'Audit Scorecard'), ('/actions', 'Action Queue'), ('/alerts', 'Alerts'),
+                ('/ledger', 'Contact Ledger'), ('/consent', 'Consent Integrity'), ('/revocation', 'Revocation Integrity'),
+                ('/who-contact', 'Who You Contact'), ('/vault', 'Evidence Vault'), ('/conduct', 'Contact Conduct'), ('/leads', 'Lead Provenance'),
+                ('/vendors', 'Vendor Ledger'), ('/sources', 'Source Registry'), ('/reports', 'Reports & Exports'), ('/rulebook', 'Rulebook'),
+                ('/regulatory', 'Regulatory Changes'), ('/integrity', 'Data Integrity'), ('/attestation', 'Risk Attestation'),
+                ('/uw-export', 'Underwriting Export'), ('/setup', 'Setup & Readiness'), ('/settings', 'Settings'), ('/users', 'Users & Access'),
+                ('/account', 'My account')]

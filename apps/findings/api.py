@@ -15,6 +15,9 @@ from apps.accounts.permissions import IsClientUser
 from .build import plural, ranked
 from .catalog import RESPONSES
 from .models import Finding
+from apps.refs import number, text
+
+NOTE_LIMIT = 2000  # a decision or dispute note
 
 DECISIONS = {'accepted', 'declined', 'alternative'}
 STATUSES = {'open', 'in_progress', 'resolved'}
@@ -57,37 +60,38 @@ class ActionView(APIView):
         if not can_decide(user):
             return Response({'detail': 'Only an Admin or your lawyer can change a finding.'}, status=status.HTTP_403_FORBIDDEN)
         pk = ref.removeprefix('f-')
-        f = Finding.objects.filter(client=user.client, pk=int(pk) if pk.isdigit() else 0).first()
+        f = Finding.objects.filter(client=user.client, pk=(number(pk) or 0)).first()
         if f is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         data, changed = request.data, []
         if 'assignee' in data:
-            name = data['assignee'] or None
+            name = data['assignee'] if isinstance(data['assignee'], str) and data['assignee'] else None
             person = ClientUser.objects.filter(client=user.client, is_active=True, name=name).first() if name else None
             if name and person is None:
                 return Response({'detail': 'Pick one of your active users.'}, status=status.HTTP_400_BAD_REQUEST)
             f.assignee = person
             changed.append(f'assigned to {person.name if person else "nobody"}')
         if 'due' in data:
-            try:
-                f.due = timezone.datetime.fromisoformat(data['due']).date() if data['due'] else None
-            except ValueError:
+            from apps.refs import day
+            f.due = day(data['due']) if data['due'] else None
+            if data['due'] and f.due is None:
                 return Response({'detail': 'Give the due date as YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
             changed.append(f'due {f.due or "none"}')
         if 'status' in data:
-            if data['status'] not in STATUSES:
+            if not isinstance(data['status'], str) or data['status'] not in STATUSES:
                 return Response({'detail': 'Unknown status.'}, status=status.HTTP_400_BAD_REQUEST)
             f.work_status = data['status']
             changed.append(f'status {f.work_status}')
         if 'decision' in data:
-            choice, note = (data['decision'] or {}).get('choice'), ((data['decision'] or {}).get('note') or '').strip()
-            if choice not in DECISIONS:
+            decision = data['decision'] if isinstance(data['decision'], dict) else {}
+            choice, note = decision.get('choice'), text(decision.get('note'), NOTE_LIMIT)
+            if not isinstance(choice, str) or choice not in DECISIONS:
                 return Response({'detail': 'Choose Accepted, Declined or Other plan.'}, status=status.HTTP_400_BAD_REQUEST)
             f.decision, f.decision_note, f.decided_by, f.decided_at = choice, note, user.name, timezone.now()
             f.note_sha256 = hashlib.sha256(note.encode()).hexdigest() if note else ''
             changed.append(f'decided {choice}' + (f' · note sha256 {f.note_sha256[:16]}' if note else ''))
         if 'dispute' in data:
-            note = ((data['dispute'] or {}).get('note') or '').strip()
+            note = text((data['dispute'] if isinstance(data['dispute'], dict) else {}).get('note'), NOTE_LIMIT)
             if not note:
                 return Response({'detail': 'Say what the measurement missed.'}, status=status.HTTP_400_BAD_REQUEST)
             f.dispute_note, f.dispute_by, f.dispute_at = note, user.name, timezone.localdate()

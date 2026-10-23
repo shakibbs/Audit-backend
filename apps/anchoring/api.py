@@ -38,8 +38,20 @@ class VaultView(APIView):
                 return 'before'  # before CiV started
             return 'covered' if m in with_records and m < this_month else 'partial'  # this month, or a month with no records
         coverage = [{'label': m.strftime('%b %Y'), 'state': state(m)} for m in span[-12:]]
-        return Response({'artifacts': f'{held:,}', 'anchors': anchors.count(), 'lastAnchor': last.day.isoformat() if last else '—',
-                         'engagedSince': client.start_date.isoformat(), 'coverage': coverage})
+        return Response({'artifacts': f'{held:,}', 'anchors': anchors.count(), 'lastAnchor': last.day.isoformat() if last else None,
+                         'engagedSince': client.start_date.isoformat(), 'coverage': coverage,
+                         'deletedUnderRetention': deleted_under_retention(client)})
+
+
+def deleted_under_retention(client) -> int:
+    """Files deleted after their 4 years (not under a hold); their fingerprints are kept (real count, 2026-10-23)."""
+    from apps.captures.models import PageCapture
+    from apps.provenance.models import ProofRequest
+    from apps.reports.models import Report
+    from apps.uploads.models import UploadedFile
+    from apps.vendors.models import VendorContract
+    return sum(m.objects.filter(client=client, purged_at__isnull=False).count()
+               for m in (UploadedFile, PageCapture, VendorContract, Report, ProofRequest))
 
 
 class PositionView(APIView):
@@ -48,10 +60,14 @@ class PositionView(APIView):
 
     def get(self, request):
         from .position import position
-        try:
-            day = date.fromisoformat(request.query_params.get('date', ''))
-        except ValueError:
+        from django.utils import timezone
+
+        from apps.refs import day as read_day
+        day = read_day(request.query_params.get('date'))
+        if day is None:
             return Response({'detail': 'Enter a date.'}, status=400)
+        if day > timezone.localdate():
+            return Response({'detail': 'Choose a date up to today.'}, status=400)
         found = position(request.user.client, request.query_params.get('phone', ''), day)
         return Response(found) if found else Response({'detail': 'Enter a full phone number.'}, status=400)
 

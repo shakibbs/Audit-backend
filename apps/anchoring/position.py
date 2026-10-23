@@ -61,12 +61,35 @@ def position(client, typed: str, day: date) -> dict | None:
     if result:
         rows.append(row('Consent status', f'{result.status.upper()} · {result.primary_code}', f'Rulebook v{result.rulebook_version}'))
     covered = day >= client.start_date
-    return {'phone': mask(number), 'date': day.isoformat(), 'insideCoverage': covered, 'rows': rows}
+    # The link to this number's full evidence file, when CiV has contacts with it (2026-10-23).
+    ref = f'p-{token[:24]}' if ContactEvent.objects.filter(client=client, phone_token=token).exists() else None
+    return {'phone': mask(number), 'date': day.isoformat(), 'insideCoverage': covered, 'rows': rows, 'ref': ref}
 
 
 def hash_check(client, sha: str) -> dict:
-    found = Fingerprint.objects.filter(client=client, sha256=sha.lower().strip()).select_related('anchor').first()
+    """Is this file one CiV holds? A record read from a tool, or (2026-10-23) a report or evidence file CiV made for
+    this company. Only the fingerprint is sent; the file never leaves the browser."""
+    sha = sha.lower().strip()
+    found = Fingerprint.objects.filter(client=client, sha256=sha).select_related('anchor').first()
     if found is None:
-        return {'found': False, 'artifact': None, 'capturedAt': None, 'anchoredOn': None, 'tier': None}
+        return made_by_civ(client, sha)
     return {'found': True, 'artifact': f'{found.source_system} · {found.source_record_id}', 'capturedAt': found.fetched_at,
             'anchoredOn': found.anchor.day.isoformat() if found.anchor_id else None, 'tier': GRADE_TIER.get(found.source_grade)}
+
+
+def made_by_civ(client, sha: str) -> dict:
+    from apps.access_log.models import AccessEntry
+    from apps.reports.models import Report
+    empty = {'found': False, 'artifact': None, 'capturedAt': None, 'anchoredOn': None, 'tier': None}
+    if len(sha) != 64:
+        return empty
+    report = Report.objects.filter(client=client, sha256=sha).first()
+    if report:
+        return {**empty, 'found': True, 'artifact': f'{report.name} · {report.period:%b %Y}' if report.period else report.name,
+                'capturedAt': report.made_at}
+    made = AccessEntry.objects.filter(client_id=client.pk, action__in=['evidence_file_downloaded', 'evidence_bundle_downloaded'],
+                                      object__endswith=f'sha256 {sha}').order_by('at').first()
+    if made:
+        kind = 'Evidence bundle' if made.action == 'evidence_bundle_downloaded' else 'Evidence file'
+        return {**empty, 'found': True, 'artifact': f"{kind} · {made.object.split(' · sha256')[0]}", 'capturedAt': made.at}
+    return empty

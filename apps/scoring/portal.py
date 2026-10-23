@@ -4,22 +4,14 @@ domains (higher = better, grades from the Rulebook's grade_bands); the six facto
 come from steps 3–4. Labels: "partial" while factors are pending, "draft bands" while the bands are drafts."""
 from datetime import date, datetime
 
+from apps.metrics.catalog import DOMAINS as CATALOG
 from apps.rulebook.lookup import NoRulebook, RuleSet
 
 from .models import SnapshotRun
 from .snapshots import latest, months_back
 
-# The portal's 25 domains: family and the metrics they show (same as the portal's domain register).
-DOMAINS = {
-    'CON': ('Permission', ['M01', 'M02', 'M03']), 'WEB': ('Permission', ['M04', 'M05', 'M28']), 'LPV': ('Permission', ['M06', 'M26', 'M27']),
-    'VND': ('Permission', ['M07', 'M29', 'M30']), 'AFF': ('Permission', ['M06', 'M26']), 'RND': ('Who you contact', ['M11']),
-    'IDN': ('Who you contact', ['M12']), 'NDN': ('Who you contact', ['M13']), 'SDN': ('Who you contact', ['M13']),
-    'XBD': ('Who you contact', ['M15']), 'DLR': ('How you contact', ['M19', 'M31']), 'PRV': ('How you contact', ['M19', 'M20']),
-    'SMS': ('How you contact', ['M10', 'M16']), 'CTF': ('How you contact', ['M16', 'M17', 'M18']), 'IDD': ('How you contact', ['M21']),
-    'SHK': ('How you contact', ['M21']), 'VLT': ('How you contact', []), 'REV': ('Stopping', ['M08', 'M09', 'M10']),
-    'REC': ('Records', ['M22a', 'M22b']), 'RET': ('Records', ['M23']), 'SEC': ('Records', []), 'GOV': ('Company controls', ['M25a']),
-    'INC': ('Company controls', ['M24']), 'PLT': ('Company controls', []), 'MNA': ('Company controls', ['M25b']),
-}
+# The 25 domains: family and the metrics they show (apps/metrics/catalog.py).
+DOMAINS = {code: (row[1], row[4]) for code, row in CATALOG.items()}
 OUTSIDE = {'NDN', 'SDN'}  # shown, never in the overall (spec §9)
 FAMILIES = ['Permission', 'Who you contact', 'How you contact', 'Stopping', 'Records', 'Company controls']
 STOP_CAP = {'REV': 'M10', 'IDN': 'M12'}  # contact after a stop / an internal-list entry: that domain's grade at most D
@@ -73,24 +65,43 @@ def overall(domains: dict) -> float | None:
 
 
 def domains_page(client, key: str | None) -> list[dict]:
+    """All 25 domains with their fixed words; one with no scored metric yet has score None ("Not measured")."""
+    from apps.findings.models import Finding
     run = run_for(client, key)
-    if run is None:
-        return []
-    bands = cutoffs(run.period)
-    now = domain_scores(run, bands)
-    past = [domain_scores(r, bands) if r else {} for r in (latest(client, p) for p in months_back(run.period, 3))]
-    return [{**d, 'history': [p.get(code, {}).get('score') for p in past] + [d['score']]} for code, d in now.items()]
+    bands = cutoffs(run.period) if run else DRAFT_GRADES
+    now = domain_scores(run, bands) if run else {}
+    past = [domain_scores(r, bands) if r else {} for r in (latest(client, p) for p in months_back(run.period, 3))] if run else [{}, {}, {}]
+    findings = {}
+    for f in Finding.objects.filter(client=client).exclude(status='resolved').order_by('-affected'):
+        findings.setdefault(f.domain, f.title)
+    out = []
+    for code, (name, family, what, sources, metrics) in CATALOG.items():
+        d = now.get(code) or {'code': code, 'family': family, 'score': None, 'total': len(metrics), 'run': 0, 'pass': 0, 'warn': 0, 'fail': 0,
+                              'notRun': len(metrics)}
+        out.append({**d, 'name': name, 'what': what, 'sources': sources, 'metrics': metrics, 'excluded': code in OUTSIDE,
+                    'finding': findings.get(code) or ('Not measured yet.' if d['score'] is None else 'No open finding.'),
+                    'history': [p.get(code, {}).get('score') for p in past] + [d['score']]})
+    return out
+
+
+def empty_score() -> dict:
+    """The full score shape before anything is measured: every number None, so the portal says "Not measured"."""
+    return {'score': None, 'grade': None, 'rawGrade': None, 'cap': None, 'checkpointsRun': 0,
+            'checkpointsTotal': sum(len(c) for _, c in DOMAINS.values()), 'domainsMeasured': 0, 'domainsTotal': len(DOMAINS),
+            'projected': None, 'previous': None, 'evidenceCoverage': None, 'confirmedScore': None, 'caps': [],
+            'families': [{'family': f, 'score': None} for f in FAMILIES], 'history': [], 'partial': None, 'draftBands': True,
+            'exposure': {'value': None, 'grade': None, 'defect': None}}
 
 
 def score_page(client, key: str | None) -> dict:
     run = run_for(client, key)
     if run is None:
-        return {}
+        return empty_score()
     bands = cutoffs(run.period)
     domains = domain_scores(run, bands)
     value = overall(domains)
     if value is None:
-        return {}
+        return empty_score()
     raw = grade_of(value, bands)
     exposure = run.score.get('exposure', {})
     hard = exposure.get('caps', {}).get('hard', {})
@@ -106,6 +117,7 @@ def score_page(client, key: str | None) -> dict:
     measured = sum(not f['pending'] for f in factors)
     stop_held = [d for d in domains.values() if d.get('held')]
     out = {
+        **empty_score(),
         'score': value, 'grade': held_grade, 'rawGrade': raw,
         'checkpointsRun': sum(d['run'] for d in domains.values()), 'checkpointsTotal': sum(len(c) for _, c in DOMAINS.values()),
         'domainsMeasured': len([c for c in domains if c not in OUTSIDE]), 'domainsTotal': len(DOMAINS),
@@ -130,7 +142,7 @@ def score_page(client, key: str | None) -> dict:
         'exposure': {'value': exposure.get('value'), 'grade': exposure.get('grade'), 'defect': run.score.get('defect')},
     }
     if run.score.get('coverage', {}).get('value') is not None:
-        out['evidenceCoverage'] = run.score['coverage']['value']  # M36 (Module 14); before it, the portal keeps its sample
+        out['evidenceCoverage'] = run.score['coverage']['value']  # M36 (Module 14)
     if len(history) > 1:
         out['previous'] = history[-2]['score']
     out.update(projection(client, run, bands, value, hard))

@@ -2,6 +2,7 @@
 owner: present or not, who captured it (evidence tier), when, and its fingerprint."""
 from apps.captures.models import PageCapture
 from apps.consent.models import ConsentProof
+from apps.consent.sources import CUSTODY, custody_of
 from apps.ledger.models import Fingerprint
 from apps.optouts.models import OptOutEvent
 from apps.provenance.models import Provenance
@@ -10,9 +11,9 @@ from apps.uploads.models import InternalListEntry, RndQuery
 GRADE_TIER = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
 
 
-def element(number, name, present, tier=None, sha=None, source=None, at=None, applies=True):
+def element(number, name, present, tier=None, sha=None, source=None, at=None, applies=True, holder=None):
     return {'number': number, 'element': name, 'applies': applies, 'present': present, 'tier': tier, 'hash': sha,
-            'source': source, 'capturedAt': at}
+            'source': source, 'capturedAt': at, 'holder': holder}
 
 
 def latest_print(client, system: str, record: str):
@@ -30,11 +31,13 @@ def proof_elements(client, token: str, epoch, contacts: list, results: dict) -> 
     if cert and cert.certificate.page:
         page = PageCapture.objects.filter(client=client, page__address=cert.certificate.page, ok=True).order_by('-captured_at').first()
     out.append(element(2, 'Consent page as of that date', bool(page) if cert else None, 1 if page else None,
-                       page.fingerprint_sha256 if page else None, 'CiV page capture' if page else None, page.captured_at if page else None))
+                       page.fingerprint_sha256 if page else None, 'CiV page capture' if page else None, page.captured_at if page else None,
+                       holder='CiV (page photo, kept privately)' if page else None))
     cert_print = latest_print(client, cert.certificate.provider, cert.certificate.cert_ref) if cert else None
     out.append(element(3, 'Third-party proof', bool(cert and cert.certificate.state == 'claimed'), 2 if cert_print else None,
                        cert_print.sha256 if cert_print else None, cert.certificate.get_provider_display() if cert else None,
-                       cert.certificate.claimed_at if cert else None))
+                       cert.certificate.claimed_at if cert else None,
+                       holder=CUSTODY[custody_of(cert.certificate)] if cert else None))  # who holds the original (2026-10-23)
 
     trace = Provenance.objects.filter(client=client, phone_token=token, epoch=epoch).first()
     lead = latest_print(client, trace.lead_system, trace.lead_record_id) if trace and trace.lead_record_id else None

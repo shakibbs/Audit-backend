@@ -1,13 +1,13 @@
-"""Client API: the metrics that are real so far (Contact Conduct: M15–M19, M21, M31) and the Contact Conduct charts.
-/api/metrics sends only these; the portal keeps its sample for the others. A month with a saved copy (Module 10) is read
-from it."""
-import re
+"""Client API: every metric (catalog.py words; values from the engines, "Not measured" where none runs yet) and the
+Contact Conduct charts. A month with a saved copy (Module 10) is read from it."""
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsClientUser
+from apps.refs import yes
 
+from .catalog import complete
 from .conduct import conduct_metrics, conduct_page
 from .models import LeadSourceCheck
 from .overview import overview_metrics
@@ -15,8 +15,8 @@ from .who import COLUMNS, lead_sources, who_contact
 
 
 def period_of(request) -> str | None:
-    period = request.query_params.get('period') or ''
-    return period if re.fullmatch(r'\d{4}-\d{2}', period) else None
+    from apps.refs import month
+    return month(request.query_params.get('period'))
 
 
 class MetricsView(APIView):
@@ -28,8 +28,8 @@ class MetricsView(APIView):
             from apps.scoring.snapshots import saved_metrics
             saved = saved_metrics(client, period)
             if saved is not None:
-                return Response(saved)  # the month's saved copy (Module 10)
-        return Response(conduct_metrics(client, period) + overview_metrics(client, period))
+                return Response(complete(saved))  # the month's saved copy (Module 10)
+        return Response(complete(conduct_metrics(client, period) + overview_metrics(client, period)))
 
 
 class ConductView(APIView):
@@ -53,9 +53,9 @@ class WhoContactView(APIView):
             return Response({'detail': 'Only an Admin or your company lawyer can change these.'}, status=403)
         row = next((r for r in lead_sources(user.client) if r['id'] == ref), None)
         column = request.data.get('column')
-        if row is None or column not in COLUMNS:
+        if row is None or not isinstance(column, str) or column not in COLUMNS:
             return Response({'detail': 'Lead source not found.'}, status=404)
-        checked = bool(request.data.get('checked'))
+        checked = yes(request.data.get('checked'))
         LeadSourceCheck.objects.update_or_create(client=user.client, source_key=row['key'], column=column,
                                                  defaults={'checked': checked, 'set_by': user})
         record('lead_source_marked', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,

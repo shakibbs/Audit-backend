@@ -13,6 +13,7 @@ from apps.consent.sources import LABEL, UNKNOWN, source_of
 
 from .checklist import evaluate
 from .models import ConsentPage, PageCapture
+from apps.refs import number
 
 ITEMS = {  # code: (words, effect when it fails)
     'CC_CONSENT_TEXT': ('Asks for permission to call or text', 'no_proof'),
@@ -106,9 +107,9 @@ class PageMarkView(APIView):
     permission_classes = [IsClientUser]
 
     def patch(self, request, ref: str):
-        if not ref.startswith('cpg-') or not ref[4:].isdigit():
+        if not ref.startswith('cpg-') or number(ref[4:]) is None:
             raise Http404
-        page = ConsentPage.objects.filter(client=request.user.client, pk=int(ref[4:])).select_related('client').first()
+        page = ConsentPage.objects.filter(client=request.user.client, pk=number(ref[4:])).select_related('client').first()
         if page is None:
             raise Http404
         mark = request.data.get('mark')
@@ -123,9 +124,9 @@ class PagePhotoView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request, ref: str, viewport: str):
-        if not ref.startswith('cpg-') or not ref[4:].isdigit():
+        if not ref.startswith('cpg-') or number(ref[4:]) is None:
             raise Http404
-        page = ConsentPage.objects.filter(client=request.user.client, pk=int(ref[4:])).first()
+        page = ConsentPage.objects.filter(client=request.user.client, pk=number(ref[4:])).first()
         shot = next((s for s in latest(page) if s.viewport == viewport and s.screenshot), None) if page else None
         if shot is None:
             raise Http404

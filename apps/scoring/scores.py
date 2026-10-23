@@ -48,5 +48,6 @@ def score(metric: dict, state: str, contacts: int, table: dict) -> float | None:
     if code in SHARE_GOOD:
         return max(0.0, min(100.0, float(value)))
     if code in COUNTS:
-        return banded(10_000 * value / contacts, table['count_per_10k']) if contacts else (100.0 if value == 0 else None)
+        # no contacts in the month: nothing to count against, so not scored (an empty company is never graded A)
+        return banded(10_000 * value / contacts, table['count_per_10k']) if contacts else None
     return None  # not a scored metric (display, loss model…)

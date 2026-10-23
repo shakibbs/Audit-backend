@@ -1,5 +1,4 @@
 """The Users page API. Everyone sees their own company; only an Admin changes anything."""
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +9,7 @@ from apps.accounts.models import ClientUser, Role
 from apps.accounts.permissions import IsClientAdmin, IsClientUser
 from apps.accounts.serializers.invite import InviteSerializer
 from apps.accounts.serializers.user import UserChangeSerializer, invite_row, user_row
+from apps.refs import number
 
 LAST_ADMIN = 'A company needs at least one active Admin.'
 
@@ -23,7 +23,7 @@ def log(request, action: str, obj: str) -> None:
 def row_pk(row_id: str, prefix: str) -> int | None:
     """'u-12' -> 12; anything else -> None."""
     rest = row_id.removeprefix(prefix)
-    return int(rest) if row_id.startswith(prefix) and rest.isdigit() else None
+    return number(rest) if row_id.startswith(prefix) else None
 
 
 def find_user(request, row_id: str) -> ClientUser | None:

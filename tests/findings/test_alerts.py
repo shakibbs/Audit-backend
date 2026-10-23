@@ -1,6 +1,6 @@
 """Module 11 step 3: alerts gathered from what CiV already knows; updated, not repeated; lasting ones resolve;
 reviewed by anyone in the company; kept forever."""
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.utils import timezone

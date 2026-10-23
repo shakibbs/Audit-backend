@@ -36,4 +36,5 @@ def session_data(user: BuyerUser) -> dict:
     initials = ''.join(p[0] for p in user.name.split()[:2]).upper()
     return {'signedIn': True, 'userId': f'b-{user.pk}', 'name': user.name, 'initials': initials, 'email': user.email,
             'role': 'member', 'isCounsel': False, 'view': 'underwriter', 'orgKind': user.org.kind, 'orgName': user.org.name,
-            'clientId': '', 'clientName': user.org.name, 'vertical': user.org.get_kind_display(), 'sampleData': False}
+            'clientId': '', 'clientName': user.org.name, 'vertical': user.org.get_kind_display(),
+            'canSwitchView': False, 'plan': None, 'updatedAt': None, 'periods': []}  # always the underwriter view, no switch

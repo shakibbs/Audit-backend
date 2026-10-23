@@ -48,4 +48,4 @@ def test_a_held_hard_cap_keeps_the_projection_at_c_unless_consent_is_fixed(compa
 
 def test_no_open_findings_sends_no_projection(company):
     saved(company, [('M15', 'measured', 0, 100.0)])
-    assert 'projected' not in score_page(company, None)
+    assert score_page(company, None)['projected'] is None

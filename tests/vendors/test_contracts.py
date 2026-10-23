@@ -1,6 +1,6 @@
 """Module 12 step 3: the client uploads vendor contracts (private, logged, kept 4 years); M07 = active vendors with an
 unexpired contract on file; the 12 draft clauses are in the Rulebook."""
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile

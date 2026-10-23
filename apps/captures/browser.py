@@ -51,11 +51,8 @@ MEASURE_JS = r"""
 """
 
 
-class BlockedAddress(Exception):
-    """Not a public internet address on a normal web port: never opened."""
-
-
 def is_public(url: str) -> bool:
+    """Only a public internet address on a normal web port is ever opened (checked before, during and after loading)."""
     parts = urlsplit(url)
     if parts.scheme not in ('http', 'https') or not parts.hostname or parts.port not in (None, 80, 443):
         return False

@@ -53,7 +53,9 @@ def test_history_and_previous_from_saved_months(company):
 
 
 def test_nothing_saved_sends_nothing(company):
-    assert score_page(company, None) == {} and domains_page(company, None) == []
+    page, domains = score_page(company, None), domains_page(company, None)
+    assert page['score'] is None and page['grade'] is None and page['history'] == []
+    assert len(domains) == 25 and all(d['score'] is None and d['finding'] == 'Not measured yet.' for d in domains)
 
 
 def test_factor_map_reading_with_pending_factors(company):
@@ -68,5 +70,6 @@ def test_api(company, member_user, signed_in):
     saved(company, date(2026, 9, 1), {'M15': 100})
     api = signed_in(member_user)
     assert api.get('/api/score?period=2026-09').json()['score'] == 100.0
-    assert api.get('/api/domains').json()[0]['code'] == 'XBD'
-    assert api.get('/api/insureds/sunpath').json()['exposure']['inside']['factors'] == [None] * 6
+    domains = {d['code']: d for d in api.get('/api/domains').json()}
+    assert domains['XBD']['score'] is not None and domains['CON']['score'] is None and domains['XBD']['name'] == 'Non-US numbers'
+    assert api.get('/api/insureds/own').json()['exposure']['inside']['factors'] == [None] * 6

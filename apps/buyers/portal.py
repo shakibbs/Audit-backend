@@ -11,6 +11,8 @@ from apps.access_log.recorder import record
 from apps.accounts.permissions import IsClientUser
 
 from .authentication import IsBuyerUser
+from apps.refs import number
+
 from .models import AttestationSnapshot, BuyerUser
 
 NOT_MEASURED = ('marketingShare', 'smsShare', 'optOutMedianHours', 'optOutFailShare', 'rndExposure',
@@ -88,7 +90,7 @@ class InsuredsView(APIView):
 
 def one(request, ref: str) -> Response:
     pk = ref.removeprefix('c-')
-    snap = newest().filter(client_id=pk).first() if pk.isdigit() else None
+    snap = newest().filter(client_id=number(pk)).first() if number(pk) else None
     if snap is None:
         return as_buyer(Response({'detail': 'This company does not share with you.'}, status=404))
     seen(request, snap.client_id)

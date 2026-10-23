@@ -1,8 +1,9 @@
-"""Client API: Setup & Readiness (the real parts; the portal keeps its sample for the rest)."""
+"""Client API: Setup & Readiness and the Admin's checklist ticks."""
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsClientAdmin, IsClientUser
+from apps.refs import yes
 
 from .readiness import readiness
 
@@ -24,6 +25,6 @@ class SetupMarkView(APIView):
         if item not in SETUP_ITEMS:
             return Response({'detail': 'Item not found.'}, status=404)
         mark, _ = SetupMark.objects.get_or_create(client=request.user.client, item=item, defaults={'by': request.user.name})
-        mark.done, mark.by = bool(request.data.get('done')), request.user.name
+        mark.done, mark.by = yes(request.data.get('done')), request.user.name
         mark.save()
         return Response({'id': item, 'done': mark.done})

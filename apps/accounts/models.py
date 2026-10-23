@@ -4,6 +4,7 @@ from django.db import models
 
 from apps.accounts.managers import ClientUserManager
 from apps.clients.models import Client
+from .fields import LowerEmailField
 
 
 class Role(models.TextChoices):
@@ -13,7 +14,7 @@ class Role(models.TextChoices):
 
 class ClientUser(AbstractBaseUser):
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='users')
-    email = models.EmailField(unique=True)
+    email = LowerEmailField(unique=True)
     name = models.CharField(max_length=150)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.MEMBER)
     # Marks the client's lawyer: only lawyers review rule drafts and suggest law changes; lawyers and Admins sign
@@ -43,7 +44,7 @@ class ClientUser(AbstractBaseUser):
 
 class Invite(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invites')
-    email = models.EmailField()
+    email = LowerEmailField()
     name = models.CharField(max_length=150)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.MEMBER)
     is_counsel = models.BooleanField('is our lawyer', default=False)

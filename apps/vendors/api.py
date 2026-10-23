@@ -16,6 +16,7 @@ from apps.accounts.permissions import IsClientUser
 from .contracts import ALLOWED, MAX_BYTES, state
 from .models import VendorContract
 from .rates import vendor_key
+from apps.refs import day, number, text
 
 
 def contract_row(c: VendorContract) -> dict:
@@ -36,16 +37,19 @@ class ContractsView(APIView):
         user = request.user
         if not (user.is_admin or user.is_counsel):
             return Response({'detail': 'Only an Admin or your lawyer can add a contract.'}, status=status.HTTP_403_FORBIDDEN)
-        vendor, upload = (request.data.get('vendor') or '').strip(), request.FILES.get('file')
+        vendor, upload = text(request.data.get('vendor'), 1000), request.FILES.get('file')
         if not vendor or upload is None:
             return Response({'detail': 'Choose the vendor and the contract file.'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(vendor) > 120:
+            return Response({'detail': 'Keep the vendor name under 120 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+        if upload.size == 0:
+            return Response({'detail': 'That file is empty.'}, status=status.HTTP_400_BAD_REQUEST)
         if Path(upload.name).suffix.lower() not in ALLOWED or upload.size > MAX_BYTES:
             return Response({'detail': 'Upload a PDF, Word file, picture or text file under 20 MB.'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            ends = date.fromisoformat(request.data['endsOn']) if request.data.get('endsOn') else None
-            days = int(request.data['disputeDays']) if request.data.get('disputeDays') not in (None, '') else None
-        except ValueError:
-            return Response({'detail': 'Give the end date as YYYY-MM-DD and the dispute window in days.'}, status=status.HTTP_400_BAD_REQUEST)
+        ends = day(request.data.get('endsOn')) if request.data.get('endsOn') else None
+        days = number(request.data.get('disputeDays')) if request.data.get('disputeDays') not in (None, '') else None
+        if (request.data.get('endsOn') and ends is None) or (request.data.get('disputeDays') not in (None, '') and (days is None or days > 365)):
+            return Response({'detail': 'Give the end date as YYYY-MM-DD and the dispute window as 0–365 days.'}, status=status.HTTP_400_BAD_REQUEST)
         data = upload.read()
         upload.seek(0)
         c = VendorContract(client=user.client, key=vendor_key(vendor), name=' '.join(vendor.split()), original_name=upload.name[:255],
@@ -62,7 +66,7 @@ class ContractFileView(APIView):
 
     def get(self, request, ref: str):
         pk = ref.removeprefix('vc-')
-        c = VendorContract.objects.filter(client=request.user.client, pk=int(pk) if pk.isdigit() else 0, purged_at__isnull=True).exclude(file='').first()
+        c = VendorContract.objects.filter(client=request.user.client, pk=(number(pk) or 0), purged_at__isnull=True).exclude(file='').first()
         if c is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         record('vendor_contract_opened', request=request, actor_kind='client_user', actor_id=request.user.pk, actor_label=request.user.email,

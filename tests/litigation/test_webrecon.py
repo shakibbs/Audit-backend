@@ -61,7 +61,8 @@ def test_a_redesigned_page_is_marked_not_silently_skipped():
 
 
 def test_the_insurer_page_gets_real_cards_by_id():
-    assert page() == {}  # nothing read yet: the sample stays
+    before = page()  # nothing read yet: only the fixed reference cards
+    assert [h['id'] for h in before['headline']] == ['class-settlement'] and before['classByYear'] == [] and before['costs']
     refresh(get, pause=0)
     d = page()
     ids = {h['id']: h for h in d['headline']}

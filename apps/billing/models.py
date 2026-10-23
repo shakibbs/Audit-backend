@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from django.db import models
 
 from apps.clients.models import Client
+from apps.accounts.fields import LowerEmailField
 
 
 class Contract(models.Model):
@@ -29,7 +30,7 @@ class Contract(models.Model):
     notice_days = models.PositiveSmallIntegerField('notice period (days)', default=30,
                                                    help_text='How many days before the renewal date either side must give notice.')
     billing_contact_name = models.CharField(max_length=150, blank=True)
-    billing_contact_email = models.EmailField(blank=True)
+    billing_contact_email = LowerEmailField(blank=True)
     billing_contact_phone = models.CharField(max_length=40, blank=True)
     notes = models.TextField(blank=True)
     updated_at = models.DateTimeField(auto_now=True)

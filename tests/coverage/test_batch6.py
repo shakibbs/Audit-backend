@@ -48,7 +48,8 @@ def test_metrics_api_has_the_overview_numbers_too(company, member_user):
 def test_leads_inspected_this_month(company, member_user):
     CrmCreation.objects.create(client=company, source_system='hubspot', record_id='contacts:1', created_at=NOW)
     data = browser_for(member_user).get('/api/leads').json()
-    assert data == {'inspected': 1}  # no page photos yet: completeness and missing keep their sample
+    # no page photos yet: completeness not measured; signal levels need lead inspection (not read yet)
+    assert data == {'inspected': 1, 'few': None, 'some': None, 'high': None, 'completeness': None, 'pageMatch': None, 'signals': [], 'missing': []}
 
 
 def test_vendors_are_your_own_and_search_finds_them_and_numbers(company, member_user):

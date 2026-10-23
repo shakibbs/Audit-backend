@@ -4,6 +4,7 @@ from django import forms
 from unfold.widgets import UnfoldAdminEmailInputWidget, UnfoldAdminTextInputWidget
 
 from apps.clients.models import Client
+from apps.accounts.fields import LowerEmailFormField
 
 
 class ClientForm(forms.ModelForm):
@@ -14,7 +15,7 @@ class ClientForm(forms.ModelForm):
 
     admin_name = forms.CharField(required=False, max_length=150, label="Client Admin's name",
                                  widget=UnfoldAdminTextInputWidget(attrs={'placeholder': 'e.g. Dana Ruiz'}))
-    admin_email = forms.EmailField(required=False, label="Client Admin's email", widget=UnfoldAdminEmailInputWidget(),
+    admin_email = LowerEmailFormField(required=False, label="Client Admin's email", widget=UnfoldAdminEmailInputWidget(),
                                    help_text='They get an invitation link (7 days) to choose their own password and sign in as Admin.')
 
     class Meta:

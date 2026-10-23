@@ -1,5 +1,4 @@
 """Made visible: the number page's real seal, the Opt-outs card from the STOP list, and the two admin record pages."""
-import json
 from datetime import UTC, date, datetime, timedelta
 from unittest import mock
 

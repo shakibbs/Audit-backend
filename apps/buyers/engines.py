@@ -16,12 +16,18 @@ TIMEOUT = 15
 
 def check_address(url: str) -> str | None:
     """None when the address is fine, else a short reason for the insurer."""
-    parts = urlparse(url)
+    try:
+        parts = urlparse(url)
+        port = parts.port
+    except ValueError:
+        return 'Use an https:// address.'
     if parts.scheme != 'https' or not parts.hostname:
         return 'Use an https:// address.'
+    if port not in (None, 443):
+        return 'Use the normal https port (443).'
     try:
-        found = {a[4][0] for a in socket.getaddrinfo(parts.hostname, parts.port or 443, proto=socket.IPPROTO_TCP)}
-    except OSError:
+        found = {a[4][0] for a in socket.getaddrinfo(parts.hostname, 443, proto=socket.IPPROTO_TCP)}
+    except (OSError, UnicodeError):
         return 'That address could not be found.'
     for address in found:
         ip = ipaddress.ip_address(address.split('%')[0])

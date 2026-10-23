@@ -99,6 +99,19 @@ class ExamCase(models.Model):
         verbose_name_plural = 'extra exam questions'  # same words as the staff menu (2026-10-23)
         db_table = 'conversation_exam_case'
 
+    def clean(self):
+        """Turns must be a list of {"who": customer|business, "text": words, "at": seconds (calls)}; the deciding turn must exist."""
+        from django.core.exceptions import ValidationError
+        turns = self.turns
+        good = isinstance(turns, list) and turns and all(
+            isinstance(t, dict) and t.get('who') in ('customer', 'business') and isinstance(t.get('text'), str) and t['text'].strip()
+            and (t.get('at') is None or isinstance(t.get('at'), (int, float))) for t in turns)
+        if not good:
+            raise ValidationError({'turns': 'Write a list of turns, each like {"who": "customer", "text": "stop texting me"} '
+                                            '("who" is customer or business; calls may add "at": seconds).'})
+        if self.moment is not None and self.moment >= len(turns):
+            raise ValidationError({'moment': f'There are only {len(turns)} turns (the first is 0).'})
+
     def __str__(self):
-        first = next((t.get('text', '') for t in self.turns if t.get('who') == 'customer'), '') if isinstance(self.turns, list) else ''
+        first = next((t.get('text', '') for t in self.turns if isinstance(t, dict) and t.get('who') == 'customer'), '') if isinstance(self.turns, list) else ''
         return f"{self.get_channel_display()} question: “{first[:40]}” → {self.get_expected_display().lower()}"

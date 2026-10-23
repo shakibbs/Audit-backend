@@ -563,6 +563,8 @@ not supplied share, certificate validity, before-engagement expiries, four-month
 - **Who holds it** (`custody_of`): CiV claims every certificate automatically in the client's own account (no switch;
   covered by the service agreement) → claimed / being claimed / not claimed in time / provider does not have it.
   A vendor-only holder cannot be seen through the API (to confirm on a real account): never guessed.
+  Shown on each number's evidence file (Proof elements → "Who holds it"; the consent page row says "CiV (page photo,
+  kept privately)", 2026-10-23).
 - **Fingerprint-only proof:** a claimed certificate past its expiry date (or found gone) no longer opens; CiV read it
   and holds its sealed fingerprint → **WK_FINGERPRINT_ONLY** (weak), not conflicting. Nightly, `mark_gone()` sets
   `CertificateClaim.gone_at` from the expiry date the provider gave at claim time (no extra request, no extra cost)
@@ -631,7 +633,8 @@ from that page was made within a day.
 
 In the portal repo, put `BACKEND_URL=http://localhost:8000` in `.env.local` and restart `npm run dev`.
 The portal then sends sign-in, users, invites, Rulebook, Regulatory Changes, Source Registry and the Overview's Data
-health card, Contact Ledger, number pages, "Can I call now?" and the Opt-outs card to Django; other pages use sample data.
+health card, Contact Ledger, number pages, "Can I call now?" and the Opt-outs card to Django. Since 2026-10-23 every
+portal page reads Django (no sample data anywhere; see "No sample data" below).
 While building, emails (reset and invite links) print in this terminal.
 
 ## Deploy on a server that already runs Traefik (Docker)
@@ -766,8 +769,8 @@ A→1 … D→4) and record fingerprint; the number page's list checks use the S
 Upload centre); `GET /api/vault` (records held, daily seals, last seal, months covered); `GET /api/settings` (company
 name, industry, states contacted, engaged since, agreements from client documents); `GET /api/revocation` (Annex C
 signed date); `GET /api/insureds/<ref>` (own company: records completeness and the reconciliation table); Source
-Registry's "Feeds domains" per kind of tool. The partly real pages (vault, settings, revocation, insureds) send only the
-fields they have; the portal fills the rest from its sample until those modules exist.
+Registry's "Feeds domains" per kind of tool. Every page sends its full shape (2026-10-23): a
+value not measured yet is null or empty and the portal says "Not measured".
 
 ## Card coverage, batch 2: the Upload centre works
 
@@ -788,7 +791,8 @@ both; numbers in a new file are checked again.
 
 `apps/metrics` (Module 10's app, started here). `GET /api/conduct` (fully real: outside-hours by state, "possible"
 count, contacts by the person's local hour, abandoned rate by campaign and the limit) and `GET /api/metrics?period=`
-(only the metrics that are real so far; the portal keeps the sample for the rest, merged by metric code). From the
+(every metric in `apps/metrics/catalog.py`, with its fixed name, group, definition and unit; one no engine measures yet
+says "Not measured" with the reason). From the
 contacts CiV holds, over the chosen month or the last 30 days: **M16** out of hours (federal · state, each contact
 counted once; several possible time zones or low confidence = "possible"), **M17** over a state's frequency limit
 (per number and owner, campaigns together), **M19** robo contacts without the proof they need (strict), **M15**
@@ -799,8 +803,8 @@ mix is shown when the dialer gives it. Each metric carries a four-month history.
 
 ## Card coverage, batch 4: Who You Contact
 
-`GET /api/who-contact` (`apps/metrics/who.py`, last 30 days) sends the checks that are real now, with the portal's own
-check names so each replaces its own row (the portal keeps its sample for checks that need a later module): **M40**
+`GET /api/who-contact` (`apps/metrics/who.py`, last 30 days) sends all four areas (title, law) and every check; a check
+with no data yet, or one that needs a later module, says "Not measured" with the reason (never "pass" with no contacts): **M40**
 expired customer relationship (consent results with `NP_RELATIONSHIP_LAPSED`); with uploaded DNC check records,
 **M13** national registry checked (a check within 31 days before the contact), **M39** called after the provider
 flagged the number, **M49** registry copy older than 31 days, state lists checked; with the uploaded internal list,
@@ -828,11 +832,12 @@ month's billed numbers as a CSV of masked labels (never the number), first conta
 **M10** contacts after opt-out (strict results with `NP_AFTER_OPT_OUT`), each with a four-month history.
 `GET /api/leads` (merged): leads this month (CRM records created), consent completeness (leads whose form page passed
 every rule checklist item, among leads with a photographed page), the checklist items most often missing; signal
-levels and page match keep the sample (paid certificate data). `GET /api/vendors` (merged): the client's own vendors
+levels, frequent signals and page match are null / empty ("Not measured") until lead inspection exists; leads inspected
+count CRM records and uploaded vendor lead files. `GET /api/vendors` (merged): the client's own vendors
 and their leads this month, "not enough data" until Module 12 (empty → nothing sent, the page keeps its rows).
 `GET /api/search`: numbers (last 4 digits or a full number, answered masked) and vendors; the portal adds pages,
-domains and metrics. The session's `updatedAt` is the last time CiV read something new. The month list stays the
-sample's until Module 10 (the score pages read it).
+domains and metrics. The session's `updatedAt` is the last time CiV read something new. The month list runs from the
+client's start date; an insurer's session has no months and `canSwitchView: false`.
 
 ## Card coverage, batch 7: proof elements, position lookup, hash check, Rulebook snapshot, attestation
 
@@ -847,7 +852,8 @@ opt-out history, internal list and consent status as of the end of that day; the
 (`reportlab`); the Reports card downloads it. `GET /api/insureds/<ref>` adds the attestation rows the records answer
 (contacts per month, prerecorded share when the dialer says, purchased-lead and manual-import shares, evidence found,
 consent proof rate, contacts after opt-out, re-added numbers, internal-list contacts, monitoring, records
-fingerprinted); the rest keep the sample and its worst-case notes.
+fingerprinted); since 2026-10-23 the client's own page is `/api/insureds/own`: the same
+attestation sheet its insurer receives, plus its signed statements (signing or withdrawing saves the sheet again at once).
 
 ## AI conversation review: texts (Module 9, step 1)
 
@@ -920,14 +926,16 @@ contacted after the deadline. Not measured until there is data. Shown in the por
 
 - `GET /api/revocation`: M08 median / 90th percentile, M09a / M09b, the opt-out matrix (rows: STOP texts, plain-word
   texts, spoken on a call, CRM box; columns: the client's tools; median hours per cell, NEVER when missed) and the
-  time-to-stop chart, last 90 days. Before anything is checked the KPIs say "Not measured" and the matrix keeps its sample.
+  time-to-stop chart, last 90 days. Before anything is checked the KPIs say "Not measured", the matrix and chart are empty and each stop word in the
+  wording list (Rulebook `optout_keywords`) says "Not checked"; once real opt-outs are checked it says whether the
+  dialer and the texting tool honoured it.
 - `GET /api/optouts`: `dialerMarked` (dialers only), plus `tools` (each tool's answer), `urgent`, `counted`.
 - `GET /api/data-health` → `conversationReview` (Overview card "Opt-outs your dialer missed"), last 30 days.
 - `GET /api/metrics`: M08 and M09 added.
 - Who You Contact: **M41** stop requests that never reached every tool, **M42** share marked within the deadline,
   **M48** contacts after a "wrong number" reply, **M45** contacts after naming an attorney (a 4th answer in the same AI
-  request, `ConversationReview.attorney_at`; trusted reviews only; complaint-log demand letters not counted yet). Shown
-  once the AI has read anything; before that the sample rows stay.
+  request, `ConversationReview.attorney_at`; trusted reviews only; complaint-log demand letters not counted yet). Before the
+  AI has read anything these rows say "Not measured · Comes with AI review of calls and texts".
 
 ## Metrics + scoring (Module 10)
 
@@ -1334,3 +1342,45 @@ them emails print in the terminal), and nobody ever types a password for someone
   "already has an invite … Use Resend, or Cancel it" (portal and staff panel); expired invites stay in Users & Access
   as "Invite expired" with **Resend invite** (`POST /api/users/inv-<id>/resend`, Admin only, new 7-day link); the
   email reads "as a Member and the company's lawyer".
+- **Vault and reports (2026-10-23):** "Verify a file" on the Evidence Vault (the browser sends only the file's SHA-256 to
+  `/api/hash-check`, which knows tool records, reports and evidence files/bundles CiV made); the real "Deleted under
+  retention" count; the position lookup links to that number's evidence file (`ref`). Reports & Exports has a direct
+  "Download the <month> audit report" button (`GET /api/reports/period`).
+- **Docs:** `docs/CiV-System-Spec` (full, .md/.docx/.pdf) and `docs/CiV-Handover-Summary` (short, for handover).
+
+## No sample data (owner, 2026-10-23)
+
+Every portal page now comes from Django; the portal's sample files were moved to `frontend/tests/fixtures` (tests only).
+- **Fixed words in the backend:** `apps/metrics/catalog.py` (every metric: name, group, definition, source, unit,
+  better; the 25 domains: name, family, what it tests, sources, metrics), Who You Contact areas (`who.py: AREAS`), setup
+  checklist labels (`onboarding/readiness.py: SETUP_LABELS`), the plan-usage rule, report types (`reports/api.py: TYPES`),
+  litigation reference cards (`litigation/api.py`) and the search box's page list (`provenance/api.py: CLIENT_PAGES`).
+- **Full shapes:** `/api/score` (all fields, null before a scored month), `/api/domains` (all 25, newest open finding),
+  `/api/metrics`, `/api/who-contact`, `/api/revocation` (incl. stop-word list and measurement window), `/api/readiness`
+  (preview, not-supplied metrics), `/api/settings` (brands, Admins and lawyers as contacts, forum null), `/api/leads`,
+  `/api/reports` (types), `/api/litigation`, `/api/search` (numbers, vendors incl. lead files, domains, metrics, pages),
+  `/api/session` (`updatedAt` null until anything is read; insurers: no switch, no months).
+- **Scoring:** a month with no contacts is not scored at all (no top grade, no worst case); a count metric is never
+  scored against zero contacts. Statements say "Not measured yet" instead of "Matches what CiV measured" when nothing
+  was checked; the same statement can't be signed twice. The insurer sheet uses the newest scored month.
+- **Reports:** only the six report types can be made, for months from the client's start to this month.
+- **Access log:** the visitor's own address (last `X-Forwarded-For` entry from our private-network proxies).
+
+
+## Bad input never crashes (super test, 2026-10-23)
+
+- `config/api_guard.py` (`ApiGuardMiddleware`): on `/api`, a hidden NUL character or a JSON body that is not an object
+  gets 400; any error a view did not catch answers in JSON (400 for values too long, out of range, the wrong kind or
+  already saved; otherwise a plain 500 message) and is logged. Unknown `/api` addresses give a JSON 404; a refused
+  CSRF check gives a JSON 403 ("Your page is out of date").
+- `apps/refs.py`: `number()` (plain 0–9 ids only, so "²" or Arabic digits never match), `month()` / `year()` / `day()`
+  (2000–2100), `yes()` (only true counts, never the word "false"), `text()` (trimmed and cut to length). Every API id,
+  month, date, tick and text box uses them; notes, reasons, names and dispute days have limits; positions can't be
+  looked up for a future date.
+- Emails: `apps/accounts/fields.py` (`LowerEmailField`) keeps every email in small letters before any "already has an
+  account" check (client users, invites, staff, insurer people, billing contact); the portal's email boxes show small
+  letters as you type.
+- Uploads: an empty file, or the same file again for the same source, is refused; a file that cannot be read is not kept.
+- Staff panel: "Test connection" never crashes (an unreadable answer is "Failed", the message is cut to fit);
+  extra exam questions check their turns and the deciding turn.
+- Tests: `tests/guard/test_bad_input.py`.

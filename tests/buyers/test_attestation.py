@@ -35,14 +35,14 @@ def test_statements_signed_with_conflicts_shown(company, admin_user, member_user
     assert api.call('post', '/api/statements', {'topic': 'optouts_honored'}).status_code == 201
     assert api.call('post', '/api/statements', {'topic': 'other', 'text': 'All our calling runs through Five9.'}).status_code == 201
     assert signed_in(member_user).call('post', '/api/statements', {'topic': 'other', 'text': 'x'}).status_code == 403
-    page = signed_in(admin_user).get('/api/insureds/sunpath').json()
+    page = signed_in(admin_user).get('/api/insureds/own').json()
     assert page['conflicts'][0]['stated'] == 'We stop contacting people who opt out' and '1 contact after an opt-out' in page['conflicts'][0]['observed']
     assert page['statements'] == ['All our calling runs through Five9.'] and page['signedBy'] == admin_user.name
     rows = {r['topic']: r for r in page['statementRows']}
     assert rows['other']['note'] == 'Info only: CiV cannot check this'
     sid = rows['other']['id']
     assert api.call('post', f'/api/statements/{sid}/withdraw').json()['withdrawn']
-    assert api.get('/api/insureds/sunpath').json()['statements'] == []
+    assert api.get('/api/insureds/own').json()['statements'] == []
 
 
 def test_the_dnc_statement_conflicts_without_check_records(company, admin_user, signed_in):

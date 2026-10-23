@@ -5,6 +5,7 @@ address is a buyer of its own). A buyer sees a company only while that company s
 acquirer's sharing also ends on its date. Buyers never see contact-level records."""
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from apps.accounts.fields import LowerEmailField
 
 
 class BuyerOrg(models.Model):
@@ -39,7 +40,7 @@ class BuyerUserManager(BaseUserManager):
 class BuyerUser(AbstractBaseUser):
     """An underwriter (or deal counsel) who signs into the portal and only ever sees the underwriter view."""
     org = models.ForeignKey(BuyerOrg, on_delete=models.PROTECT, related_name='users')
-    email = models.EmailField(unique=True)
+    email = LowerEmailField(unique=True)
     name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,7 +84,7 @@ class BuyerInvite(models.Model):
     link (same sign-in page as client invites)."""
     org = models.ForeignKey(BuyerOrg, on_delete=models.CASCADE, related_name='invites')
     client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='buyer_invites')  # who invited
-    email = models.EmailField()
+    email = LowerEmailField()
     name = models.CharField(max_length=150, blank=True)
     invited_by = models.CharField(max_length=200)
     token_hash = models.CharField(max_length=64, unique=True)

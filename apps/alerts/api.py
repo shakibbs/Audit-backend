@@ -9,6 +9,7 @@ from apps.access_log.recorder import record
 from apps.accounts.permissions import IsClientUser
 
 from .models import Alert
+from apps.refs import number
 
 
 def row(a: Alert) -> dict:
@@ -31,7 +32,7 @@ class ReviewView(APIView):
     def post(self, request, ref: str):
         user = request.user
         pk = ref.removeprefix('al-')
-        alert = Alert.objects.filter(client=user.client, pk=int(pk) if pk.isdigit() else 0).first()
+        alert = Alert.objects.filter(client=user.client, pk=(number(pk) or 0)).first()
         if alert is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         if not alert.reviewed:

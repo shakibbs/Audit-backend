@@ -1,5 +1,4 @@
 """The "Contract & billing" tab on a client company's page."""
-from django.contrib import admin
 from unfold.admin import StackedInline
 
 from apps.access_log.recorder import record

@@ -12,7 +12,7 @@ def updated_at(client) -> dict:
 
     from apps.sync.models import SyncCursor
     last = SyncCursor.objects.filter(client=client).aggregate(m=Max('last_event_at'))['m']
-    return {'updatedAt': last.isoformat()} if last else {}
+    return {'updatedAt': last.isoformat() if last else None}  # None: nothing read yet
 
 
 def session_data(user: ClientUser | None) -> dict:

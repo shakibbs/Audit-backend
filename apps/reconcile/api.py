@@ -1,5 +1,5 @@
-"""Client API: the insurer pages' records completeness and reconciliation table for the signed-in company (its own
-"insured" page only). Other fields of that page are left out until their modules (the portal keeps its sample)."""
+"""Client API: a company's own insurer page (/api/insureds/own): the same attestation sheet its insurer receives, with
+its own signed statements; for an insurer, a shared company's sheet. Also the records-completeness rows the sheet uses."""
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -85,19 +85,10 @@ class OwnInsuredView(APIView):
         from apps.buyers.portal import as_buyer, insured, own_sheet, previewing
         if previewing(request.user):  # its own company exactly as its insurer sees it: real data only
             return as_buyer(Response(insured(own_sheet(request.user.client))))
-        from apps.scoring.portal import exposure_reading
-        client = request.user.client
-        out = attestation(client)
-        reading = exposure_reading(client)  # Module 10: the factor map and Exposure from the saved scores
-        if reading:
-            out['exposure'] = {'inside': reading}
+        # Its own company: exactly the sheet its insurer receives (one source, owner 2026-10-23), plus its own statements.
+        if ref not in ('own', f'c-{request.user.client_id}'):
+            return Response({'detail': 'You can see only your own company.'}, status=404)
         from apps.buyers.attestation import statements
-        signed = statements(client)  # Module 15: the company's signed statements, conflicts shown
-        out.update({'statements': signed['statements'], 'conflicts': signed['conflicts'], 'statementRows': signed['statementRows'],
-                    'signedBy': signed['signedBy'], 'asOf': signed['asOf']})
-        month = PeriodIntegrity.objects.filter(client=client).first()  # latest month checked
-        if month is not None:
-            out['completeness'] = month.completeness
-            if rows(month):
-                out['reconciliation'] = rows(month)
+        out = insured(own_sheet(request.user.client))
+        out['statementRows'] = statements(request.user.client)['statementRows']
         return Response(out)

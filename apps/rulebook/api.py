@@ -1,5 +1,4 @@
 """Client API: the Rulebook page and its Calendar & hours tab."""
-from datetime import date
 
 from django.utils import timezone
 from rest_framework.response import Response
@@ -59,8 +58,9 @@ class CalendarView(APIView):
 
     def get(self, request):
         today = timezone.localdate()
-        year = int(request.query_params.get('year') or today.year)
-        if not 2000 <= year <= 2100:
+        from apps.refs import year as read_year
+        year = read_year(request.query_params.get('year'), today.year)
+        if year is None:
             return Response({'detail': 'Year out of range.'}, status=400)
         draft = RuleSet('draft')
         live = RuleSet('internal', version=draft.version)
@@ -106,8 +106,9 @@ class SnapshotView(APIView):
         from django.http import HttpResponse
 
         from .snapshot import snapshot_pdf
-        period = request.query_params.get('period', '')
-        if not re.fullmatch(r'\d{4}-\d{2}', period):
+        from apps.refs import month
+        period = month(request.query_params.get('period'))
+        if period is None:
             from django.utils import timezone
             period = timezone.localdate().strftime('%Y-%m')
         response = HttpResponse(snapshot_pdf(request.user.client.name, period), content_type='application/pdf')

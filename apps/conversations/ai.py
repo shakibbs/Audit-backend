@@ -5,7 +5,6 @@ seconds into the call). "One listen, one request, several answers": later questi
 this same request, never a second AI call: a reviewer may add a 4th value, extra answers as a dict, now
 {"attorney": index of the customer turn that named a lawyer, or None} (M45) and, Module 16,
 {"consent": index of the customer turn that gave spoken consent to be called or texted, or None}. Tests plug in a pretend reviewer."""
-from django.conf import settings
 
 PROMPT_VERSION = 'v1'
 MIN_CONFIDENCE = 0.90  # conv_review_min_confidence: below this a possible stop counts as a stop, anything else "unclear"

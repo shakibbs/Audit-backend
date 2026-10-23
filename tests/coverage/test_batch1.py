@@ -66,23 +66,23 @@ def test_vault_numbers_are_real(call, company, member_user):
     MerkleAnchor.objects.create(client=company, day=NOW.date() - timedelta(days=1), leaf_count=1, root='a' * 64)
     vault = browser_for(member_user).get('/api/vault').json()
     assert (vault['artifacts'], vault['anchors'], vault['lastAnchor']) == ('1', 1, (NOW.date() - timedelta(days=1)).isoformat())
-    assert vault['coverage'][0]['state'] in ('before', 'covered', 'partial') and 'deletedUnderRetention' not in vault  # sample keeps it
+    assert vault['coverage'][0]['state'] in ('before', 'covered', 'partial') and vault['deletedUnderRetention'] == 0  # real since 2026-10-23
 
 
 def test_settings_facts_and_agreements_and_annex_c(call, company, admin_user):
     ClientDocument.objects.create(client=company, kind='annex_c', signed_on=date(2026, 9, 1), title='Annex C')
     api = browser_for(admin_user)  # Settings is Admin only since 2026-10-23
     settings = api.get('/api/settings').json()
-    assert settings['company']['name'] == company.name and settings['company']['states'] == ['CA'] and 'forum' not in settings['company']
+    assert settings['company']['name'] == company.name and settings['company']['states'] == ['CA'] and settings['company']['forum'] is None
     assert {a['name']: a['status'] for a in settings['agreements']}['Annex C · test opt-outs'] == 'signed'
-    assert api.get('/api/revocation').json()['authorisation'] == {'signedOn': '2026-09-01'}
+    assert api.get('/api/revocation').json()['authorisation']['signedOn'] == '2026-09-01'
 
 
 def test_insurer_page_gets_real_completeness_and_reconciliation(company, member_user):
     month = PeriodIntegrity.objects.create(client=company, period=NOW.date().replace(day=1), completeness=0.94, incomplete=False)
     Reconciliation.objects.create(client=company, period=month.period, measure='texts', source_system='twilio', method='bill', records=990,
                                   independent_total=1000, ratio=0.99)
-    data = browser_for(member_user).get('/api/insureds/sunpath').json()
+    data = browser_for(member_user).get('/api/insureds/own').json()
     assert data['completeness'] == 0.94
     assert data['reconciliation'] == [{'label': 'Texts in Twilio logs', 'against': 'Messages billed by Twilio', 'records': '990', 'total': '1,000',
                                        'ratio': 0.99, 'result': 'consistent', 'source': 'Billing API · source grade B'}]

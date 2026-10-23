@@ -3,10 +3,11 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 from apps.staff.managers import StaffUserManager
+from apps.accounts.fields import LowerEmailField
 
 
 class StaffUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True)
+    email = LowerEmailField(unique=True)
     name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

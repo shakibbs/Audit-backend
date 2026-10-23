@@ -70,6 +70,21 @@ def test_rulebook_snapshot_is_a_pdf(number, member_user):
 
 
 def test_attestation_rows_from_records(number, member_user):
-    data = browser_for(member_user).get('/api/insureds/sunpath').json()
+    data = browser_for(member_user).get('/api/insureds/own').json()
     assert data['contactsPerMonth'] == 1 and data['consentProof'] == 1.0 and data['contactsAfterOptOut'] == 0
-    assert data['controls'] == {'fingerprinted': 1} and 'prerecordedShare' not in data  # not known from this dialer: sample keeps it
+    assert data['controls'] == {'policy': None, 'trainingCurrency': None, 'optOutTests90d': None, 'fingerprinted': 1}
+    assert data['prerecordedShare'] is None  # not known from this dialer: not measured
+
+
+def test_the_number_page_says_who_holds_the_consent_proof(number, member_user):
+    """Owner, 2026-10-23: the third-party proof row shows who holds the original."""
+    from apps.certificates.models import CertificateClaim
+    from apps.consent.models import ConsentProof
+    claim = CertificateClaim.objects.create(client=number.client, provider='trustedform', cert_ref='abc123', deadline_at=NOW + timedelta(days=3),
+                                            state='claimed')
+    ConsentProof.objects.create(client=number.client, phone_token=number.phone_token, epoch=number.epoch, kind='certificate', proof_type='web_cert',
+                                certificate=claim, captured_at=NOW - timedelta(days=5), source_system='twilio', source_record_id='lead-1')
+    api = browser_for(member_user)
+    ref = api.get('/api/contacts').json()[0]['phoneE164']
+    elements = {e['number']: e for e in api.get(f'/api/evidence/{ref}').json()['proofElements']}
+    assert elements[3]['holder'] == "Claimed in the client's account"

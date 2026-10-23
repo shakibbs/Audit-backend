@@ -18,6 +18,7 @@ from .proof_elements import proof_elements
 from .location import locate
 from .models import ContactEvent, PhoneEpoch
 from .normalize import mask
+from apps.refs import number
 
 NOT_CHECKED = 'NOT_CHECKED'
 LIMIT = 200
@@ -124,9 +125,9 @@ class ContactView(APIView):
 
     def get(self, request, ref):
         client = request.user.client
-        if not ref.startswith('ce-') or not ref[3:].isdigit():
+        if not ref.startswith('ce-') or number(ref[3:]) is None:
             return Response({'detail': 'No such contact.'}, status=404)
-        c = ContactEvent.objects.filter(client=client, pk=int(ref[3:])).first()
+        c = ContactEvent.objects.filter(client=client, pk=number(ref[3:])).first()
         if c is None:
             return Response({'detail': 'No such contact.'}, status=404)
         copies = ContactEvent.objects.filter(client=client, dedupe_group=c.dedupe_group).count() if c.dedupe_group else 1

@@ -58,7 +58,8 @@ def test_only_the_admin_changes_choices_and_ticks(company, admin_user, member_us
     assert api.call('patch', '/api/setup/nonsense', {'done': True}).status_code == 404
     rows = {r['id']: r for r in api.call('get', '/api/readiness').json()['setup']}
     assert rows['outcomes']['done'] and 'Marked done by' in rows['outcomes']['count']
-    assert rows['optout-methods'] == {'id': 'optout-methods', 'done': False, 'count': 'Not marked yet'}
+    assert rows['optout-methods'] == {'id': 'optout-methods', 'done': False, 'count': 'Not marked yet', 'label': 'Designated opt-out methods',
+                                      'detail': 'Whether you designate an exclusive opt-out method, and where it is disclosed'}
 
 
 def test_ticks_and_choices_are_per_company(company, other_company, admin_user, other_admin, signed_in, api):

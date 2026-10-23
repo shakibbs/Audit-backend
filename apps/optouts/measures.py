@@ -100,9 +100,29 @@ def tool_hours(check, event, now) -> float | None:
     return None
 
 
+MIN_TESTS_PER_CELL = 3  # a matrix cell with fewer opt-outs says "too few"
+CHANNEL_NAME = {'text': 'Text', 'call': 'Call', 'crm': 'CRM'}
+
+
+def wording(client, start, end) -> list[dict]:
+    """Each Rulebook stop word: was it honoured by the dialer and by the texting tool in the client's real opt-outs?
+    None = no opt-out with that word was checked in that kind of tool."""
+    from .detect import keywords
+    rows = []
+    for word in keywords():
+        found = {'dialer': [], 'sms': []}
+        for event in _optouts(client, start, end).filter(method='keyword', keyword__iexact=word):
+            for check in event.mark_checks.all():
+                if check.marked is not None and check.connection.kind in found:
+                    found[check.connection.kind].append(check.marked)
+        rows.append({'phrase': word, 'kind': 'keyword', 'dialer': all(found['dialer']) if found['dialer'] else None,
+                     'messaging': all(found['sms']) if found['sms'] else None})
+    return rows
+
+
 def revocation_page(client, now=None) -> dict:
-    """The Revocation page's real numbers over the last 90 days. Before any opt-out is checked, the KPIs say "Not measured"
-    and the matrix and chart keep their sample."""
+    """The Revocation page over the last 90 days. Before any opt-out is checked, the KPIs say "Not measured" and the
+    matrix, chart and wording list are empty or "Not checked"."""
     from datetime import timedelta
 
     from apps.rulebook.lookup import NoRulebook, RuleSet
@@ -116,7 +136,10 @@ def revocation_page(client, now=None) -> dict:
         days = 10
     out = {'windowDays': WINDOW_DAYS, 'tests': len(times), 'medianHours': m08['value'],
            'p90': None if not times else ('NEVER' if _p90(times) == NEVER else round(_p90(times), 1)),
-           'notSuppressedByDeadline': m09.get('m09a', 0), 'contactedAfterDeadline': m09.get('m09b', 0), 'deadlineBusinessDays': days}
+           'notSuppressedByDeadline': m09.get('m09a', 0), 'contactedAfterDeadline': m09.get('m09b', 0), 'deadlineBusinessDays': days,
+           'minTestsPerCell': MIN_TESTS_PER_CELL, 'systems': [], 'rows': [], 'distribution': [], 'wording': wording(client, start, now),
+           'channels': sorted({CHANNEL_NAME.get(c, c) for c in _optouts(client, start, now).values_list('channel', flat=True)}),
+           'windowFrom': start.date().isoformat(), 'windowTo': now.date().isoformat()}
     if not times:
         return out
     tools = {}

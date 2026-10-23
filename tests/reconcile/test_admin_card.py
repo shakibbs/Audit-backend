@@ -1,5 +1,4 @@
 """Admin client page: the Records completeness tile, and the page it opens with every tool."""
-from datetime import date
 
 from django.utils import timezone
 

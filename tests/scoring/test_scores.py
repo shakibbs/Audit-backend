@@ -23,7 +23,7 @@ def m(code, value=None, **more):
     (m('M10', 0), 20_000, 100.0),  # no problems
     (m('M10', 6), 20_000, 50.0),  # 3 per 10,000
     (m('M10', 20), 20_000, 0.0),  # 10 per 10,000
-    (m('M10', 0), 0, 100.0),  # nothing sent, nothing wrong
+    (m('M10', 0), 0, None),  # nothing sent: nothing to count against, so no score (never an A for an empty month)
     (m('M08', 6.0, display='6.0 h'), 0, 100.0),
     (m('M08', 48.0, display='48.0 h'), 0, 50.0),
     (m('M08', None, display='NEVER'), 0, 0.0),

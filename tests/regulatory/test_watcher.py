@@ -148,7 +148,6 @@ def test_the_draft_box_on_the_item_page(client):
 
 
 def test_a_final_rule_becomes_a_law_change_whose_approval_ends_the_old_value(client):
-    from datetime import timedelta
 
     from apps.regulatory.approve import approve
     from apps.regulatory.models import RegChange, RuleUpdate

@@ -1,4 +1,5 @@
 """'Test connection': one read-only call per tool. Tools without a tester yet stay 'Saved, not tested'."""
+import logging
 import base64
 import json
 import urllib.error
@@ -6,6 +7,8 @@ import urllib.parse
 import urllib.request
 
 from apps.connections.models import Connection, Status
+
+log = logging.getLogger('civ.connections')
 
 TIMEOUT_SECONDS = 10
 
@@ -139,4 +142,9 @@ def run_test(connection: Connection) -> tuple[str, str]:
     if tester is None:
         return Status.UNTESTED, f'Key saved. A live test for {connection.tool.name} comes with its connector.'
     # The visible Time zone / region box goes along with the keys (never stored with them).
-    return tester({**connection.get_credentials(), 'setting': connection.setting})
+    try:
+        status, message = tester({**connection.get_credentials(), 'setting': connection.setting})
+    except Exception as problem:  # an odd reply (bad JSON, a web page, a bad port) is a failed test, never a crash
+        log.warning('Tester for %s failed: %r', connection.provider, problem)
+        return Status.FAILED, f'{connection.tool.name} gave an answer CiV could not read. Check the address and keys.'
+    return status, ' '.join(str(message).split())[:290]  # the status box holds 300 characters

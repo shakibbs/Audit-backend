@@ -6,7 +6,7 @@ Window: the selected month, or the last metric_window_days (30) when none is cho
 not CiV's test numbers. Each contact is checked in every time zone its number could be in; a low-confidence location
 is a "possible" case, never counted as confirmed."""
 from collections import Counter, defaultdict
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.utils import timezone

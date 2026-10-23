@@ -70,6 +70,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'config.api_guard.ApiGuardMiddleware',  # odd input on /api gets a JSON message, never an error page
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,6 +81,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+CSRF_FAILURE_VIEW = 'config.api_guard.csrf_failure'  # JSON on /api, Django's page elsewhere
 
 # CiV staff accounts (admin panel). Client users live in a separate table.
 AUTH_USER_MODEL = 'staff.StaffUser'

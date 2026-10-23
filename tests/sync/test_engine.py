@@ -14,7 +14,7 @@ from apps.sync import engine, handoff, health, tasks
 from apps.sync.views import hook
 from apps.sync.connector import CONNECTORS
 from apps.sync.models import SyncCursor, SyncGap
-from apps.tenancy.scope import _scope, tenant
+from apps.tenancy.scope import _scope
 from tests.sync.fake_tool import FakeTool, message, sign
 
 pytestmark = pytest.mark.django_db

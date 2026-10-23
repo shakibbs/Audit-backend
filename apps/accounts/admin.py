@@ -36,12 +36,8 @@ class ClientUserAdmin(CivModelAdmin):
 
     @admin.action(description='Send a link to set their password')
     def send_password_link(self, request, queryset):
-        users = queryset.filter(is_active=True)
-        for user in users:
-            send_reset(user, encode_uid(user.pk), reset_tokens.make_token(user))
-            record('password_link_sent', request=request, actor_kind='staff', actor_id=request.user.pk,
-                   actor_label=request.user.email, client_id=user.client_id, object=user.email)
-        self.message_user(request, f'Sent to {users.count()} user(s).')
+        for user in queryset.filter(is_active=True):
+            send_password_link(request, user)  # the one shared way (also the Users tab button)
 
 
 @admin.register(Invite)
@@ -120,6 +116,7 @@ class InviteInline(TabularInline):
     extra = 0
     can_delete = False
     verbose_name_plural = 'Invites'
+    show_title = False  # the email is already in its own column (2026-10-23)
     fields = ('email', 'name', 'role', 'is_counsel', 'state_shown', 'sent_at', 'expires_at', 'row_actions')
     readonly_fields = fields
 
