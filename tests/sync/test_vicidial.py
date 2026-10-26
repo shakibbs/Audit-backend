@@ -124,9 +124,13 @@ def test_only_select_and_only_needed_columns(conn, db, clock):
     assert db.sql and all('SELECT uniqueid, lead_id' in q or 'SELECT closecallid' in q for q in db.sql)
 
 
-def test_server_address():
+def test_server_address(monkeypatch):
+    monkeypatch.setattr(vd.socket, 'getaddrinfo', lambda host, port, proto=0: [(0, 0, 0, '', ('93.184.216.34' if host == 'db.cc.example' else host, port))])
     assert vd.server('db.cc.example:3307/vici') == {'host': 'db.cc.example', 'port': 3307, 'database': 'vici'}
-    assert vd.server('10.0.0.5') == {'host': '10.0.0.5', 'port': 3306, 'database': 'asterisk'}
+    # QA 2026-10-23: blank, private or local addresses and bad ports are refused before any connection
+    for bad in ('', '10.0.0.5', '127.0.0.1:3306', 'db.cc.example:abc', 'db.cc.example:99999'):
+        with pytest.raises(vd.BadAddress):
+            vd.server(bad)
 
 
 def test_the_test_button(monkeypatch, db):

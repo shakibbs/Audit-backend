@@ -4,6 +4,7 @@ from django.urls import include, path, re_path
 
 from django.conf import settings
 
+from apps.staff.password import change_own_password
 from apps.staff.welcome import welcome as staff_welcome
 from apps.sync.views import hook as sync_hook
 
@@ -14,6 +15,7 @@ from config.root_redirect import root_redirect
 urlpatterns = [
     path('', root_redirect),
     path('civ-admin/welcome/', staff_welcome, name='staff_welcome'),  # a new team member chooses a password
+    path('civ-admin/password_change/', admin.site.admin_view(change_own_password, cacheable=False)),  # same page, plus an access-log line
     path('civ-admin/', admin.site.urls),
     path('api/health', health),
     path('api/', include('apps.accounts.urls')),

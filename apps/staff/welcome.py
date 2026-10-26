@@ -26,6 +26,11 @@ def send_welcome(user: StaffUser, request=None) -> StaffWelcome:
          lines=['You have been added to the Comply iV admin panel.',
                 'Click the button to choose your own password. The link works once, for 7 days.'],
          button='Choose your password', link=link, note='Nobody at CiV will ever ask you for your password.')
+    from apps.access_log.recorder import record
+    by = getattr(request, 'user', None) if request else None
+    record('welcome_link_sent', request=request, actor_kind='staff' if by and by.is_authenticated else 'system',
+           actor_id=by.pk if by and by.is_authenticated else None, actor_label=by.email if by and by.is_authenticated else '',
+           object=f'CiV staff: {user.email}')
     return made
 
 
@@ -48,6 +53,9 @@ def welcome(request):
         with transaction.atomic():
             form.save()
             StaffWelcome.objects.filter(pk=found.pk).update(used_at=timezone.now())
+            from apps.access_log.recorder import record
+            record('staff_password_set', request=request, actor_kind='staff', actor_id=found.user.pk, actor_label=found.user.email,
+                   object='From a welcome / password link')
         messages.success(request, 'Your password is set. Sign in with your email and new password.')
         return redirect('admin:login')
     return render(request, 'staff/welcome.html', {'form': form, 'token': token, 'person': found.user, 'title': 'Choose your password'})

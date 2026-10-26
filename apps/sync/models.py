@@ -23,6 +23,7 @@ class SyncCursor(models.Model):
     records_delivered = models.PositiveBigIntegerField(default=0)
     failures_in_row = models.PositiveIntegerField(default=0)
     last_error = models.CharField(max_length=120, blank=True)  # the error's type only: a message could quote a record
+    wait_until = models.DateTimeField(null=True, blank=True)  # the tool asked CiV to slow down: not asked again before this
 
     class Meta:
         db_table = 'sync_cursor'

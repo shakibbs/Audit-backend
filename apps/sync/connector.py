@@ -52,9 +52,43 @@ class Connector:
         """A live notice from the tool. Must check the tool's signature and raise BadSignature if wrong."""
         raise NotImplementedError
 
+    def recent(self, since: datetime) -> list[Record]:
+        """Every record from `since` until now, read again by the hourly catch-up (QA 2026-10-23): a long call the tool
+        writes only when it ends, or a call or text whose status changed, is found within the hour. Records already
+        processed with the same content are skipped, so nothing is counted twice. Tools without it return []."""
+        return []
+
 
 class BadSignature(Exception):
     pass
+
+
+class AccessRemoved(Exception):
+    """The tool refused CiV's key or pass (removed, changed, or no rights): someone must reconnect it."""
+
+
+class SlowDown(Exception):
+    """The tool asked CiV to wait (HTTP 429 and its Retry-After)."""
+    def __init__(self, seconds: int):
+        super().__init__(f'wait {seconds} s')
+        self.seconds = seconds
+
+
+LOOK_BACK_HOURS = 3  # how far the hourly catch-up reads again
+
+
+def raise_for_status(error) -> None:
+    """Turns a refused or too-many-requests HTTP answer into the engine's own errors; anything else is re-raised."""
+    code = getattr(error, 'code', None)
+    if code == 429:
+        try:
+            seconds = int(float(error.headers.get('Retry-After') or 60))
+        except (TypeError, ValueError):
+            seconds = 60
+        raise SlowDown(max(1, min(seconds, 3600))) from None
+    if code in (401, 403):
+        raise AccessRemoved(f'HTTP {code}') from None
+    raise error
 
 
 # provider code → Connector class. Real tools are added in the next steps; until then nothing syncs.

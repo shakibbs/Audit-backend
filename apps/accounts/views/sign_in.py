@@ -25,7 +25,8 @@ def buyer_sign_in(request, email: str, password: str):
     if buyer is None or not buyer.check_password(password) or not buyer.is_active or not buyer.org.is_active:
         return None
     buyer_in(request, buyer)
-    record('sign_in', request=request, actor_kind='anonymous', actor_label=f'{buyer.email} ({buyer.org.name})')
+    record('sign_in', request=request, actor_kind='buyer', actor_id=buyer.pk, actor_label=f'{buyer.name or buyer.email} ({buyer.org.name})',
+           object=buyer.email)
     return Response(buyer_data(buyer))
 
 
@@ -37,7 +38,8 @@ class SignInView(APIView):
         email, password = form.validated_data['email'], form.validated_data['password']
 
         if is_locked(email):
-            record('sign_in_locked', request=request, actor_kind='anonymous', object=email)
+            known = ClientUser.objects.filter(email=email).values_list('client_id', flat=True).first()
+            record('sign_in_locked', request=request, actor_kind='anonymous', object=email, client_id=known)  # in that company's log too
             return Response({'detail': LOCKED}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
         user = ClientUser.objects.select_related('client').filter(email=email).first()

@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from email.utils import parsedate_to_datetime
 
-from ..connector import CONNECTORS, BadSignature, Connector, Page, Record
+from ..connector import CONNECTORS, BadSignature, Connector, Page, Record, raise_for_status
 
 API = 'https://api.twilio.com'
-WINDOW = timedelta(days=1)  # one day per request series
+WINDOW = timedelta(hours=1)  # one hour per request series, read whole: a busy day was re-read for every batch (QA 2026-10-23)
 LAG = timedelta(minutes=2)  # the newest two minutes wait for the next run: records may still be landing
 PAGE_SIZE = 1000  # Twilio's largest page
 TIMEOUT_SECONDS = 20
@@ -70,8 +70,13 @@ class Twilio(Connector):
             url += '?' + urllib.parse.urlencode(params)
         auth = base64.b64encode(f'{self.sid}:{self.token}'.encode()).decode()
         request = urllib.request.Request(url, headers={'Authorization': f'Basic {auth}', 'Accept': 'application/json'})
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
-            return json.loads(reply.read())
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
+                return json.loads(reply.read())
+        except urllib.error.HTTPError as error:
+            if error.code == 404:
+                raise  # one record gone (fetch_one answers None)
+            raise_for_status(error)
 
     def rows_between(self, stream: Stream, start: datetime, end: datetime) -> list[dict]:
         """Every row from start up to (not including) end, oldest first. Twilio lists newest first."""
@@ -110,23 +115,30 @@ class Twilio(Connector):
             return Page([], cursor, begin < safe_now)
         end = min(begin + WINDOW, safe_now)
         rows = self.rows_between(stream, begin, end)
-        # Rows at exactly the bookmark time come first; `skip` of them were done in the last batch.
+        # The whole hour at once: its pages are read one after another with Twilio's next-page link, never again.
+        # Rows at exactly the bookmark time come first; `skip` of them were done in an older-style batch.
         rest = [r for r in rows if happened_at(r, stream) == begin][skip:] + [r for r in rows if happened_at(r, stream) > begin]
-        batch = rest[:limit]
-        if len(rest) > limit:
-            last = happened_at(batch[-1], stream)
-            same = sum(1 for r in batch if happened_at(r, stream) == last) + (skip if last == begin else 0)
-            return Page([self.record(r, stream) for r in batch], f'{last.isoformat()}#{same}', True)
-        return Page([self.record(r, stream) for r in batch], f'{end.isoformat()}#0', end < safe_now)
+        return Page([self.record(r, stream) for r in rest], f'{end.isoformat()}#0', end < safe_now)
+
+    def recent(self, since: datetime) -> list[Record]:
+        """Texts and calls of the last hours again: a call read while it was ringing now has its final status and length."""
+        safe_now = datetime.now(UTC) - LAG
+        out = []
+        for stream in STREAMS:
+            start = since
+            while start < safe_now:
+                end = min(start + WINDOW, safe_now)
+                out += [self.record(r, stream) for r in self.rows_between(stream, start, end)]
+                start = end
+        return out
 
     def changes_since(self, cursor: str, limit: int) -> Page:
         """Texts and calls, each with its own bookmark, sharing the batch. Bookmark = JSON of both."""
         marks = json.loads(cursor) if cursor.startswith('{') else {'texts': cursor} if cursor else {}
         records, more = [], False
-        for i, stream in enumerate(STREAMS):
-            # Texts get half the batch, calls the rest: a backlog of one never holds up the other.
-            share = limit // 2 if i == 0 else limit - len(records)
-            page = self.read_stream(stream, marks.get(stream.name, ''), share)
+        for stream in STREAMS:
+            # Each stream reads its own next hour in every batch: a backlog of one never holds up the other.
+            page = self.read_stream(stream, marks.get(stream.name, ''), limit)
             records += page.records
             marks[stream.name] = page.next_cursor
             more = more or page.more

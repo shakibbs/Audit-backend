@@ -72,5 +72,6 @@ def accept_buyer(request):
     form.is_valid(raise_exception=True)
     user = accept(invite, form.validated_data['password'])
     buyer_in(request, user)
-    record('invite_accepted', request=request, actor_kind='anonymous', actor_label=f'{user.email} ({user.org.name})', client_id=invite.client_id)
+    record('invite_accepted', request=request, actor_kind='buyer', actor_id=user.pk, actor_label=f'{user.name or user.email} ({user.org.name})',
+           client_id=invite.client_id, object=user.email)
     return Response(buyer_data(user))

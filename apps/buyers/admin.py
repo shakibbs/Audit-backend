@@ -111,15 +111,18 @@ class BuyerOrgAdmin(CivModelAdmin):
     readonly_fields = ('name', 'domain', 'kind', 'created_at')
     inlines = [UserInline, InviteInline, LinkInline]
 
+    access_log_deletes = False  # delete_model writes "Insurer deleted by CiV" into each sharing company's log
+    access_log_inlines = True  # a person turned off on the People tab is logged too
+
     def has_add_permission(self, request):
         return False
 
     def delete_model(self, request, org):
         """Deletes an insurer for good with its people, invitations, sharing and rating engine (owner, 2026-10-22).
         Each company that shared gets a line in its access log; the log keeps names as text."""
-        for link in org.links.select_related('client'):
+        for client_id in sorted(set(org.links.values_list('client_id', flat=True))):  # one line per company, not per link
             record('buyer_deleted', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
-                   client_id=link.client_id, object=org.name)
+                   client_id=client_id, object=org.name)
         org.links.all().delete()
         org.users.all().delete()
         super().delete_model(request, org)

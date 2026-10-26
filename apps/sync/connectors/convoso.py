@@ -1,16 +1,20 @@
 """Convoso (dialer). Built from Convoso's API docs (call log: /v1/log/retrieve); not yet tried on a real account.
 
 - Polled every 2 minutes: call log rows between two times, one hour at a time, all pages (limit + offset), oldest
-  first. Bookmark "<time>#<how many at exactly that time are done>", so nothing is skipped or doubled.
+  first, the whole hour in one batch (asking again for each small batch re-read the hour, QA 2026-10-23). Bookmark
+  "<time>#0"; older bookmarks with "#<n>" still work.
+- Every hour the catch-up reads the last 3 hours again (`recent`): a long call Convoso writes only when it ends is
+  found then. Calls already processed are skipped.
 - Convoso gives times in the account's own time zone (saved with the connection); CiV turns them into UTC.
 """
 import json
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..connector import CONNECTORS, Connector, Page, Record
+from ..connector import CONNECTORS, Connector, Page, Record, raise_for_status
 
 API = 'https://api.convoso.com/v1'
 WINDOW = timedelta(hours=1)  # a busy call center makes thousands of calls an hour
@@ -47,8 +51,11 @@ class Convoso(Connector):
         # POST keeps the token out of URLs and server logs.
         body = urllib.parse.urlencode({'auth_token': self.token, **params}).encode()
         request = urllib.request.Request(f'{API}/{path}', data=body, headers={'Accept': 'application/json'})
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
-            answer = json.loads(reply.read())
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
+                answer = json.loads(reply.read())
+        except urllib.error.HTTPError as error:
+            raise_for_status(error)  # refused → reconnect; too many requests → wait
         if not answer.get('success'):
             raise ConvosoError(str(answer.get('text') or answer.get('code') or 'Convoso refused the request'))
         return answer.get('data') or {}
@@ -95,14 +102,19 @@ class Convoso(Connector):
             return Page([], cursor, False)
         end = min(begin + WINDOW, safe_now)
         calls = self.calls_between(begin, end)
-        # Calls at exactly the bookmark time come first; `skip` of them were done in the last batch.
+        # The whole hour at once (one request series per hour). Calls at exactly the bookmark time come first;
+        # `skip` of them were done in an older-style batch.
         rest = [c for c in calls if self.called_at(c) == begin][skip:] + [c for c in calls if self.called_at(c) > begin]
-        batch = rest[:limit]
-        if len(rest) > limit:
-            last = self.called_at(batch[-1])
-            same = sum(1 for c in batch if self.called_at(c) == last) + (skip if last == begin else 0)
-            return Page([self.record(c) for c in batch], f'{last.isoformat()}#{same}', True)
-        return Page([self.record(c) for c in batch], f'{end.isoformat()}#0', end < safe_now)
+        return Page([self.record(c) for c in rest], f'{end.isoformat()}#0', end < safe_now)
+
+    def recent(self, since: datetime) -> list[Record]:
+        safe_now = datetime.now(UTC) - LAG
+        out, start = [], since
+        while start < safe_now:
+            end = min(start + WINDOW, safe_now)
+            out += [self.record(c) for c in self.calls_between(start, end)]
+            start = end
+        return out
 
 
 CONNECTORS['convoso'] = Convoso

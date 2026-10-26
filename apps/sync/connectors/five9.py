@@ -6,6 +6,9 @@ getReportResultCsv); not yet tried on a real account.
   one window per report, the whole window at once.
 - Report times are in the account's time zone (saved with the connection); CiV turns them into UTC.
 - Column names are matched loosely (CALL ID, TIMESTAMP or DATE + TIME, ANI, DNIS…), to confirm on a real account.
+- The weekly full check runs one report per DAY (QA 2026-10-23: one per hour from the start date was thousands of
+  reports a week); the hourly catch-up runs one report for the last 3 hours (`recent`), so calls Five9 adds late are
+  found within the hour.
 """
 import base64
 import csv
@@ -19,12 +22,13 @@ from datetime import UTC, datetime, time, timedelta
 from xml.sax.saxutils import escape
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..connector import CONNECTORS, Connector, Page, Record
+from ..connector import CONNECTORS, Connector, Page, Record, raise_for_status
 
 API = 'https://api.five9.com/wsadmin/v12/AdminWebService'
 NS = 'http://service.admin.ws.five9.com/'
 REPORT_FOLDER, REPORT_NAME = 'Call Log Reports', 'Call Log'
 WINDOW = timedelta(hours=1)
+SWEEP_WINDOW = timedelta(days=1)  # the weekly full check: one report per day
 LAG = timedelta(minutes=5)  # Five9 reports fill in a little after the call
 WAIT_SECONDS, WAIT_ROUNDS = 10, 12  # isReportRunning waits up to 10 s itself: about 2 minutes in all
 TIMEOUT_SECONDS = 60
@@ -75,7 +79,13 @@ class Five9(Connector):
             with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
                 return self.answer(reply.read())
         except urllib.error.HTTPError as error:  # Five9 sends faults with status 500
-            return self.answer(error.read())
+            if error.code in (401, 403, 429):
+                raise_for_status(error)  # refused → reconnect; too many requests → wait
+            body = error.read()
+            try:
+                return self.answer(body)
+            except ET.ParseError:
+                raise Five9Error(f'Five9 answered HTTP {error.code}') from None
 
     @staticmethod
     def answer(xml: bytes) -> ET.Element:
@@ -131,6 +141,23 @@ class Five9(Connector):
         rows = [r for r in csv.DictReader(io.StringIO(self.report_csv(begin, end))) if any((v or '').strip() for v in r.values())]
         records = sorted((self.record(r) for r in rows), key=lambda rec: (rec.changed_at, rec.source_record_id))
         return Page(records, end.isoformat(), end < safe_now)
+
+    def rows_in(self, start: datetime, end: datetime) -> list[Record]:
+        rows = [r for r in csv.DictReader(io.StringIO(self.report_csv(start, end))) if any((v or '').strip() for v in r.values())]
+        return sorted((self.record(r) for r in rows), key=lambda rec: (rec.changed_at, rec.source_record_id))
+
+    def list_all(self, cursor: str, limit: int) -> Page:
+        """The weekly full check: one report per day from the start date."""
+        begin = datetime.fromisoformat(cursor) if cursor else datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC)
+        safe_now = datetime.now(UTC) - LAG
+        if begin >= safe_now:
+            return Page([], cursor, False)
+        end = min(begin + SWEEP_WINDOW, safe_now)
+        return Page(self.rows_in(begin, end), end.isoformat(), end < safe_now)
+
+    def recent(self, since: datetime) -> list[Record]:
+        safe_now = datetime.now(UTC) - LAG
+        return self.rows_in(since, safe_now) if since < safe_now else []
 
 
 CONNECTORS['five9'] = Five9

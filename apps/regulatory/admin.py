@@ -65,6 +65,7 @@ class RuleUpdateInline(TabularInline):
 
 @admin.register(RegChange)
 class RegChangeAdmin(CivModelAdmin):
+    access_log = False  # writes its own reg_change_added / changed / removed lines
     eyebrow = 'Rules'
     page_sub = ('New laws, orders and court rulings, with the Rulebook rules each one touches. On a change\'s '
                 '"Rule updates" tab, add the new value of a rule (or a brand-new rule): it stays a draft until an admin '

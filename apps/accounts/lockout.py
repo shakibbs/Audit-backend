@@ -10,6 +10,10 @@ MAX_FAILURES = 5
 WINDOW = timedelta(minutes=15)
 
 
-def is_locked(email: str, action: str = 'sign_in_failed') -> bool:
+PORTAL_FAILURES = ('sign_in_failed', 'wrong_current_password')  # My account's wrong current password counts too
+
+
+def is_locked(email: str, action: str | tuple = PORTAL_FAILURES) -> bool:
     since = timezone.now() - WINDOW
-    return AccessEntry.objects.filter(action=action, object=email, at__gte=since).count() >= MAX_FAILURES
+    actions = (action,) if isinstance(action, str) else action
+    return AccessEntry.objects.filter(action__in=actions, object=email, at__gte=since).count() >= MAX_FAILURES

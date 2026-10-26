@@ -10,7 +10,7 @@ TYPES = {
     'page-change': ('Consent page changed', ('Consent page changed',), True),
     'cert-expiry': ('Certificates nearing expiry', ('Certificate expiry',), True),
     'test-deadline': ('Opt-out past its deadline', ('Opt-out not marked',), True),
-    'source-stale': ('Source stale', ('Source stale', 'Incomplete data', 'Records changed at the source'), True),
+    'source-stale': ('Source stale', ('Source stale', 'Source disconnected', 'Incomplete data', 'Records changed at the source'), True),
     'vendor-drop': ('Vendor score drop', ('Vendor score drop',), False),
     'rule-change': ('Rule change that affects your settings', (), True),
 }

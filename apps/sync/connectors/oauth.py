@@ -9,7 +9,10 @@ import urllib.request
 TIMEOUT_SECONDS = 30
 
 
-class Disconnected(Exception):
+from ..connector import AccessRemoved
+
+
+class Disconnected(AccessRemoved):
     """The client removed CiV's access (or the pass cannot be renewed): someone must click Allow again."""
 
 
@@ -51,5 +54,8 @@ class OAuthTool:
                     continue
                 if error.code in (401, 403):
                     raise Disconnected(f'HTTP {error.code}') from None
+                if error.code == 429:
+                    from ..connector import raise_for_status
+                    raise_for_status(error)  # the tool asked CiV to wait
                 raise
         raise Disconnected('still refused after renewing the pass')

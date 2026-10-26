@@ -1418,3 +1418,37 @@ never touched. Tests: `tests/buyers/test_one_person_per_browser.py`.
 an account and was told by email", "An invite … was sent". A known insurer's kind is never silently changed (choosing
 Acquirer for an insurer is refused with the reason); an end date typed for a company already shared with is saved;
 sharing again keeps the person's name. Tests: `tests/buyers/test_share_again.py`.
+
+## The access log holds everything (2026-10-23)
+
+- Every add, change and delete in the CiV staff panel is logged (`apps/admin_panel/base.py`: `record_added`,
+  `record_changed` with "Field: old → new", `record_deleted`; secret fields show only "•••"). Pages with their own lines
+  opt out (`access_log = False`, `access_log_deletes`, `access_log_inlines`). Company name, plan and start date,
+  hidden client-user pages, staff members, turning off an insurer or one of its people and deleting a company are covered.
+- Staff sign-in / sign-out (`apps/staff/apps.py` signals), welcome and password links (`welcome_link_sent`), a staff
+  password set from a link (`staff_password_set`) or changed in the panel (`/civ-admin/password_change/`).
+- Insurers sign in and join as themselves ("J. Lee (Falcon Risk)", kind Insurer or acquirer), not "Not signed in".
+- Clearer client lines: a cancelled invite shows the email, a resend is "Invite resent", a lockout is in that
+  company's log, a wrong current password in My account is "Wrong current password" (still counts toward the lock).
+- The log can only grow: a database trigger refuses TRUNCATE too (migration `access_log/0004`; only the automatic
+  tests' `test_…` database may be emptied between tests). Tests: `tests/access_log/test_everything_logged.py`.
+
+## Reading from tools, group 1 (2026-10-24)
+
+- **Refused access:** a 401/403 (or a refused Vicidial user, or an "Allow" pass that cannot be renewed) raises
+  `AccessRemoved`; the connection turns **Failed** with "Access removed: … send the client a new connect link", the
+  access log says "Tool refused CiV's access", and the client gets a High alert "Source disconnected" (email type
+  "Source stale").
+- **Slow down:** HTTP 429 raises `SlowDown(Retry-After)`; `SyncCursor.wait_until` keeps CiV from asking that tool
+  again before then (the 2-minute poll and every run respect it).
+- **Late records:** `Connector.recent(since)` is read by the hourly catch-up for the last 3 hours (Convoso, Five9,
+  Twilio, Vicidial): long calls written when they end and changed statuses are found within the hour; records already
+  processed with the same content are skipped.
+- **One request series per window:** Convoso and Twilio read a whole hour per batch (Twilio follows its next-page
+  links once; a busy day is no longer re-read for every 250 texts). Five9's weekly check runs one report per **day**,
+  spaced a minute apart.
+- **Vicidial:** always encrypted (TLS, certificate checked); blank, local or private addresses and bad ports refused
+  before connecting.
+- **HubSpot:** one time window per search (a day, halved while it holds more than 9,000), read whole; a window that
+  took more than one page is searched again so a record that moved while paging is not skipped.
+- Tests: `tests/sync/test_reading_fixes.py`.

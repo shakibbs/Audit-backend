@@ -85,10 +85,11 @@ class UserDetailView(APIView):
     def delete(self, request, row_id: str):
         client = request.user.client
         if row_id.startswith('inv-'):
-            deleted, _ = client.invites.filter(pk=row_pk(row_id, 'inv-'), used_at__isnull=True).delete()
-            if not deleted:
+            gone = client.invites.filter(pk=row_pk(row_id, 'inv-'), used_at__isnull=True).first()
+            if gone is None:
                 return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
-            log(request, 'invite_cancelled', row_id)
+            gone.delete()
+            log(request, 'invite_cancelled', gone.email)  # the email, never "inv-16" (QA 2026-10-23)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         user = find_user(request, row_id)
@@ -114,5 +115,5 @@ class ResendInviteView(APIView):
         if invite is None:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         resend(invite)
-        log(request, 'invite_sent', invite.email)
+        log(request, 'invite_resent', invite.email)
         return Response(invite_row(invite))

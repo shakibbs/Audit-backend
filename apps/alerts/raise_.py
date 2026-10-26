@@ -64,6 +64,10 @@ def gather(client, now) -> dict[str, dict]:
         out['certs-expiring'] = dict(kind='Certificate expiry', severity=MEDIUM, domain='CON', lasting=True, count=soon,
                                      title=f'{many(soon, "certificate")} become unavailable within 30 days',
                                      detail='After that the provider no longer shows them; CiV keeps its fingerprints.')
+    for c in Connection.objects.filter(client=client, status=Status.FAILED, last_message__startswith='Access removed'):
+        out[f'access-removed-{c.pk}'] = dict(kind='Source disconnected', severity=HIGH, domain='REC', lasting=True,
+                                             title=f'{c.tool.name} stopped letting CiV read it',
+                                             detail='Its key or access was refused. CiV will contact you to reconnect it; until then nothing new is read from it.')
     for c in Connection.objects.filter(client=client, status=Status.STALE):
         out[f'stale-{c.pk}'] = dict(kind='Source stale', severity=MEDIUM, domain='REC', lasting=True,
                                     title=f'{c.tool.name} has stopped sending data',

@@ -87,7 +87,8 @@ def test_vicidial(creds: dict) -> tuple[str, str]:
     """Connects to the client's Vicidial database and reads one row from each call log table (read-only)."""
     import pymysql
 
-    from apps.sync.connectors.vicidial import TABLES, Vicidial
+    from apps.sync.connector import AccessRemoved
+    from apps.sync.connectors.vicidial import TABLES, BadAddress, Vicidial
 
     class Probe:
         def get_credentials(self):
@@ -96,11 +97,16 @@ def test_vicidial(creds: dict) -> tuple[str, str]:
     try:
         for table in TABLES:
             adapter.query(f'SELECT {table.id_column} FROM {table.table} LIMIT 1', ())
+    except BadAddress as problem:
+        return Status.FAILED, str(problem)
+    except AccessRemoved:
+        return Status.FAILED, 'Vicidial refused the database user or password.'
     except pymysql.err.OperationalError as error:
         code = error.args[0] if error.args else 0
         if code == 1045:
             return Status.FAILED, 'Vicidial refused the database user or password.'
-        return Status.FAILED, 'Could not reach the Vicidial database: check the server address, port and that it accepts CiV.'
+        return Status.FAILED, ('Could not reach the Vicidial database securely: check the server address and port, that it '
+                               'accepts CiV, and that it offers an encrypted (TLS) connection with a valid certificate.')
     except pymysql.err.ProgrammingError:
         return Status.FAILED, 'Connected, but the call log tables could not be read: give the user SELECT on vicidial_log and vicidial_closer_log.'
     return Status.CONNECTED, 'Read access works (outbound and inbound call logs).'

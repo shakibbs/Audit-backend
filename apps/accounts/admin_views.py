@@ -30,7 +30,7 @@ def resend_invite(request, client_id, invite_id):
     except ValueError as error:
         messages.error(request, str(error))
     else:
-        record('invite_sent', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
+        record('invite_resent', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
                client_id=client_id, object=invite.email)
         messages.info(request, f'A new invitation link was sent to {invite.email}.')
     return redirect(reverse('admin:clients_client_change', args=[client_id]) + '#invites')

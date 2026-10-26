@@ -18,7 +18,7 @@ ACTION_LABEL = {
     'reg_change_removed': ('Law change removed', 'amber'), 'rule_update_deleted': ('Draft rule update deleted', 'amber'),
     'optout_readded': ('Opted-out number re-added', 'red'),
     'certificate_lost': ('Certificate lost', 'red'), 'certificate_deadline_close': ('Certificate deadline close', 'amber'),
-    'source_stale': ('Source stale', 'amber'), 'source_recovered': ('Source back', 'green'),
+    'source_stale': ('Source stale', 'amber'), 'source_access_removed': ('Tool refused CiV\'s access', 'red'), 'source_recovered': ('Source back', 'green'),
     'reg_change_read': ('Law change read', 'gray'), 'rule_update_reviewed': ('Lawyer reviewed a rule', 'teal'),
     'law_change_suggested': ('Law change suggested', 'teal'),
     'rule_update_approved': ('Rule updated', 'green'), 'rule_update_rejected': ('Rule update rejected', 'gray'),
@@ -28,6 +28,10 @@ ACTION_LABEL = {
     'buyer_deleted': ('Insurer deleted by CiV', 'red'), 'buyer_user_deleted': ('Insurer person deleted by CiV', 'amber'),
     'attestation_viewed': ('Insurer opened your sheet', 'teal'), 'attestation_sent': ('Sheet sent to insurer software', 'teal'),
     'attestation_send_failed': ('Sheet send to insurer failed', 'amber'),
+    'record_added': ('Added', 'teal'), 'record_changed': ('Changed', 'gray'), 'record_deleted': ('Deleted', 'red'),
+    'staff_sign_in': ('Staff signed in', 'green'), 'staff_sign_out': ('Staff signed out', 'gray'),
+    'staff_password_set': ('Staff password set', 'teal'), 'welcome_link_sent': ('Welcome / password link sent', 'teal'),
+    'invite_resent': ('Invite resent', 'teal'), 'wrong_current_password': ('Wrong current password', 'amber'),
     'client_key_created': ('Phone-code key made', 'teal'), 'client_key_destroyed': ('Phone-code key destroyed', 'red'),
 }
 

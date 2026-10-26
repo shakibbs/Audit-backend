@@ -27,7 +27,9 @@ class ChangePasswordView(APIView):
             return Response({'detail': 'Too many wrong tries. Wait 15 minutes and try again.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         if not user.check_password(str(request.data.get('current', ''))):
             # counts toward the same 5-tries lock as sign-in
-            record('sign_in_failed', request=request, actor_kind='anonymous', object=user.email, client_id=client_id)
+            # the person is signed in: logged as who they are, and it counts toward the same 5-tries lock as sign-in
+            record('wrong_current_password', request=request, actor_kind='client_user' if client_id else 'buyer', actor_id=user.pk,
+                   actor_label=user.email if client_id else f'{user.name or user.email} ({user.org.name})', object=user.email, client_id=client_id)
             return Response({'detail': WRONG}, status=status.HTTP_400_BAD_REQUEST)
         form = NewPasswordSerializer(data=request.data, context={'user': user})
         form.is_valid(raise_exception=True)

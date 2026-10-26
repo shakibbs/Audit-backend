@@ -1,6 +1,7 @@
 """Runs one tool at one client: a small batch at a time, so every client gets a turn. The bookmark moves only after a
 batch is fully processed, so a crash never skips or doubles a record."""
 from contextlib import contextmanager
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import connection as db_connection
@@ -13,7 +14,7 @@ from apps.ledger.record import ledger_job
 from apps.tenancy.scope import tenant
 
 from . import handoff
-from .connector import Record, connector_for
+from .connector import LOOK_BACK_HOURS, AccessRemoved, Record, SlowDown, connector_for
 from .models import SyncCursor
 from .process import process
 
@@ -65,6 +66,8 @@ def _run(connection_id: int, kind: str) -> bool:
         return False
     with tenant(connection.client):
         cursor = cursor_for(connection)
+        if cursor.wait_until and timezone.now() < cursor.wait_until:
+            return False  # the tool asked CiV to slow down: not before the time it gave
         start = cursor.sweep_cursor if kind == 'full_sweep' else cursor.cursor
         if kind == 'full_sweep' and not start:
             cursor.sweep_started_at = timezone.now()  # a new full check begins
@@ -82,17 +85,37 @@ def _run(connection_id: int, kind: str) -> bool:
                     cursor.last_event_at = now
                 if kind == 'catchup' and not page.more:
                     cursor.last_catchup_at = now
+                    # read the last few hours again: long calls written late and changed statuses are found within the hour
+                    process(job, cursor, tool.recent(now - timedelta(hours=LOOK_BACK_HOURS)), 'catchup', Tokenizer(connection.client))
                 if kind == 'full_sweep' and not page.more:
                     cursor.last_full_sweep_at = now
                     for receiver in handoff.SWEEP_DONE:  # every record was read: the rest are gone from the tool
                         receiver(connection, cursor.sweep_started_at)
                 cursor.save()
+        except AccessRemoved as error:  # the key or pass was refused: staff must reconnect it (QA 2026-10-23)
+            access_removed(connection, cursor, error)
+            return False
+        except SlowDown as error:  # the tool asked CiV to wait: no request to it before then
+            SyncCursor.objects.filter(pk=cursor.pk).update(wait_until=timezone.now() + timedelta(seconds=error.seconds), last_error='SlowDown')
+            return False
         except Exception as error:  # the tool is down or answered wrongly: try again next turn
             cursor.failures_in_row += 1
             cursor.last_error = type(error).__name__
             SyncCursor.objects.filter(pk=cursor.pk).update(failures_in_row=cursor.failures_in_row, last_error=cursor.last_error)
             return False
     return page.more
+
+
+ACCESS_REMOVED = 'Access removed: the tool refused CiV\'s key or pass. Send the client a new connect link (or ask for a new key).'
+
+
+def access_removed(connection: Connection, cursor: SyncCursor, error: Exception) -> None:
+    """Shown on the connection (staff panel) and raised as a client alert; logged once."""
+    from apps.access_log.recorder import record
+    SyncCursor.objects.filter(pk=cursor.pk).update(failures_in_row=cursor.failures_in_row + 1, last_error=type(error).__name__)
+    if connection.status != Status.FAILED or not connection.last_message.startswith('Access removed'):
+        Connection.objects.filter(pk=connection.pk).update(status=Status.FAILED, last_message=ACCESS_REMOVED[:300], last_checked_at=timezone.now())
+        record('source_access_removed', client_id=connection.client_id, object=str(connection)[:254])
 
 
 def receive_live(connection: Connection, records: list[Record]) -> int:

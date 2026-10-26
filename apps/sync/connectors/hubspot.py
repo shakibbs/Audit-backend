@@ -2,8 +2,11 @@
 real portal.
 
 - Reads contacts and logged calls changed since the bookmark through the search API, sorted by hs_lastmodifieddate
-  (milliseconds), 100 per page. Bookmark per object "<ms>#<how many at exactly that ms are done>": a run asks for
-  "on or after" the mark and skips the ones already done, so nothing is skipped or doubled.
+  (milliseconds), 100 per page, one TIME WINDOW at a time (QA 2026-10-23):
+  - a window is read whole; when it took more than one page it is searched again from its start and anything new is
+    added, because a record changed while CiV was paging moves and shifts the pages after it;
+  - HubSpot's search stops at 10,000 results, so a window with more is halved until it fits.
+  Bookmark per object "<ms>#0" = the window's end; older bookmarks with "#<n>" still work.
 - The search answer only has the properties asked for, so CiV asks for the standard ones it needs plus any property
   whose name mentions TrustedForm, LeadiD or Jornaya (certificate links go to the claim queue).
 """
@@ -17,6 +20,8 @@ from .oauth import OAuthTool
 API = 'https://api.hubapi.com'
 PAGE = 100  # HubSpot's search page size
 LAG = timedelta(minutes=2)
+WINDOW_MS = 24 * 3600 * 1000  # one day per search, halved when it holds more than one search can give
+SEARCH_CAP = 9_000  # HubSpot's search gives at most 10,000 results
 CERT_WORDS = ('trustedform', 'leadid', 'jornaya', 'consent',  # certificate links and the client's own consent fields
               'vendor', 'provider', 'publisher', 'affiliate', 'supplier', 'lead_source', 'utm_source')  # who supplied the lead
 
@@ -63,25 +68,42 @@ class HubSpot(OAuthTool, Connector):
         extra = [n for n in names if any(word in n.lower() for word in CERT_WORDS)]
         return list(dict.fromkeys([*obj.standard, *extra]))
 
-    def changed_from(self, obj: HObject, start_ms: int, until_ms: int, skip: int, want: int) -> list[dict]:
-        """Rows modified at or after start_ms (oldest first), dropping the first `skip` at exactly start_ms."""
-        props, rows, after = self.properties(obj), [], None
-        while len(rows) < want + skip:
+    def search(self, obj: HObject, props: list[str], start_ms: int, end_ms: int) -> tuple[list[dict], int, int]:
+        """(rows modified in [start_ms, end_ms), HubSpot's total, pages read)."""
+        rows, after, pages, total = [], None, 0, 0
+        while True:
             body = {'filterGroups': [{'filters': [
                         {'propertyName': 'hs_lastmodifieddate', 'operator': 'GTE', 'value': str(start_ms)},
-                        {'propertyName': 'hs_lastmodifieddate', 'operator': 'LTE', 'value': str(until_ms)}]}],
+                        {'propertyName': 'hs_lastmodifieddate', 'operator': 'LT', 'value': str(end_ms)}]}],
                     'sorts': [{'propertyName': 'hs_lastmodifieddate', 'direction': 'ASCENDING'}],
                     'properties': props, 'limit': PAGE}
             if after:
                 body['after'] = after
             answer = self.call(f'{API}/crm/v3/objects/{obj.path}/search', body)
+            pages += 1
+            total = int(answer.get('total') or total)
+            if pages == 1 and total > SEARCH_CAP:
+                return [], total, pages  # too many for one search: the caller halves the window
             rows.extend(answer.get('results', []))
             after = answer.get('paging', {}).get('next', {}).get('after')
             if not after:
+                return rows, total, pages
+
+    def window(self, obj: HObject, start_ms: int, until_ms: int) -> tuple[list[dict], int]:
+        """Every row of the next window that fits one search, read whole (and read again when it was paged)."""
+        props = self.properties(obj)
+        end_ms = min(start_ms + WINDOW_MS, until_ms)
+        while True:
+            rows, total, pages = self.search(obj, props, start_ms, end_ms)
+            if total <= SEARCH_CAP or end_ms - start_ms <= 1:
                 break
+            end_ms = start_ms + (end_ms - start_ms) // 2
+        if pages > 1:  # rows changed while paging shift the pages after them: search the window once more
+            again, _, _ = self.search(obj, props, start_ms, end_ms)
+            known = {r['id'] for r in rows}
+            rows += [r for r in again if r['id'] not in known]
         rows.sort(key=lambda r: (modified(r), r['id']))
-        at_start = [r for r in rows if ms(modified(r)) == start_ms]
-        return (at_start[skip:] + [r for r in rows if ms(modified(r)) > start_ms])[:want]
+        return rows, end_ms
 
     def count_between(self, measure: str, start: datetime, end: datetime) -> int:
         """HubSpot's own count (the search answer's total): contacts created, or calls made, in the range."""
@@ -112,21 +134,20 @@ class HubSpot(OAuthTool, Connector):
         return self.record(row, obj)
 
     def changes_since(self, cursor: str, limit: int) -> Page:
+        """One window per object; the bookmark moves to the window's end (records changed later fall in a later window)."""
         marks = json.loads(cursor) if cursor else {}
         first = ms(datetime.combine(self.connection.client.start_date, time(0), tzinfo=UTC))
         until = ms(datetime.now(UTC) - LAG)
-        share = max(1, limit // len(OBJECTS))
         records, more = [], False
         for obj in OBJECTS:
-            mark, _, done = marks.get(obj.name, f'{first}#0').partition('#')
-            start, skip = int(mark), int(done)
-            rows = self.changed_from(obj, start, until, skip, share)
+            mark, _, _ = marks.get(obj.name, f'{first}#0').partition('#')
+            start = int(mark)
+            if start >= until:
+                continue
+            rows, end = self.window(obj, start, until)
             records += [self.record(r, obj) for r in rows]
-            if rows:
-                last = ms(modified(rows[-1]))
-                same = sum(1 for r in rows if ms(modified(r)) == last) + (skip if last == start else 0)
-                marks[obj.name] = f'{last}#{same}'
-            more = more or len(rows) == share
+            marks[obj.name] = f'{end}#0'
+            more = more or end < until
         records.sort(key=lambda r: (r.changed_at, r.source_record_id))
         return Page(records, json.dumps(marks, sort_keys=True), more)
 

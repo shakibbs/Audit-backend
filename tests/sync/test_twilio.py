@@ -119,7 +119,7 @@ def test_calls_and_texts_both_read_each_with_its_own_bookmark(conn, received, mo
     monkeypatch.setattr(tw, 'datetime', type('D', (datetime,), {'now': staticmethod(lambda tz=None: DAY + timedelta(days=2))}))
     engine.run(conn.pk, 'poll')
     first = [r for r, _ in received]
-    assert sum(r.startswith('SM') for r in first) == 2 and sum(r.startswith('CA') for r in first) == 2  # both get a share
+    assert sum(r.startswith('SM') for r in first) == 9 and sum(r.startswith('CA') for r in first) == 5  # each reads its whole hour
     drain(conn)
     ids = [r for r, _ in received]
     assert sorted(i for i in ids if i.startswith('CA')) == [f'CA{n:032d}' for n in range(1, 6)]

@@ -18,7 +18,23 @@ log = logging.getLogger('civ.sync')
 @shared_task(acks_late=True)
 def sync_connection(connection_id: int, kind: str) -> None:
     if engine.run(connection_id, kind):
-        sync_connection.delay(connection_id, kind)  # more waiting: back of the line, after other clients' batches
+        if kind == 'full_sweep' and slow_tool(connection_id):
+            # tools that dislike frequent reads (Five9 reports): the weekly check's reports are spaced out
+            sync_connection.apply_async((connection_id, kind), countdown=SWEEP_SPACING_SECONDS)
+        else:
+            sync_connection.delay(connection_id, kind)  # more waiting: back of the line, after other clients' batches
+
+
+SWEEP_SPACING_SECONDS = 60
+
+
+def slow_tool(connection_id: int) -> bool:
+    from apps.connections.models import Connection
+
+    from .connector import CONNECTORS
+    provider = Connection.objects.filter(pk=connection_id).values_list('provider', flat=True).first()
+    tool = CONNECTORS.get(provider)
+    return bool(tool and tool.min_poll_minutes)
 
 
 BUSY = timedelta(minutes=10)  # a backlog chain that moved in the last 10 minutes is still working
@@ -43,6 +59,8 @@ def poll_due() -> None:
             except Exception as error:
                 broken(connection, error)
                 continue
+            if cursor.wait_until and now < cursor.wait_until:
+                continue  # the tool asked CiV to slow down
             if cursor.backlog and cursor.last_heartbeat_at and now - cursor.last_heartbeat_at < BUSY:
                 continue  # its backlog chain is still reading: a second reader would read the same records
             if cursor.mode == SyncCursor.Mode.POLL and (cursor.last_heartbeat_at is None or now - cursor.last_heartbeat_at >= gap):
