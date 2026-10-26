@@ -49,12 +49,12 @@ class LinksView(APIView):
         if ends and ends < timezone.localdate():
             return Response({'detail': 'The end date has passed.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            link, invited = share(user.client, user.name, text(request.data.get('name'), 150), text(request.data.get('email'), 254).lower(), kind, ends,
+            link, invited, message = share(user.client, user.name, text(request.data.get('name'), 150), text(request.data.get('email'), 254).lower(), kind, ends,
                                   text(request.data.get('person'), 150))
         except ValueError as problem:
             return Response({'detail': str(problem)}, status=status.HTTP_400_BAD_REQUEST)
         log(request, 'buyer_link_granted', f'{link.org.name} · {request.data.get("email")}' + (f' until {ends}' if ends else '') + (' · invite sent' if invited else ''))
-        return Response({**link_row(link, timezone.localdate()), 'invited': invited}, status=status.HTTP_201_CREATED)
+        return Response({**link_row(link, timezone.localdate()), 'invited': invited, 'message': message}, status=status.HTTP_201_CREATED)
 
 
 class RevokeView(APIView):

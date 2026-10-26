@@ -1384,3 +1384,37 @@ Every portal page now comes from Django; the portal's sample files were moved to
 - Staff panel: "Test connection" never crashes (an unreadable answer is "Failed", the message is cut to fit);
   extra exam questions check their turns and the deciding turn.
 - Tests: `tests/guard/test_bad_input.py`.
+
+## One portal person per browser (2026-10-23)
+
+`apps/accounts/session.py: clear_portal` empties both the client and the insurer key on every portal sign-in and
+sign-out (client or insurer), so nobody stays signed in behind the next person. The CiV staff panel's own login is
+never touched. Tests: `tests/buyers/test_one_person_per_browser.py`.
+
+## Test connection: Convoso and Jornaya (2026-10-23)
+
+- Convoso's test reads the account time zone from the visible "Time zone or region" box (older connections: the
+  hidden secret box); a refused token says "Convoso refused the auth token", not "Could not reach Convoso".
+- `apps/certificates/vendors.py: _vendor_error`: an "OK" answer with an error written inside (Jornaya's
+  `{"error": {...}}`) is a refused key ("not found" inside it = not found). "Test connection" then says the account code
+  or key was refused, and a certificate claim is never marked Claimed with such an answer: it stays waiting and is
+  tried again until its deadline. Tests: `tests/certificates/test_hidden_errors.py`.
+
+## Reading from tools: no stopping, no double reads (2026-10-23)
+
+- `apps/sync/tasks.py`: a connection that cannot even start (e.g. a wrong time zone) is marked **Failed** with the
+  reason ("Could not start reading: …") and skipped; every other client is still read (poll and weekly full check).
+- One reader per connection: `engine.only_reader` takes a Postgres advisory lock for the batch; a second worker on the
+  same connection skips its turn. The 2-minute poll does not start a reader while that connection's backlog chain
+  moved in the last 10 minutes. Records already read (same record, same fingerprint) are skipped as before.
+- The "Time zone or region" box only takes what fits: a time zone for Five9, Convoso and Vicidial (required, so no
+  silent New York), a region for Genesys, nothing for other tools. A value saved earlier is kept.
+- Tests: `tests/sync/test_one_reader.py`.
+
+## Insurer sharing says what happened (2026-10-23)
+
+`apps/buyers/invite.py: share` returns a plain message the Settings → Insurer sharing tab shows: "Now sharing with …",
+"Already sharing with … End date changed to …", "That email belongs to … on CiV, so "…" is not used", "… already has
+an account and was told by email", "An invite … was sent". A known insurer's kind is never silently changed (choosing
+Acquirer for an insurer is refused with the reason); an end date typed for a company already shared with is saved;
+sharing again keeps the person's name. Tests: `tests/buyers/test_share_again.py`.

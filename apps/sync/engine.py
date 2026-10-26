@@ -1,6 +1,9 @@
 """Runs one tool at one client: a small batch at a time, so every client gets a turn. The bookmark moves only after a
 batch is fully processed, so a crash never skips or doubles a record."""
+from contextlib import contextmanager
+
 from django.conf import settings
+from django.db import connection as db_connection
 from django.db import transaction
 from django.utils import timezone
 
@@ -24,10 +27,40 @@ def cursor_for(connection: Connection) -> SyncCursor:
     return cursor
 
 
+LOCK_SPACE = 7301  # advisory locks for "a reader is working on this connection"
+
+
+@contextmanager
+def only_reader(connection_id: int):
+    """True while this worker holds the connection's reader lock; False when another worker is reading it right now
+    (QA 2026-10-23: two readers on one bookmark read the same records twice). Freed when the batch ends."""
+    with db_connection.cursor() as c:
+        c.execute('SELECT pg_try_advisory_lock(%s, %s)', [LOCK_SPACE, connection_id])
+        got = c.fetchone()[0]
+    try:
+        yield got
+    finally:
+        if got:
+            with db_connection.cursor() as c:
+                c.execute('SELECT pg_advisory_unlock(%s, %s)', [LOCK_SPACE, connection_id])
+
+
 def run(connection_id: int, kind: str) -> bool:
     """One batch. Returns True when the tool has more right now (the caller queues another turn)."""
+    with only_reader(connection_id) as mine:
+        if not mine:
+            return False  # another worker is reading this connection: skip this turn
+        return _run(connection_id, kind)
+
+
+def _run(connection_id: int, kind: str) -> bool:
     connection = Connection.objects.select_related('client').get(pk=connection_id)
-    tool = connector_for(connection)
+    try:
+        tool = connector_for(connection)
+    except Exception as error:  # e.g. a wrong time zone: marked Failed so staff see it, never retried in a loop
+        from .tasks import broken
+        broken(connection, error)
+        return False
     if tool is None or not connection.client.can_sync:
         return False
     with tenant(connection.client):

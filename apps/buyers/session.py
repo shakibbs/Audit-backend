@@ -2,6 +2,8 @@
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 
+from apps.accounts.session import clear_portal
+
 from .models import BuyerUser
 
 USER_KEY = 'civ_buyer_user_id'
@@ -9,6 +11,7 @@ HASH_KEY = 'civ_buyer_auth_hash'
 
 
 def sign_in(request, user: BuyerUser) -> None:
+    clear_portal(request)  # a client signed in before in this browser is signed out
     request.session.cycle_key()
     request.session[USER_KEY] = user.pk
     request.session[HASH_KEY] = user.get_session_auth_hash()
@@ -17,8 +20,8 @@ def sign_in(request, user: BuyerUser) -> None:
 
 
 def sign_out(request) -> None:
-    request.session.pop(USER_KEY, None)
-    request.session.pop(HASH_KEY, None)
+    clear_portal(request)
+    request.session.cycle_key()
 
 
 def current_buyer(request) -> BuyerUser | None:

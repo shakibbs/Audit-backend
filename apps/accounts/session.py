@@ -11,7 +11,19 @@ USER_KEY = 'civ_client_user_id'
 HASH_KEY = 'civ_client_auth_hash'
 
 
+# Every portal key: a client user's and an insurer's (apps/buyers/session.py). Only one portal person per browser
+# (owner, 2026-10-23); the CiV staff panel keeps its own login and is never touched here.
+PORTAL_KEYS = (USER_KEY, HASH_KEY, 'civ_buyer_user_id', 'civ_buyer_auth_hash')
+
+
+def clear_portal(request) -> None:
+    """Empties every portal key, so nobody stays signed in behind the next person."""
+    for key in PORTAL_KEYS:
+        request.session.pop(key, None)
+
+
 def sign_in(request, user: ClientUser) -> None:
+    clear_portal(request)
     request.session.cycle_key()  # new session id at sign-in, against session fixation
     request.session[USER_KEY] = user.pk
     request.session[HASH_KEY] = user.get_session_auth_hash()
@@ -20,8 +32,7 @@ def sign_in(request, user: ClientUser) -> None:
 
 
 def sign_out(request) -> None:
-    request.session.pop(USER_KEY, None)
-    request.session.pop(HASH_KEY, None)
+    clear_portal(request)
     request.session.cycle_key()
 
 

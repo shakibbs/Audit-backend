@@ -15,7 +15,9 @@ def test_staff_login_does_not_count_in_client_api(client, staff):
     client.force_login(staff)
     assert client.get('/civ-admin/').status_code == 200
     assert client.get('/api/session').json() == {'signedIn': False}
-    assert client.post('/api/session/sign-out', content_type='application/json').status_code == 401
+    # portal sign-out always empties the portal keys (2026-10-23) and leaves the staff panel login alone
+    assert client.post('/api/session/sign-out', content_type='application/json').json() == {'signedIn': False}
+    assert client.get('/civ-admin/').status_code == 200
 
 
 @pytest.mark.django_db

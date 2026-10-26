@@ -12,14 +12,13 @@ class SignOutView(APIView):
     def post(self, request):
         from apps.buyers.models import BuyerUser
         from apps.buyers.session import sign_out as buyer_out
+        # Signing out always empties every portal key (owner, 2026-10-23), whoever the page thought was signed in.
         if isinstance(request.user, BuyerUser):  # Module 15
             buyer_out(request)
-            request.session.cycle_key()
             return Response(session_data(None))
-        if not IsClientUser().has_permission(request, self):
-            return Response({'detail': 'Authentication credentials were not provided.'}, status=401)
-        user = request.user
+        user = request.user if IsClientUser().has_permission(request, self) else None
         sign_out(request)
-        record('sign_out', request=request, actor_kind='client_user', actor_id=user.pk,
-               actor_label=user.email, client_id=user.client_id)
+        if user is not None:
+            record('sign_out', request=request, actor_kind='client_user', actor_id=user.pk,
+                   actor_label=user.email, client_id=user.client_id)
         return Response(session_data(None))

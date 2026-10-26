@@ -43,8 +43,10 @@ def send_access_notice(user: BuyerUser, client, link: BuyerLink) -> None:
 
 
 @transaction.atomic
-def share(client, by: str, name: str, email: str, kind: str, ends_on, person: str = '') -> tuple[BuyerLink, bool]:
-    """(the link, whether an invite was sent). Raises ValueError with a message for the client."""
+def share(client, by: str, name: str, email: str, kind: str, ends_on, person: str = '') -> tuple[BuyerLink, bool, str]:
+    """(the link, whether an invite was sent, what happened in plain words). Raises ValueError with a message for the
+    client. An insurer CiV already knows (by the email's domain) keeps its name and kind: the answer says so instead of
+    ignoring what was typed (QA 2026-10-23)."""
     email = email.lower().strip()
     if '@' not in email:
         raise ValueError("Enter the underwriter's email.")
@@ -52,6 +54,14 @@ def share(client, by: str, name: str, email: str, kind: str, ends_on, person: st
         raise ValueError('That email belongs to a client user, not an insurer.')
     person_user = BuyerUser.objects.select_related('org').filter(email=email).first()
     org = person_user.org if person_user else BuyerOrg.objects.filter(domain=domain_of(email)).first()
+    notes = []
+    if org is not None:
+        if org.kind != kind:
+            raise ValueError(f'{org.name} is set up on CiV as {"an acquirer" if org.kind == BuyerOrg.Kind.ACQUIRER else "an insurer"}, '
+                             f'not {"an acquirer" if kind == BuyerOrg.Kind.ACQUIRER else "an insurer"}. Choose "{org.get_kind_display()}".')
+        typed = ' '.join(name.split())
+        if typed and typed.lower() != org.name.lower():
+            notes.append(f'That email belongs to {org.name} on CiV, so "{typed}" is not used.')
     if org is None:
         if not name.strip():
             raise ValueError("Enter the insurer's company name.")
@@ -61,23 +71,35 @@ def share(client, by: str, name: str, email: str, kind: str, ends_on, person: st
     if org.kind == BuyerOrg.Kind.ACQUIRER and ends_on is None:
         raise ValueError('Sharing with an acquirer needs an end date.')
     today = timezone.localdate()
-    if any(link.active(today) for link in BuyerLink.objects.filter(client=client, org=org)):
-        link = BuyerLink.objects.filter(client=client, org=org, revoked_at__isnull=True).first()
+    current = next((link for link in BuyerLink.objects.filter(client=client, org=org, revoked_at__isnull=True) if link.active(today)), None)
+    if current is not None:
+        link = current
+        if ends_on and ends_on != link.ends_on:  # the end date typed is kept, never dropped
+            link.ends_on = ends_on
+            link.save(update_fields=['ends_on'])
+            notes.append(f'Already sharing with {org.name}. End date changed to {ends_on:%-d %b %Y}.')
+        else:
+            notes.append(f'Already sharing with {org.name}.')
     else:
         link = BuyerLink.objects.create(org=org, client=client, granted_by=by, ends_on=ends_on)
+        notes.append(f'Now sharing with {org.name} ({org.get_kind_display().lower()})' + (f' until {ends_on:%-d %b %Y}.' if ends_on else '.'))
         from .attestation import save
         save(client, today.replace(day=1))  # the insurer sees this month so far at once, not after the nightly run
     invited = False
     if person_user is None:
         token, token_hash = new_invite_token()
+        old = BuyerInvite.objects.filter(email=email, used_at__isnull=True).first()
+        keep_name = ' '.join(person.split())[:150] or (old.name if old else '')  # sharing again never wipes the name
         BuyerInvite.objects.filter(email=email, used_at__isnull=True).delete()  # a new invite replaces an old one
-        invite = BuyerInvite.objects.create(org=org, client=client, email=email, name=person[:150], invited_by=by, token_hash=token_hash,
+        invite = BuyerInvite.objects.create(org=org, client=client, email=email, name=keep_name, invited_by=by, token_hash=token_hash,
                                             expires_at=timezone.now() + INVITE_LIFETIME)
         send(invite, token)
         invited = True
+        notes.append(f'An invite to choose a password was sent to {email}' + (' (the earlier invite no longer works).' if old else '.'))
     else:
         send_access_notice(person_user, client, link)  # already has a password: a confirmation instead of an invite
-    return link, invited
+        notes.append(f'{person_user.name or email} already has an account and was told by email.')
+    return link, invited, ' '.join(notes)
 
 def open_invite(token: str) -> BuyerInvite | None:
     # The person opening the link is not signed in yet, so no scope is set and the locked invite table would show

@@ -39,6 +39,17 @@ GENESYS_REGIONS = [
     ('mypurecloud.com.au', 'Asia Pacific (Sydney) — mypurecloud.com.au'), ('mypurecloud.jp', 'Asia Pacific (Tokyo) — mypurecloud.jp'),
     ('sae1.pure.cloud', 'South America (São Paulo) — sae1.pure.cloud'),
 ]
+TIME_ZONE_VALUES = {v for v, _ in TIME_ZONES}
+GENESYS_VALUES = {v for v, _ in GENESYS_REGIONS}
+
+
+def setting_values(provider) -> set[str]:
+    """What the Time zone or region box may hold for this tool: Genesys a region, Five9 / Convoso / Vicidial a time zone."""
+    if not provider.setting_label:
+        return set()
+    return GENESYS_VALUES if 'Region' in provider.setting_label else TIME_ZONE_VALUES
+
+
 SETTING_CHOICES = [('', '— Not needed for this tool —'),
                    ('Time zone (Five9, Convoso, Vicidial)', TIME_ZONES), ('Region (Genesys)', GENESYS_REGIONS)]
 
@@ -75,6 +86,17 @@ class ConnectionForm(forms.ModelForm):
     def clean(self):
         data = super().clean()
         provider = PROVIDERS.get(data.get('provider', ''))
+        setting = data.get('setting') or ''
+        if provider and setting and setting != getattr(self.instance, 'setting', ''):  # a value saved earlier is kept
+            allowed = setting_values(provider)
+            if not allowed:
+                self.add_error('setting', f'{provider.name} needs no time zone or region: choose "Not needed for this tool".')
+            elif setting not in allowed:
+                kind = 'region' if allowed is GENESYS_VALUES else 'time zone'
+                self.add_error('setting', f'Choose a {kind} for {provider.name}.')
+        if provider and provider.setting_label and not setting and provider.auth != 'oauth':
+            self.add_error('setting', f'Choose the {provider.name} {"region" if "Region" in provider.setting_label else "time zone"}: '
+                                      'call times depend on it.')
         if provider and provider.auth == 'oauth' and self.new_credentials():
             raise forms.ValidationError(f'{provider.name} connects by the client clicking Allow. Leave the key fields empty and use "Send connect link".')
         return data

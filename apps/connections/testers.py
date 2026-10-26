@@ -36,16 +36,20 @@ def test_convoso(creds: dict) -> tuple[str, str]:
     from datetime import UTC, datetime, timedelta
 
     from apps.sync.connectors.convoso import WHEN, ConvosoError, zone
-    try:
-        tz = zone(creds.get('secret', ''))
+    try:  # the Time zone box (2026-10-23); connections saved before it kept the zone in "API secret"
+        tz = zone(creds.get('setting') or creds.get('secret', ''))
     except ConvosoError:
-        return Status.FAILED, 'Enter the Convoso account time zone in "API secret", e.g. America/New_York.'
+        return Status.FAILED, 'Choose the Convoso account time zone in the "Time zone or region" box.'
     now = datetime.now(UTC).astimezone(tz)
     body = {'auth_token': creds.get('key', ''), 'start_time': (now - timedelta(hours=1)).strftime(WHEN), 'end_time': now.strftime(WHEN), 'limit': 1}
     try:
         request = urllib.request.Request('https://api.convoso.com/v1/log/retrieve', data=urllib.parse.urlencode(body).encode(), headers={'Accept': 'application/json'})
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
             answer = json.loads(reply.read())
+    except urllib.error.HTTPError as error:  # a refusal is an answer, not "could not reach"
+        if error.code in (401, 403):
+            return Status.FAILED, 'Convoso refused the auth token: check it in Convoso → Admin → API.'
+        return Status.FAILED, f'Convoso answered with an error (HTTP {error.code}). Try again in a minute.'
     except (urllib.error.URLError, TimeoutError):
         return Status.FAILED, 'Could not reach Convoso. Try again in a minute.'
     if not answer.get('success'):
@@ -110,7 +114,7 @@ def _certificate_probe(ask) -> tuple[str, str]:
     except vendors.NotFound:
         return Status.CONNECTED, 'The key works (asked about a test certificate; nothing was claimed).'
     except vendors.Refused:
-        return Status.FAILED, 'The key was refused: check it in the vendor account.'
+        return Status.FAILED, 'The account code or key was refused: check them in the vendor account.'
     except (urllib.error.URLError, TimeoutError):
         return Status.FAILED, 'Could not reach the vendor. Try again in a minute.'
     return Status.CONNECTED, 'The key works.'

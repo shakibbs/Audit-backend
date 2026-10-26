@@ -75,6 +75,21 @@ def _first(data: dict, *paths: str):
     return None
 
 
+def _vendor_error(data) -> None:
+    """Some vendors answer "OK" with the problem written inside, e.g. Jornaya's {"error": {"code": 2001,
+    "message": "Malformed account code"}} (QA 2026-10-23). Such an answer is never a success: "not found" in it is
+    NotFound, anything else is a refused key."""
+    if not isinstance(data, dict):
+        return
+    problem = data.get('error') or data.get('errors')
+    if not problem:
+        return
+    text = json.dumps(problem).lower()
+    if 'not found' in text or 'not_found' in text:
+        raise NotFound(text[:200])
+    raise Refused(text[:200])
+
+
 def _send(request: urllib.request.Request) -> bytes:
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
@@ -98,6 +113,7 @@ def claim_trustedform(cert_id: str, key: str, reference: str, phone: str | None 
     raw = _send(urllib.request.Request(f'{TRUSTEDFORM}/{cert_id}', data=body, method='POST', headers={
         'Authorization': f'Basic {auth}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'api-version': '4.0'}))
     data = json.loads(raw)
+    _vendor_error(data)
     if str(data.get('outcome', 'success')).lower() == 'failure' and 'not found' in json.dumps(data).lower():
         raise NotFound('certificate not found')
     return Facts(raw=raw,
@@ -120,6 +136,7 @@ def read_jornaya(token: str, account_code: str, key: str) -> Facts:
     query = urllib.parse.urlencode({'lac': account_code, 'lak': key, 'id': token})
     raw = _send(urllib.request.Request(f'{JORNAYA}?{query}', headers={'Accept': 'application/json'}))
     data = json.loads(raw)
+    _vendor_error(data)
     if not data or str(_first(data, 'authentic', 'found')).lower() in ('0', 'false', 'no'):
         raise NotFound('token not found')
     return Facts(raw=raw, created_at=_when(_first(data, 'creation_time', 'created', 'timestamp')),
