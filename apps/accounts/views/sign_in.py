@@ -22,7 +22,7 @@ def buyer_sign_in(request, email: str, password: str):
     from apps.buyers.session import session_data as buyer_data
     from apps.buyers.session import sign_in as buyer_in
     buyer = BuyerUser.objects.select_related('org').filter(email=email.lower()).first()
-    if buyer is None or not buyer.check_password(password) or not buyer.is_active or not buyer.org.is_active:
+    if buyer is None or not buyer.check_password(password) or not buyer.is_active or not buyer.org.is_active or buyer.org.deleted_at:
         return None
     buyer_in(request, buyer)
     record('sign_in', request=request, actor_kind='buyer', actor_id=buyer.pk, actor_label=f'{buyer.name or buyer.email} ({buyer.org.name})',

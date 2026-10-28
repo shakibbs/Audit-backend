@@ -72,6 +72,8 @@ class AnswerView(APIView):
         record('proof_request_answered', request=request, actor_kind='client_user', actor_id=request.user.pk, actor_label=request.user.email,
                client_id=found.client_id, object=str(found)[:254])
         found.refresh_from_db()
+        from apps.scoring.tasks import queue_refresh
+        queue_refresh(request.user.client)
         return Response(row(found))
 
 

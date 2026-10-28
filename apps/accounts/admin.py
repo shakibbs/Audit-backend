@@ -2,59 +2,40 @@
 from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import format_html
+from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 from unfold.admin import TabularInline
 
-from apps.admin_panel.base import CivModelAdmin
 from apps.access_log.recorder import record
 from apps.accounts.emails import send_reset
-from apps.accounts.models import ClientUser, Invite
+from apps.accounts.models import ClientUser, Invite, Role
 from apps.accounts.tokens import encode_uid, reset_tokens
 
 
-@admin.register(ClientUser)
-class ClientUserAdmin(CivModelAdmin):
-    """A person's own page, opened from a client company's Users tab. No list in the menu."""
-    eyebrow = 'Clients'
-    page_sub = 'People at each client who can sign in to the portal. Passwords are set by the person, never here.'
-    list_display = ('email', 'name', 'client', 'role', 'is_counsel', 'is_active', 'last_login')
-    list_filter = ('role', 'is_counsel', 'is_active', 'client')
-    search_fields = ('email', 'name', 'client__name')
-    fields = ('client', 'email', 'name', 'role', 'is_counsel', 'is_active', 'last_login', 'created_at')
-    readonly_fields = ('last_login', 'created_at')
-    actions = ['send_password_link']
-
-    def has_module_permission(self, request):
-        return False  # not in the menu; people are managed on their company's page
-
-    # Passwords are never typed here: a new user gets a link to set their own.
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.email = obj.email.strip().lower()
-            obj.set_unusable_password()
-        super().save_model(request, obj, form, change)
-
-    @admin.action(description='Send a link to set their password')
-    def send_password_link(self, request, queryset):
-        for user in queryset.filter(is_active=True):
-            send_password_link(request, user)  # the one shared way (also the Users tab button)
+# No ClientUser or Invite pages of their own (owner, 2026-10-24): people and invites are managed only on their
+# company's Users and Invites tabs, which follow the rules (invite links, no deleting, every change logged).
 
 
-@admin.register(Invite)
-class InviteAdmin(CivModelAdmin):
-    eyebrow = 'Clients'
-    page_sub = 'Invites sent by client Admins. Each link works once, for 7 days.'
-    list_display = ('email', 'client', 'role', 'sent_at', 'expires_at', 'used_at')
-    list_filter = ('role', 'client')
-    search_fields = ('email', 'client__name')
-    readonly_fields = ('client', 'email', 'name', 'role', 'is_counsel', 'invited_by', 'sent_at', 'expires_at', 'used_at')
-    exclude = ('token_hash',)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_module_permission(self, request):
-        return False  # invites show on their company's Invites tab
+class UsersFormSet(BaseInlineFormSet):
+    """A company keeps at least one active Admin (QA 2026-10-23; the portal already refuses this)."""
+    def clean(self):
+        super().clean()
+        saved = {u.pk: u for u in ClientUser.objects.filter(pk__in=[f.instance.pk for f in self.forms if f.instance.pk])}
+        before = after = 0
+        for form in self.forms:
+            old = saved.get(form.instance.pk)  # the form already put the new values on form.instance: read the saved ones
+            if old is None or not hasattr(form, 'cleaned_data'):
+                continue
+            before += old.role == Role.ADMIN and old.is_active
+            now_role = form.cleaned_data.get('role', old.role) if form.has_changed() else old.role
+            now_active = form.cleaned_data.get('is_active', old.is_active) if form.has_changed() else old.is_active
+            after += now_role == Role.ADMIN and bool(now_active)
+        if before and not after:
+            message = 'A company needs at least one active Admin. Make someone else Admin first.'
+            first = next((f for f in self.forms if f.instance.pk and f.has_changed()), None)
+            if first is not None:
+                first.add_error(None, message)  # shown on the row as well as above the tab
+            raise ValidationError(message)
 
 
 class ClientUserInline(TabularInline):
@@ -63,13 +44,14 @@ class ClientUserInline(TabularInline):
     New people are invited from the "Invite someone" tab; passwords are never typed in the admin panel.
     """
     model = ClientUser
+    formset = UsersFormSet
     tab = True
     extra = 0
     can_delete = False  # turn someone off with "Is active" instead; their history stays
 
     def has_add_permission(self, request, obj=None):
         return False  # new people are invited (Invite someone tab) and choose their own password
-    show_change_link = True
+    show_change_link = False  # no separate person page: everything is on this tab
     verbose_name = 'user'
     verbose_name_plural = 'Users'
     fields = ('name', 'email', 'role', 'is_counsel', 'is_active', 'last_login', 'row_actions')
@@ -80,6 +62,8 @@ class ClientUserInline(TabularInline):
     def row_actions(self, user):
         if not user.pk:
             return 'Gets a password link when you click Save'
+        if not user.is_active:  # no link for someone who cannot sign in (QA 2026-10-23)
+            return 'Turned off: tick "Is active" and save to let them sign in again'
         url = reverse('admin:clients_client_user_password_link', args=[user.client_id, user.pk])
         return format_html('<button type="submit" class="civ-btn" formaction="{}" formnovalidate>Send password link</button>', url)
 

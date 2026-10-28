@@ -58,6 +58,8 @@ class ContractsView(APIView):
         c.save()
         record('vendor_contract_added', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,
                client_id=user.client_id, object=f'{c.name} · sha256 {c.sha256}'[:254])
+        from apps.scoring.tasks import queue_refresh
+        queue_refresh(user.client)  # vendor terms on file (M07) follow within minutes
         return Response(contract_row(c), status=status.HTTP_201_CREATED)
 
 

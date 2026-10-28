@@ -68,6 +68,8 @@ class UploadsView(APIView):
             return Response({'detail': 'CiV could not read this file. Check it is a normal CSV with one row per line.'}, status=400)
         from .effects import after_upload
         after_upload(saved)
+        from apps.scoring.tasks import queue_refresh
+        queue_refresh(user.client)  # scores, findings and reports follow within minutes, not tonight
         record('upload_received', request=request, actor_kind='client_user', actor_id=user.pk, actor_label=user.email,
                client_id=user.client_id, object=f'{saved} · {saved.rows_read} rows'[:254])
         return Response(row(saved))

@@ -50,16 +50,25 @@ def test_staff_stop_a_company_sharing(staff, shared, company):
     assert AccessEntry.objects.filter(action='buyer_link_revoked', client_id=company.pk).exists()
 
 
-def test_delete_a_person_and_a_whole_insurer(staff, shared, company):
+def test_delete_an_insurer_hides_it_keeps_everything_and_can_be_restored(staff, shared, company, api):
+    """Owner, 2026-10-24: deleting an insurer works like deleting a client: hidden, switched off, everything kept."""
     from apps.buyers.models import BuyerUser
     person = BuyerUser(org=shared, email='kim@falconrisk.com', name='Kim')
     person.set_password(PASSWORD)
     person.save()
-    page = staff.get(f'/civ-admin/buyers/buyerorg/{shared.pk}/change/').content.decode()
-    assert 'Delete' in page
-    confirm = staff.get(f'/civ-admin/buyers/buyerorg/{shared.pk}/delete/')
-    assert confirm.status_code == 200  # an "Are you sure?" page first
-    done = staff.post(f'/civ-admin/buyers/buyerorg/{shared.pk}/delete/', {'post': 'yes'})
-    assert done.status_code == 302
-    assert not BuyerOrg.objects.exists() and not BuyerUser.objects.exists() and not BuyerLink.objects.exists()
-    assert AccessEntry.objects.filter(action='buyer_deleted', client_id=company.pk, object='Falcon Risk').exists()
+    confirm = staff.get(f'/civ-admin/buyers/buyerorg/{shared.pk}/delete/').content.decode()
+    assert 'Nothing is erased' in confirm and 'Kim' in confirm and company.name in confirm  # everything it has is listed
+    assert staff.post(f'/civ-admin/buyers/buyerorg/{shared.pk}/delete/', {'post': 'yes'}).status_code == 302
+    shared.refresh_from_db()
+    assert shared.deleted_at and BuyerUser.objects.filter(org=shared).count() == 1 and BuyerLink.objects.exists()
+    assert not BuyerLink.objects.get().active(timezone.localdate())  # the company no longer shares with it
+    reply = api.call('post', '/api/session/sign-in', {'email': 'kim@falconrisk.com', 'password': PASSWORD})
+    assert reply.status_code == 400  # its people cannot sign in
+    row = f'/civ-admin/buyers/buyerorg/{shared.pk}/change/'
+    assert row not in staff.get('/civ-admin/buyers/buyerorg/').content.decode()
+    assert row in staff.get('/civ-admin/buyers/buyerorg/?deleted=yes').content.decode()
+    assert AccessEntry.objects.filter(action='buyer_deleted', client_id=company.pk).exists()
+    staff.post('/civ-admin/buyers/buyerorg/?deleted=yes', {'action': 'restore', '_selected_action': [shared.pk]})
+    shared.refresh_from_db()
+    assert shared.deleted_at is None and BuyerLink.objects.get().active(timezone.localdate())
+    assert AccessEntry.objects.filter(action='buyer_restored', client_id=company.pk).exists()

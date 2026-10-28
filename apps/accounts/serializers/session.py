@@ -15,6 +15,13 @@ def updated_at(client) -> dict:
     return {'updatedAt': last.isoformat() if last else None}  # None: nothing read yet
 
 
+def scored(client) -> dict:
+    """When the scores were last worked out, and whether a re-run (after an upload) is on its way."""
+    from apps.scoring.models import SnapshotRun
+    last = SnapshotRun.objects.filter(client=client).order_by('-ran_at').values_list('ran_at', flat=True).first()
+    return {'scoredAt': last.isoformat() if last else None, 'updating': client.refresh_pending_since is not None}
+
+
 def session_data(user: ClientUser | None) -> dict:
     if user is None:
         return {'signedIn': False}
@@ -27,6 +34,7 @@ def session_data(user: ClientUser | None) -> dict:
         'clientId': str(client.pk), 'clientName': client.name, 'vertical': client.industry,
         'plan': client.get_plan_display(),
         **updated_at(client),
+        **scored(client),
         'periods': periods_of(client),
     }
 

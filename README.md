@@ -1452,3 +1452,75 @@ sharing again keeps the person's name. Tests: `tests/buyers/test_share_again.py`
 - **HubSpot:** one time window per search (a day, halved while it holds more than 9,000), read whole; a window that
   took more than one page is searched again so a record that moved while paging is not skipped.
 - Tests: `tests/sync/test_reading_fixes.py`.
+
+## Uploaded lead files in "Who checked what" (2026-10-24)
+
+Who You Contact → "Who checked what" now also lists the vendors named in the client's **Upload centre vendor lead files**
+(joined with the CRM's vendors when the name is the same, lead counts added) and each **vendor lead file** under
+"Uploaded lists" ("Vendor lead file · 23 Oct 2026 · 4 numbers · file.csv"), with the same four switches, saved and
+logged like the others (`apps/metrics/who.py: lead_sources`).
+
+## Hidden client-user and invite pages switched off (2026-10-24)
+
+`/civ-admin/accounts/clientuser/` and `/civ-admin/accounts/invite/` no longer exist (owner decision): client people and
+invites are managed only on their company's **Users** and **Invites** tabs (invite links, no deleting, every change
+logged). To find which company a person is in, search the Client companies page by their name or email.
+
+## Deleting a client company keeps everything (2026-10-24)
+
+"Delete" on a client company hides it and switches it off (`Client.deleted_at`, `deleted_by`; migration
+`clients/0008`): no sign-in, no reading its tools, nightly jobs skip it, insurers lose access (`BuyerLink.active` and
+the attestation lock, migration `buyers/0009`). Every record and file is kept and still follows the normal 4-year
+clean-up and legal holds. Staff open it read-only from the "Deleted companies" filter and bring it back with the
+**Restore** action. Both are logged ("Company deleted (records kept)", "Company restored").
+Tests: `tests/clients/test_soft_delete.py`.
+
+## A company keeps an active Admin (2026-10-24)
+
+The staff panel's Users tab refuses a save that would leave a company with no active Admin (turning off, or making a
+Member, the last one): "A company needs at least one active Admin. Make someone else Admin first." Making another
+person Admin in the same save is fine. (`apps/accounts/admin.py: UsersFormSet`; the portal already refused it.)
+
+## Row buttons ask before dropping unsaved changes (2026-10-24)
+
+On a staff panel page, the row buttons ("Test connection now", "Send connect link", "Send password link", "Resend",
+"Stop sharing"…) reload the page when done. If anything on the page was changed and not saved, `civ.js` asks first
+("You have changes on this page that are not saved…"): Cancel keeps the changes so they can be saved; OK continues
+and drops them. With nothing changed, the button just works. Also: no "Save and add another" button anywhere.
+
+## Contract dates checked (2026-10-24)
+
+Contract & billing refuses a renewal date on or before the contract start ("The renewal date must be after the
+contract start.") and a notice period longer than the contract ("The notice period is longer than the contract.").
+Empty dates are still allowed (`apps/billing/models.py: Contract.clean`).
+
+## No password link for someone turned off (2026-10-24)
+
+On a company's Users tab and an insurer's People tab, a turned-off person shows "Turned off: tick 'Is active' and save
+to let them sign in again" instead of "Send password link". An old page or second tab that still sends it gets a clear
+message back on the page, never a "not found" page.
+
+## Tab errors are shown (2026-10-24)
+
+A whole-row problem on a stacked tab (Connections, Documents, Contract) now shows its reason on that row
+(`apps/admin_panel/templates/unfold/helpers/edit_inline/stacked_list.html`, a copy of django-unfold 0.108.0's with one
+addition; re-check it when unfold is upgraded). The red "Please correct the errors below" line names the tab ("…: see
+the Connections tab.") and that tab opens by itself (`civ.js`). Tests: `tests/admin_panel/test_errors_shown.py`.
+
+## Deleting an insurer keeps everything (2026-10-24)
+
+Like client companies: "Delete" on an insurer or acquirer hides it and switches it off (`BuyerOrg.deleted_at`,
+`deleted_by`; migration `buyers/0010`). Its people cannot sign in, its invitations stop working, companies no longer
+share with it, its rating engine gets no monthly sheet; its people, invitations, sharing links and rating engine are
+kept. The confirm page lists all of that. Staff open it read-only from the "Deleted insurers" filter and bring it
+back with **Restore**; each sharing company's log says "Insurer deleted by CiV (records kept)" / "Insurer restored".
+Removing one person on the People tab still deletes that person for good (owner, 2026-10-22).
+
+## Scores follow an upload within minutes (2026-10-24)
+
+After an Upload centre file, a vendor contract or a proof-request answer, `apps/scoring/tasks.py: queue_refresh` asks
+for `refresh_one(client)` a minute later (several uploads share one run): this month's metrics and scores, vendor
+scorecards, findings, risk attestation and alerts are worked out again, not only at 04:00. `Client.refresh_pending_since`
+(migration `clients/0009`) marks a run on its way; the session sends `updating` and `scoredAt`. The portal shows
+"Updating your scores…" while it runs (asking again every 15 s, then refreshing every page) and "Scores, findings and
+reports last worked out …" on Overview, Action Queue and Reports. Test: `tests/scoring/test_refresh_after_upload.py`.

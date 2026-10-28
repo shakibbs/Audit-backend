@@ -66,7 +66,7 @@ def share(client, by: str, name: str, email: str, kind: str, ends_on, person: st
         if not name.strip():
             raise ValueError("Enter the insurer's company name.")
         org = BuyerOrg.objects.create(name=' '.join(name.split())[:150], domain=domain_of(email), kind=kind)
-    if not org.is_active:
+    if not org.is_active or org.deleted_at:
         raise ValueError('CiV has blocked this insurer. Contact CiV.')
     if org.kind == BuyerOrg.Kind.ACQUIRER and ends_on is None:
         raise ValueError('Sharing with an acquirer needs an end date.')
@@ -106,7 +106,8 @@ def open_invite(token: str) -> BuyerInvite | None:
     # nothing: look it up across companies (the secret token is the key; only its hash is stored).
     with all_clients():
         return BuyerInvite.objects.select_related('org', 'client').filter(token_hash=hash_invite_token(token), used_at__isnull=True,
-                                                                          expires_at__gt=timezone.now(), org__is_active=True).first()
+                                                                          expires_at__gt=timezone.now(), org__is_active=True,
+                                                                          org__deleted_at__isnull=True).first()
 
 def accept(invite: BuyerInvite, password: str) -> BuyerUser:
     with all_clients(), transaction.atomic():

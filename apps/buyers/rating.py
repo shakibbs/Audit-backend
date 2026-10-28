@@ -77,7 +77,7 @@ def send_monthly(today=None) -> int:
     today = today or timezone.localdate()
     period = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
     sent = 0
-    for engine in RatingEngine.objects.filter(monthly=True, org__is_active=True).select_related('org'):
+    for engine in RatingEngine.objects.filter(monthly=True, org__is_active=True, org__deleted_at__isnull=True).select_related('org'):
         for link in BuyerLink.objects.filter(org=engine.org):
             if not link.active(today):
                 continue

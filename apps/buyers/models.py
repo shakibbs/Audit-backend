@@ -17,6 +17,10 @@ class BuyerOrg(models.Model):
     domain = models.CharField(max_length=150, unique=True)  # e.g. falconrisk.com, or the full address for free mail
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.INSURER)
     is_active = models.BooleanField(default=True)  # CiV staff can block a buyer
+    # "Delete" in the staff panel hides and switches the buyer off; its people, invites, sharing and rating engine are
+    # kept and it can be restored (owner, 2026-10-24, same as client companies).
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False)
+    deleted_by = models.CharField(max_length=254, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -73,7 +77,8 @@ class BuyerLink(models.Model):
         ordering = ['-granted_at']
 
     def active(self, today) -> bool:
-        return self.revoked_at is None and (self.ends_on is None or today <= self.ends_on)
+        return (self.revoked_at is None and (self.ends_on is None or today <= self.ends_on)
+                and self.client.deleted_at is None and self.org.deleted_at is None)  # nothing is shared with a deleted side
 
     def __str__(self):
         return f'{self.client} → {self.org}'

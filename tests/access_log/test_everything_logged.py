@@ -43,7 +43,8 @@ def test_deleting_a_company_is_logged(client):
     client.force_login(StaffUser.objects.get())
     gone = Client.objects.create(name='Gone Co', start_date='2026-06-01')
     client.post(f'/civ-admin/clients/client/{gone.pk}/delete/', {'post': 'yes'})
-    assert not Client.objects.filter(pk=gone.pk).exists() and 'Gone Co' in last('record_deleted').object
+    gone.refresh_from_db()  # owner, 2026-10-24: deleting hides and keeps the company
+    assert gone.deleted_at and 'Gone Co' in last('client_deleted').object
 
 
 def test_insurer_sign_in_is_logged_by_name_not_as_not_signed_in(company, admin_user, signed_in):

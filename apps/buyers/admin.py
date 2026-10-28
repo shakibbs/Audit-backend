@@ -13,7 +13,7 @@ from unfold.admin import TabularInline
 from apps.access_log.recorder import record
 from apps.admin_panel.base import CivModelAdmin
 
-from .models import BuyerInvite, BuyerLink, BuyerOrg, BuyerUser
+from .models import BuyerInvite, BuyerLink, BuyerOrg, BuyerUser, RatingEngine
 
 
 class LinkInline(TabularInline):
@@ -54,8 +54,10 @@ class UserInline(TabularInline):
     # Posts the page's form to the action URL (no nested forms), like a client's Users tab.
     @admin.display(description='Actions')
     def row_actions(self, user):
-        if not user.pk or not user.is_active:
+        if not user.pk:
             return '-'
+        if not user.is_active:
+            return 'Turned off: tick "Is active" and save to let them sign in again'
         url = reverse('admin:buyers_buyerorg_password_link', args=[user.org_id, user.pk])
         return format_html('<button type="submit" class="civ-btn" formaction="{}" formnovalidate>Send password link</button>', url)
 
@@ -92,6 +94,18 @@ class InviteInline(TabularInline):
                            '<button type="submit" class="civ-btn" formaction="{}" formnovalidate>Cancel</button>', resend, cancel)
 
 
+class DeletedBuyers(admin.SimpleListFilter):
+    """Deleted insurers are hidden from the list but kept (owner, 2026-10-24)."""
+    title = 'deleted'
+    parameter_name = 'deleted'
+
+    def lookups(self, request, model_admin):
+        return [('yes', 'Deleted insurers')]
+
+    def queryset(self, request, queryset):
+        return queryset.filter(deleted_at__isnull=False) if self.value() == 'yes' else queryset.filter(deleted_at__isnull=True)
+
+
 @admin.register(BuyerOrg)
 class BuyerOrgAdmin(CivModelAdmin):
     def get_urls(self):
@@ -105,7 +119,8 @@ class BuyerOrgAdmin(CivModelAdmin):
     page_sub = ('Insurers and acquirers invited by clients from their own Settings (one per email domain). Untick "active" to '
                 'block a buyer: its people lose access at once.')
     list_display = ('name', 'domain', 'kind', 'is_active', 'users_count', 'sharing')
-    list_filter = ('kind', 'is_active')
+    list_filter = ('kind', 'is_active', DeletedBuyers)
+    actions = ['restore']
     search_fields = ('name', 'domain')
     fields = ('name', 'domain', 'kind', 'is_active', 'created_at')
     readonly_fields = ('name', 'domain', 'kind', 'created_at')
@@ -117,24 +132,70 @@ class BuyerOrgAdmin(CivModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    # --- Delete = hide and switch off, keep everything; Restore brings it back (owner, 2026-10-24) -------------------
     def delete_model(self, request, org):
-        """Deletes an insurer for good with its people, invitations, sharing and rating engine (owner, 2026-10-22).
-        Each company that shared gets a line in its access log; the log keeps names as text."""
+        from django.utils import timezone
+        org.deleted_at, org.deleted_by = timezone.now(), request.user.email
+        org.save(update_fields=['deleted_at', 'deleted_by'])
         for client_id in sorted(set(org.links.values_list('client_id', flat=True))):  # one line per company, not per link
             record('buyer_deleted', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
-                   client_id=client_id, object=org.name)
-        org.links.all().delete()
-        org.users.all().delete()
-        super().delete_model(request, org)
-
-    def get_deleted_objects(self, objs, request):
-        # People and sharing are protected from accidental deletion elsewhere; delete_model removes them first here.
-        deleted, counts, perms, _ = super().get_deleted_objects(objs, request)
-        return deleted, counts, perms, []
+                   client_id=client_id, object=f'{org.name} · its people lost access; records kept')
 
     def delete_queryset(self, request, queryset):
         for org in queryset:
             self.delete_model(request, org)
+
+    def get_deleted_objects(self, objs, request):
+        """The confirm page lists everything the insurer has, and says nothing is erased."""
+        today = timezone.localdate()
+        lines = []
+        for org in objs:
+            people = [u.name or u.email for u in org.users.all()]
+            waiting = org.invites.filter(used_at__isnull=True).count()
+            sharing = sorted({link.client.name for link in org.links.select_related('client') if link.active(today)})
+            engine = RatingEngine.objects.filter(org=org).first()
+            lines.append(f'{org.name}: hidden from the list and switched off. Nothing is erased; restore it any time from '
+                         '"Deleted insurers".')
+            lines.append(f'{len(people)} {"person" if len(people) == 1 else "people"} can no longer sign in'
+                         + (f': {", ".join(people[:10])}' if people else ''))
+            lines.append(f'{waiting} waiting invitation{"" if waiting == 1 else "s"} stop working')
+            lines.append(f'{len(sharing)} compan{"y" if len(sharing) == 1 else "ies"} sharing with it'
+                         + (f' ({", ".join(sharing[:10])}) are told in their access log' if sharing else ''))
+            if engine:
+                lines.append(f'Its rating engine ({engine.url}) stops receiving sheets')
+        return lines, {}, set(), []
+
+    def response_delete(self, request, obj_display, obj_id):
+        from django.http import HttpResponseRedirect
+        self.message_user(request, f'{obj_display} is deleted: hidden and switched off, with everything kept. '
+                                   'Find it under "Deleted insurers" to look at it or restore it.')
+        return HttpResponseRedirect(reverse('admin:buyers_buyerorg_changelist'))
+
+    @admin.action(description='Restore the selected deleted insurers')
+    def restore(self, request, queryset):
+        restored = 0
+        for org in queryset.filter(deleted_at__isnull=False):
+            org.deleted_at, org.deleted_by = None, ''
+            org.save(update_fields=['deleted_at', 'deleted_by'])
+            for client_id in sorted(set(org.links.values_list('client_id', flat=True))):
+                record('buyer_restored', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
+                       client_id=client_id, object=org.name)
+            restored += 1
+        self.message_user(request, f'{restored} insurer{"" if restored == 1 else "s"} restored.')
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.deleted_at:
+            return False  # shown read-only; Restore it to change it
+        return super().has_change_permission(request, obj)
+
+    def get_inline_instances(self, request, obj=None):
+        found = super().get_inline_instances(request, obj)
+        if obj is not None and obj.deleted_at:
+            for inline in found:
+                inline.has_add_permission = lambda *a, **k: False
+                inline.has_change_permission = lambda *a, **k: False
+                inline.has_delete_permission = lambda *a, **k: False
+        return found
 
     def save_formset(self, request, form, formset, change):
         if formset.model is BuyerUser:
@@ -158,7 +219,10 @@ def password_link(request, org_id, user_id):
     """CiV staff email an insurer or acquirer person a link to choose a new password (owner decision 2026-10-22)."""
     staff_only(request)
     from .invite import send_password_link
-    person = get_object_or_404(BuyerUser, pk=user_id, org_id=org_id, is_active=True)
+    person = get_object_or_404(BuyerUser, pk=user_id, org_id=org_id)
+    if not person.is_active:  # an old page or a second tab: a clear message, never a "not found" page
+        messages.error(request, f'{person.name or person.email} is turned off. Tick "Is active" and save first, then send the link.')
+        return redirect(reverse('admin:buyers_buyerorg_change', args=[org_id]))
     send_password_link(person)
     record('password_link_sent', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
            object=f'{person.email} ({person.org.name})')

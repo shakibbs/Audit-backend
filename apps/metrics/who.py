@@ -242,22 +242,38 @@ def source_id(key: str) -> str:
 
 
 def lead_sources(client) -> list[dict]:
-    """Vendors the CRM names (and websites when none is named), and each uploaded list, with the client's own switches."""
+    """Vendors the CRM names or the client's uploaded vendor lead files name (websites when none is named), and each
+    uploaded list (CRM import batches and Upload centre vendor lead files), with the client's own switches.
+    Owner, 2026-10-24: lead files uploaded to CiV are shown and managed like the CRM's vendors and lists."""
+    from apps.vendors.models import VendorLead
     marks = {(m.source_key, m.column): m.checked for m in LeadSourceCheck.objects.filter(client=client)}
     rows = []
-    vendors = Counter(CrmCreation.objects.filter(client=client).exclude(vendor='').values_list('vendor', flat=True))
+    vendors: dict[str, list] = {}  # name in lower case → [name as first seen, leads]
+    for name, n in list(Counter(CrmCreation.objects.filter(client=client).exclude(vendor='').values_list('vendor', flat=True)).items()) \
+            + list(Counter(VendorLead.objects.filter(client=client).exclude(vendor='').values_list('vendor', flat=True)).items()):
+        found = vendors.setdefault(' '.join(name.split()).lower(), [' '.join(name.split()), 0])
+        found[1] += n
     if not vendors:
-        vendors = Counter(dict(Provenance.objects.filter(client=client, basis='cert_domain').values_list('source_name')
-                               .annotate(n=Count('id')).values_list('source_name', 'n')))
-    for name, n in vendors.most_common(20):
+        for name, n in Provenance.objects.filter(client=client, basis='cert_domain').values_list('source_name').annotate(n=Count('id')).values_list('source_name', 'n'):
+            vendors[name.lower()] = [name, n]
+    for name, n in sorted(vendors.values(), key=lambda v: -v[1])[:20]:
         key = f'vendor:{name}'
-        rows.append({'id': source_id(key), 'key': key, 'group': 'vendor', 'name': name, 'note': f'{n:,} leads',
+        rows.append({'id': source_id(key), 'key': key, 'group': 'vendor', 'name': name, 'note': many(n, 'lead'),
                      'checked': {col: marks.get((key, col), False) for col in COLUMNS}})
+    lists = []
     for batch in ImportBatch.objects.filter(client=client, kind__in=[ImportBatch.Kind.BULK, ImportBatch.Kind.SMALL]).order_by('-starts')[:20]:
         key = f'upload:{batch.system}|{batch.source_system}|{batch.created_by or batch.list_id}|{batch.starts:%Y%m%dT%H%M%S}'
         size = batch.updated_count if batch.system == 'crm_update' else batch.created_count
-        rows.append({'id': source_id(key), 'key': key, 'group': 'upload', 'name': f'Uploaded list · {batch.starts:%-d %b %Y}',
-                     'note': f'{size:,} numbers', 'checked': {col: marks.get((key, col), False) for col in COLUMNS}})
+        lists.append((batch.starts, {'id': source_id(key), 'key': key, 'group': 'upload', 'name': f'Uploaded list · {batch.starts:%-d %b %Y}',
+                                     'note': f'{size:,} numbers', 'checked': {col: marks.get((key, col), False) for col in COLUMNS}}))
+    for upload in UploadedFile.objects.filter(client=client, source=Source.VENDOR_LEADS).order_by('-received_at')[:20]:
+        key = f'upload:file|{upload.pk}'
+        numbers = VendorLead.objects.filter(upload=upload).values('phone_token').distinct().count()
+        lists.append((upload.received_at, {'id': source_id(key), 'key': key, 'group': 'upload',
+                                           'name': f'Vendor lead file · {upload.received_at:%-d %b %Y}',
+                                           'note': f'{many(numbers, "number")} · {upload.original_name}'[:120],
+                                           'checked': {col: marks.get((key, col), False) for col in COLUMNS}}))
+    rows += [row for _, row in sorted(lists, key=lambda t: t[0], reverse=True)[:20]]
     return rows
 
 

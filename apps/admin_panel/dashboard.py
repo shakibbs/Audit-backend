@@ -45,7 +45,7 @@ def dashboard(request, context: dict) -> dict:
     now = timezone.now()
     day = AccessEntry.objects.filter(at__gte=now - timedelta(hours=24))
     clients = Client.objects.filter(is_active=True)
-    by_stage = dict(Client.objects.values_list('status').annotate(n=Count('id')))
+    by_stage = dict(Client.objects.filter(deleted_at__isnull=True).values_list('status').annotate(n=Count('id')))
     context.update({
         'stats': [
             stat('Active clients', by_stage.get('active', 0),

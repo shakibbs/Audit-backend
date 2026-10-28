@@ -53,6 +53,18 @@ class NeedsAttention(admin.SimpleListFilter):
         return queryset
 
 
+class Deleted(admin.SimpleListFilter):
+    """Deleted companies are hidden from the list but kept with all their records (owner, 2026-10-24)."""
+    title = 'deleted'
+    parameter_name = 'deleted'
+
+    def lookups(self, request, model_admin):
+        return [('yes', 'Deleted companies')]
+
+    def queryset(self, request, queryset):
+        return queryset.filter(deleted_at__isnull=False) if self.value() == 'yes' else queryset.filter(deleted_at__isnull=True)
+
+
 @admin.register(Client)
 class ClientAdmin(CivModelAdmin):
     eyebrow = 'Clients'
@@ -62,7 +74,9 @@ class ClientAdmin(CivModelAdmin):
     form = ClientForm
     list_display = ('name', 'status_shown', 'industry', 'plan', 'onboarding_shown', 'access_shown', 'users_shown', 'connections_shown', 'renews_shown')
     list_display_links = ('name',)
-    list_filter = (NeedsAttention, 'status', 'plan', 'access_level')
+    list_filter = (NeedsAttention, 'status', 'plan', 'access_level', Deleted)
+    actions = ['restore']
+    access_log_deletes = False  # delete_model writes "Company deleted (kept)" itself
     search_fields = ('name', 'industry', 'users__email', 'users__name')  # find a person's company by their email
     readonly_fields = ('access_shown', 'status_since', 'created_at')
     inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, NewInviteInline, ConsentPageInline]
@@ -97,6 +111,60 @@ class ClientAdmin(CivModelAdmin):
         if obj:
             return self.fieldsets
         return (*self.fieldsets, ("Client's Admin", {'fields': ('admin_name', 'admin_email')}))
+
+    # --- Delete = hide and switch off, keep everything; Restore brings it back (owner, 2026-10-24) -------------------
+    def delete_model(self, request, obj):
+        from django.utils import timezone
+
+        from apps.access_log.recorder import record
+        obj.deleted_at, obj.deleted_by, obj.is_active = timezone.now(), request.user.email, False
+        obj.save(update_fields=['deleted_at', 'deleted_by', 'is_active'])
+        record('client_deleted', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
+               client_id=obj.pk, object=f'{obj.name} · hidden and switched off; all records kept')
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self.delete_model(request, obj)
+
+    def response_delete(self, request, obj_display, obj_id):
+        from django.http import HttpResponseRedirect
+        self.message_user(request, f'{obj_display} is deleted: hidden and switched off, with every record kept. '
+                                   'Find it under "Deleted companies" to look at it or restore it.')
+        return HttpResponseRedirect(reverse('admin:clients_client_changelist'))
+
+    def get_deleted_objects(self, objs, request):
+        """The confirm page says what really happens: nothing is erased."""
+        lines = [f'{o.name}: hidden from the list and switched off (no sign-in, no reading its tools, insurers lose access). '
+                 'Every record and file is kept; open it again with the "Deleted companies" filter and Restore it any time.'
+                 for o in objs]
+        return lines, {}, set(), []
+
+    @admin.action(description='Restore the selected deleted companies')
+    def restore(self, request, queryset):
+        from apps.access_log.recorder import record
+        restored = 0
+        for obj in queryset.filter(deleted_at__isnull=False):
+            obj.deleted_at, obj.deleted_by = None, ''
+            stages.prepare(obj, obj.status)  # is_active follows the stage again
+            obj.save(update_fields=['deleted_at', 'deleted_by', 'is_active'])
+            record('client_restored', request=request, actor_kind='staff', actor_id=request.user.pk, actor_label=request.user.email,
+                   client_id=obj.pk, object=obj.name)
+            restored += 1
+        self.message_user(request, f'{restored} compan{"y" if restored == 1 else "ies"} restored.')
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.deleted_at:
+            return False  # a deleted company is shown read-only; Restore it to change it
+        return super().has_change_permission(request, obj)
+
+    def get_inline_instances(self, request, obj=None):
+        found = super().get_inline_instances(request, obj)
+        if obj is not None and obj.deleted_at:
+            for inline in found:  # every tab read-only too
+                inline.has_add_permission = lambda *a, **k: False
+                inline.has_change_permission = lambda *a, **k: False
+                inline.has_delete_permission = lambda *a, **k: False
+        return found
 
     def save_model(self, request, obj, form, change):
         old = form.initial.get('status', '') if change else ''

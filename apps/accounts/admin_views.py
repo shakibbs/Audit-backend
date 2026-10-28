@@ -14,8 +14,11 @@ from apps.accounts.models import ClientUser, Invite
 def password_link(request, client_id, user_id):
     if not request.user.has_perm('accounts.change_clientuser'):
         raise PermissionDenied
-    user = get_object_or_404(ClientUser, pk=user_id, client_id=client_id, is_active=True)
-    send_password_link(request, user)
+    user = get_object_or_404(ClientUser, pk=user_id, client_id=client_id)
+    if not user.is_active:  # an old page or a second tab: a clear message, never a "not found" page
+        messages.error(request, f'{user.name or user.email} is turned off. Tick "Is active" and save first, then send the link.')
+    else:
+        send_password_link(request, user)
     return redirect(reverse('admin:clients_client_change', args=[client_id]) + '#users')
 
 

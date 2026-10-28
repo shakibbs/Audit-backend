@@ -26,6 +26,11 @@ class Client(models.Model):
     status_changed_at = models.DateTimeField(null=True, blank=True, editable=False)
     # Follows the status (Ended = off); sign-in, invites and resets check it. Never edited by hand.
     is_active = models.BooleanField(default=True, editable=False)
+    # "Delete" in the staff panel hides and switches the company off; every record and file is kept (owner, 2026-10-24).
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False)
+    deleted_by = models.CharField(max_length=254, blank=True, editable=False)
+    # Set when an upload (or another change) asked for this month's scores to be worked out again; cleared when done.
+    refresh_pending_since = models.DateTimeField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -37,7 +42,7 @@ class Client(models.Model):
     # Live sync reads the client's tools only in these stages.
     @property
     def can_sync(self) -> bool:
-        return self.status in (self.Status.TRIAL, self.Status.ONBOARDING, self.Status.ACTIVE)
+        return self.deleted_at is None and self.status in (self.Status.TRIAL, self.Status.ONBOARDING, self.Status.ACTIVE)
 
     def __str__(self):
         return self.name

@@ -28,7 +28,7 @@ def current_buyer(request) -> BuyerUser | None:
     user_id = request.session.get(USER_KEY)
     if user_id is None:
         return None
-    user = BuyerUser.objects.select_related('org').filter(pk=user_id, is_active=True, org__is_active=True).first()
+    user = BuyerUser.objects.select_related('org').filter(pk=user_id, is_active=True, org__is_active=True, org__deleted_at__isnull=True).first()
     if user is None or not constant_time_compare(request.session.get(HASH_KEY, ''), user.get_session_auth_hash()):
         return None
     return user

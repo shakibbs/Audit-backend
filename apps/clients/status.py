@@ -14,7 +14,7 @@ def status_pill(client: Client) -> str:
 
 def prepare(client: Client, old_status: str) -> bool:
     """Before saving: keep is_active in step with the stage. Returns True if the stage changed."""
-    client.is_active = client.status != Client.Status.ENDED
+    client.is_active = client.status != Client.Status.ENDED and client.deleted_at is None
     if client.status == old_status:
         return False
     client.status_changed_at = timezone.now()

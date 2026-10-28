@@ -38,6 +38,10 @@ class CivModelAdmin(ModelAdmin):
     access_log_deletes = True  # False where delete_model writes its own line
     access_log_inlines = False  # True: also log changes made in this page's tabs (pages whose tabs do not log themselves)
 
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        # No "Save and add another" on any page (owner, 2026-10-24): "Save" and "Save and continue editing" stay.
+        return super().changeform_view(request, object_id, form_url, {**(extra_context or {}), 'show_save_and_add_another': False})
+
     def construct_change_message(self, request, form, formsets, add=False):
         """Remembers "Field: old → new" for the log line (the form still holds both values here)."""
         changes = []

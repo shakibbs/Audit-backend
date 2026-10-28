@@ -108,3 +108,21 @@ def test_nothing_real_yet_says_not_measured(company):
     assert all(isinstance(a['flags'], list) and a['checks'] for a in data['areas'])
     rnd = {c['metric']: c for c in next(a for a in data['areas'] if a['id'] == 'rnd')['checks']}
     assert rnd['M11']['result'] == 'Not measured' and rnd['M47']['result'] == 'Not measured'
+
+
+def test_uploaded_vendor_lead_files_are_shown_and_managed_like_crm_vendors(company, admin_user):
+    """Owner, 2026-10-24: a vendor lead file uploaded to CiV appears in "Who checked what": its vendors (joined with the
+    CRM's when the name is the same) and the file itself, each with switches that are saved."""
+    from apps.vendors.models import VendorLead
+    CrmCreation.objects.create(client=company, source_system='hubspot', record_id='contacts:1', created_at=NOW, vendor='SolarLeads Inc')
+    up = upload(company, Source.VENDOR_LEADS)
+    for n, vendor in enumerate(['solarleads inc', 'Roof Leads', 'Roof Leads']):
+        VendorLead.objects.create(client=company, upload=up, row=n + 2, phone_token=f'p{n}', vendor=vendor, received_at=NOW)
+    api = browser_for(admin_user)
+    rows = {r['name']: r for r in api.get('/api/who-contact').json()['leadSources']}
+    assert rows['SolarLeads Inc']['note'] == '2 leads' and rows['Roof Leads']['note'] == '2 leads'  # same vendor, one row
+    file_row = next(r for r in rows.values() if r['name'].startswith('Vendor lead file'))
+    assert file_row['group'] == 'upload' and file_row['note'].startswith('3 numbers')
+    assert api.call('patch', f"/api/who-contact/{file_row['id']}", {'column': 'national', 'checked': True}).json()['checked']['national'] is True
+    again = {r['name']: r for r in api.get('/api/who-contact').json()['leadSources']}
+    assert again[file_row['name']]['checked']['national'] is True

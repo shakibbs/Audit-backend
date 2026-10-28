@@ -78,3 +78,22 @@ def test_contract_shows_on_page_and_list(staff_client, company):
     assert '$3,000 / month' in page and 'within notice period' in page and 'Contract &amp; billing' in page
     assert 'Renews' in staff_client.get('/civ-admin/clients/client/').content.decode()
 
+
+
+@pytest.mark.django_db
+def test_dates_that_cannot_be_right_are_refused(staff_client, company):
+    """QA 2026-10-23: a contract was saved starting 30 Dec with renewal 15 Nov."""
+    def post(fields):
+        data = {'name': company.name, 'industry': 'Solar', 'plan': 'growth', 'start_date': '2026-10-01', 'status': company.status}
+        for prefix in ('connections', 'users', 'invites', 'invites-2', 'documents'):
+            data.update({f'{prefix}-TOTAL_FORMS': 0, f'{prefix}-INITIAL_FORMS': 0, f'{prefix}-MIN_NUM_FORMS': 0, f'{prefix}-MAX_NUM_FORMS': 1000})
+        data.update({'contract-TOTAL_FORMS': 1, 'contract-INITIAL_FORMS': 0, 'contract-MIN_NUM_FORMS': 0, 'contract-MAX_NUM_FORMS': 1})
+        row = {'currency': 'USD', 'billing_period': 'monthly', 'payment_method': 'invoice', 'notice_days': 30, 'auto_renew': 'on', **fields}
+        data.update({f'contract-0-{k}': v for k, v in row.items()})
+        return staff_client.post(f'/civ-admin/clients/client/{company.pk}/change/', data)
+    backwards = post({'contract_start': '2026-12-30', 'renewal_date': '2026-11-15'})
+    assert backwards.status_code == 200 and 'The renewal date must be after the contract start.' in backwards.content.decode()
+    short = post({'contract_start': '2026-11-01', 'renewal_date': '2026-11-20', 'notice_days': 90})
+    assert short.status_code == 200 and 'The notice period is longer than the contract.' in short.content.decode()
+    assert not Contract.objects.filter(client=company).exists()
+    assert post({'contract_start': '2026-11-01', 'renewal_date': '2027-10-31'}).status_code == 302

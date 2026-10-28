@@ -128,3 +128,37 @@ def test_admin_panel_invites_are_accepted_like_a_real_browser(staff_client):
             assert b.get('/api/users').status_code == 200  # signed in to their own company
             again = Browser().post('/api/invites/accept', {'token': links[email], 'password': PASSWORD}, content_type='application/json')
             assert again.status_code == 400  # one use
+
+
+@pytest.mark.django_db
+def test_the_only_admin_cannot_be_turned_off_or_made_a_member(staff_client, company, admin_user, member_user):
+    """QA 2026-10-23: a company keeps at least one active Admin (the portal already refused this)."""
+    def row(user, **change):
+        base = {'id': user.pk, 'client': company.pk, 'name': user.name, 'email': user.email, 'role': user.role,
+                'is_active': 'on' if user.is_active else ''}
+        base.update(change)
+        return {k: v for k, v in base.items() if v != ''}
+    off = page_data(company, [row(admin_user, is_active=''), row(member_user)], users_initial=2)
+    reply = staff_client.post(f'/civ-admin/clients/client/{company.pk}/change/', off)
+    assert reply.status_code == 200 and 'A company needs at least one active Admin' in reply.content.decode()
+    admin_user.refresh_from_db()
+    assert admin_user.is_active and admin_user.role == 'admin'
+    demoted = page_data(company, [row(admin_user, role='member'), row(member_user)], users_initial=2)
+    assert staff_client.post(f'/civ-admin/clients/client/{company.pk}/change/', demoted).status_code == 200
+    # make the member Admin first, then the old Admin can go, in the same save
+    swap = page_data(company, [row(admin_user, is_active=''), row(member_user, role='admin')], users_initial=2)
+    assert staff_client.post(f'/civ-admin/clients/client/{company.pk}/change/', swap).status_code == 302
+    admin_user.refresh_from_db()
+    member_user.refresh_from_db()
+    assert not admin_user.is_active and member_user.role == 'admin'
+
+
+@pytest.mark.django_db
+def test_no_password_link_for_someone_turned_off(staff_client, company, member_user):
+    """QA 2026-10-23: the button opened a "not found" page for a turned-off person."""
+    member_user.is_active = False
+    member_user.save()
+    page = staff_client.get(f'/civ-admin/clients/client/{company.pk}/change/').content.decode()
+    assert 'Turned off: tick' in page
+    reply = staff_client.post(f'/civ-admin/clients/client/{company.pk}/users/{member_user.pk}/password-link/', follow=True)
+    assert reply.status_code == 200 and 'is turned off' in reply.content.decode() and not mail.outbox

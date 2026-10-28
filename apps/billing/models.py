@@ -35,6 +35,15 @@ class Contract(models.Model):
     notes = models.TextField(blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        """Dates that cannot be right are refused (QA 2026-10-23: a contract was saved starting after its renewal)."""
+        from django.core.exceptions import ValidationError
+        if self.contract_start and self.renewal_date:
+            if self.renewal_date <= self.contract_start:
+                raise ValidationError({'renewal_date': 'The renewal date must be after the contract start.'})
+            if self.notice_days and self.notice_days > (self.renewal_date - self.contract_start).days:
+                raise ValidationError({'notice_days': 'The notice period is longer than the contract.'})
+
     class Meta:
         db_table = 'contract'
         verbose_name = 'contract'
