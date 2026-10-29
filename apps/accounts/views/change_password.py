@@ -23,7 +23,7 @@ class ChangePasswordView(APIView):
         if not isinstance(user, (ClientUser, BuyerUser)):
             return Response({'detail': 'Sign in to continue.'}, status=status.HTTP_401_UNAUTHORIZED)
         client_id = user.client_id if isinstance(user, ClientUser) else None
-        if is_locked(user.email):
+        if is_locked(user.email, request=request):
             return Response({'detail': 'Too many wrong tries. Wait 15 minutes and try again.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         if not user.check_password(str(request.data.get('current', ''))):
             # counts toward the same 5-tries lock as sign-in

@@ -98,7 +98,12 @@ class ConsentPagesView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        pages = ConsentPage.objects.filter(client=request.user.client).select_related('client').order_by('-last_seen_at')[:100]
+        from apps.refs import month_span
+        pages = ConsentPage.objects.filter(client=request.user.client)
+        span = month_span(request.query_params.get('period'))
+        if span:  # pages seen in certificates during that month (the month picker, 2026-10-30)
+            pages = pages.filter(first_seen_at__date__lt=span[1], last_seen_at__date__gte=span[0])
+        pages = pages.select_related('client').order_by('-last_seen_at')[:100]
         return Response([page_row(p) for p in pages])
 
 

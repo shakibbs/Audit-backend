@@ -28,22 +28,29 @@ from apps.onboarding.progress import checklist
 from apps.reconcile.summary import completeness_tile
 from apps.reconcile.views import completeness_page
 from apps.captures.admin import ConsentPageInline, open_photo
+from apps.evidence.admin import LegalHoldInline
 from apps.provenance.admin import provenance_tile
 from apps.conversations.admin import ai_tile
 
 
 class NeedsAttention(admin.SimpleListFilter):
-    """What the Dashboard tiles open (2026-10-23): companies with waiting invites, failed connections or a renewal soon."""
+    """What the Dashboard tiles open (2026-10-23, 2026-10-30): companies with people, waiting invites, working or failed
+    connections, or a renewal soon. Each tile counts the same things its list shows."""
     title = 'needs attention'
     parameter_name = 'attention'
 
     def lookups(self, request, model_admin):
-        return [('invites', 'Waiting invites'), ('connections', 'Failed or stale connections'), ('renewals', 'Renewing within 30 days')]
+        return [('users', 'With active users'), ('invites', 'Waiting invites'), ('working', 'Working connections'),
+                ('connections', 'Failed or stale connections'), ('renewals', 'Renewing within 30 days')]
 
     def queryset(self, request, queryset):
         from django.utils import timezone
 
         from apps.billing.models import renewals_within
+        if self.value() == 'users':
+            return queryset.filter(users__is_active=True).distinct()
+        if self.value() == 'working':
+            return queryset.filter(connections__status=Status.CONNECTED).distinct()
         if self.value() == 'invites':
             return queryset.filter(invites__used_at__isnull=True, invites__expires_at__gt=timezone.now()).distinct()
         if self.value() == 'connections':
@@ -79,7 +86,7 @@ class ClientAdmin(CivModelAdmin):
     access_log_deletes = False  # delete_model writes "Company deleted (kept)" itself
     search_fields = ('name', 'industry', 'users__email', 'users__name')  # find a person's company by their email
     readonly_fields = ('access_shown', 'status_since', 'created_at')
-    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, NewInviteInline, ConsentPageInline]
+    inlines = [ConnectionInline, ContractInline, DocumentInline, ClientUserInline, InviteInline, NewInviteInline, ConsentPageInline, LegalHoldInline]
     fieldsets = (
         (None, {'fields': ('name', 'industry', 'plan', 'start_date', 'status', 'status_reason', 'status_since', 'access_shown', 'created_at')}),
     )
@@ -88,8 +95,8 @@ class ClientAdmin(CivModelAdmin):
     def get_inlines(self, request, obj):
         if not obj:
             return [ConnectionInline, ContractInline, DocumentInline]
-        # Consent pages are read only: shown when viewing, left out of a save (nothing in them is sent back).
-        return self.inlines if request.method == 'GET' else [i for i in self.inlines if i is not ConsentPageInline]
+        # Consent pages and legal holds are read only: shown when viewing, left out of a save (nothing in them is sent back).
+        return self.inlines if request.method == 'GET' else [i for i in self.inlines if i not in (ConsentPageInline, LegalHoldInline)]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('contract').annotate(

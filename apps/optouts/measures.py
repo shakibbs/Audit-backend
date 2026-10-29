@@ -120,31 +120,39 @@ def wording(client, start, end) -> list[dict]:
     return rows
 
 
-def revocation_page(client, now=None) -> dict:
-    """The Revocation page over the last 90 days. Before any opt-out is checked, the KPIs say "Not measured" and the
-    matrix, chart and wording list are empty or "Not checked"."""
-    from datetime import timedelta
+def revocation_page(client, now=None, period: str | None = None) -> dict:
+    """The Revocation page: the opt-outs received in the chosen month (the month picker, 2026-10-30), or over the last
+    90 days. Each is measured as of now, so a stop made after the month ended still counts. Before any opt-out is
+    checked, the KPIs say "Not measured" and the matrix, chart and wording list are empty or "Not checked"."""
+    from datetime import UTC, datetime, time, timedelta
 
+    from apps.refs import month_span
     from apps.rulebook.lookup import NoRulebook, RuleSet
     now = now or timezone.now()
-    start = now - timedelta(days=WINDOW_DAYS)
-    m08, m09 = propagation_time(client, start, now, now), unprocessed(client, start, now, now)
-    times = [h for h in (hours_to_mark(e, now) for e in _optouts(client, start, now)) if h is not None]
+    span = month_span(period)
+    if span:
+        start = datetime.combine(span[0], time.min, tzinfo=UTC)
+        end = min(datetime.combine(span[1], time.min, tzinfo=UTC), now)
+    else:
+        start, end = now - timedelta(days=WINDOW_DAYS), now
+    m08, m09 = propagation_time(client, start, end, now), unprocessed(client, start, end, now)
+    times = [h for h in (hours_to_mark(e, now) for e in _optouts(client, start, end)) if h is not None]
     try:
         days = RuleSet().get('optout_deadline_business_days', on=now.date()).value
     except NoRulebook:
         days = 10
-    out = {'windowDays': WINDOW_DAYS, 'tests': len(times), 'medianHours': m08['value'],
+    out = {'windowDays': max(1, (end - start).days) if span else WINDOW_DAYS, 'windowLabel': span[0].strftime('%b %Y') if span else None,
+           'tests': len(times), 'medianHours': m08['value'],
            'p90': None if not times else ('NEVER' if _p90(times) == NEVER else round(_p90(times), 1)),
            'notSuppressedByDeadline': m09.get('m09a', 0), 'contactedAfterDeadline': m09.get('m09b', 0), 'deadlineBusinessDays': days,
-           'minTestsPerCell': MIN_TESTS_PER_CELL, 'systems': [], 'rows': [], 'distribution': [], 'wording': wording(client, start, now),
-           'channels': sorted({CHANNEL_NAME.get(c, c) for c in _optouts(client, start, now).values_list('channel', flat=True)}),
-           'windowFrom': start.date().isoformat(), 'windowTo': now.date().isoformat()}
+           'minTestsPerCell': MIN_TESTS_PER_CELL, 'systems': [], 'rows': [], 'distribution': [], 'wording': wording(client, start, end),
+           'channels': sorted({CHANNEL_NAME.get(c, c) for c in _optouts(client, start, end).values_list('channel', flat=True)}),
+           'windowFrom': start.date().isoformat(), 'windowTo': (end - timedelta(seconds=1)).date().isoformat() if span else end.date().isoformat()}
     if not times:
         return out
     tools = {}
     cells = {}
-    for event in _optouts(client, start, now):
+    for event in _optouts(client, start, end):
         for check in event.mark_checks.all():
             tools[check.connection_id] = check.connection
             hours = tool_hours(check, event, now)

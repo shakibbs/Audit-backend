@@ -77,7 +77,7 @@ class RevocationView(APIView):
         from apps.optouts.measures import revocation_page
         client = request.user.client
         doc = ClientDocument.objects.filter(client=client, kind=ClientDocument.Kind.ANNEX_C, signed_on__isnull=False).order_by('-signed_on').first()
-        page = revocation_page(client)
+        page = revocation_page(client, period=request.query_params.get('period'))
         page['authorisation'] = {'signedOn': doc.signed_on.isoformat() if doc else None, 'windowFrom': page.pop('windowFrom'),
                                  'windowTo': page.pop('windowTo'), 'channels': page.pop('channels')}
         return Response(page)

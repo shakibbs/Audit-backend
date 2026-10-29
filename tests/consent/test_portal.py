@@ -121,3 +121,18 @@ def test_each_client_sees_only_its_own(company, other_company, member_user, othe
     assert browser_for(other_admin).get('/api/consent').json()['contacts'] == 0
     assert browser_for(other_admin).get('/api/certificates').json() == []
     assert browser_for(other_admin).get('/api/contacts').json() == []
+
+
+def test_consent_integrity_follows_the_month(company, member_user):
+    """Owner, 2026-10-30: the month picker — a month counts only the contacts made in it."""
+    this = NOW.date().replace(day=1)
+    last = (this - timedelta(days=1)).replace(day=1)
+    contact(company)  # this month
+    contact(company, at=NOW.replace(day=1) - timedelta(days=3), person='b2' * 16)  # last month
+    contact(company, at=NOW.replace(day=1) - timedelta(days=4), person='c3' * 16)
+    api = browser_for(member_user)
+    now = api.get('/api/consent').json()
+    before = api.get(f'/api/consent?period={last:%Y-%m}').json()
+    assert now['contacts'] == 1 and before['contacts'] == 2
+    assert before['period'] == last.strftime('%B %Y') and now['period'] == this.strftime('%B %Y')
+    assert api.get(f'/api/consent?period={this:%Y-%m}').json()['contacts'] == 1

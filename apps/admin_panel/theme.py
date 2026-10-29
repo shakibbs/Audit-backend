@@ -54,6 +54,7 @@ def unfold_config(portal_url: str) -> dict:
                 {'title': 'Clients', 'separator': True, 'items': [
                     link('Client companies', 'apartment', 'admin:clients_client_changelist'),
                     link('Proof requests', 'fact_check', 'admin:provenance_proofrequest_changelist'),
+                    link('Quote requests', 'request_quote', 'admin:reports_quoterequest_changelist'),
                 ]},
                 {'title': 'Insurers', 'separator': True, 'items': [
                     link('Insurers and acquirers', 'shield', 'admin:buyers_buyerorg_changelist'),

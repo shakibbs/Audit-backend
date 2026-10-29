@@ -37,7 +37,7 @@ class SignInView(APIView):
         form.is_valid(raise_exception=True)
         email, password = form.validated_data['email'], form.validated_data['password']
 
-        if is_locked(email):
+        if is_locked(email, request=request):
             known = ClientUser.objects.filter(email=email).values_list('client_id', flat=True).first()
             record('sign_in_locked', request=request, actor_kind='anonymous', object=email, client_id=known)  # in that company's log too
             return Response({'detail': LOCKED}, status=status.HTTP_429_TOO_MANY_REQUESTS)

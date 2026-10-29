@@ -44,7 +44,7 @@ class WhoContactView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request, ref=None):
-        return Response(who_contact(request.user.client))
+        return Response(who_contact(request.user.client, period_of(request)))
 
     def patch(self, request, ref=None):
         from apps.access_log.recorder import record

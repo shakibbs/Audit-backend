@@ -28,11 +28,13 @@ def _pct(part: int, whole: int) -> float:
     return round(100 * part / whole, 1) if whole else 0.0
 
 
-def summary(client, today=None) -> dict:
+def summary(client, today=None, period: str | None = None) -> dict:
+    """The chosen month (the month picker, 2026-10-30), or this month."""
+    from apps.refs import month_span
     today = today or timezone.localdate()
-    start = month_start(today)
+    start, after = month_span(period) or (month_start(today), month_start(month_start(today) + timedelta(days=32)))
     strict = ConsentResult.objects.filter(client=client, variant='strict', contact__is_primary=True)
-    month = strict.filter(contact__occurred_at__date__gte=start)
+    month = strict.filter(contact__occurred_at__date__gte=start, contact__occurred_at__date__lt=after)
     counted = month.filter(frozen=False).exclude(status__in=['pending', 'not_needed'])
     total = counted.count()
     by_status = dict(counted.values_list('status').annotate(n=Count('id')))
@@ -75,7 +77,7 @@ class ConsentView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        return Response(summary(request.user.client))
+        return Response(summary(request.user.client, period=request.query_params.get('period')))
 
 
 class CertificatesView(APIView):
@@ -83,8 +85,13 @@ class CertificatesView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
+        from apps.refs import month_span
         client = request.user.client
-        claims = (CertificateClaim.objects.filter(client=client).order_by('-seen_at')
+        claims = CertificateClaim.objects.filter(client=client)
+        span = month_span(request.query_params.get('period'))
+        if span:  # certificates CiV had found by the end of that month
+            claims = claims.filter(seen_at__date__lt=span[1])
+        claims = (claims.order_by('-seen_at')
                   .annotate(used=Count('proofs__results', filter=Q(proofs__results__variant='strict'), distinct=True))[:200])
         first_proof = {}
         for proof in ConsentProof.objects.filter(client=client, certificate__in=claims).order_by('pk'):

@@ -52,3 +52,13 @@ def day(value):
     except ValueError:
         return None
     return found if 2000 <= found.year <= 2100 else None
+
+
+def month_span(period: str | None):
+    """'2026-09' → (1 Sep 2026, 1 Oct 2026) as dates; None for no month (owner, 2026-10-30: pages follow the picker)."""
+    from datetime import date, timedelta
+    period = month(period)
+    if period is None:
+        return None
+    first = date(int(period[:4]), int(period[5:]), 1)
+    return first, (first.replace(day=28) + timedelta(days=4)).replace(day=1)

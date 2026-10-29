@@ -42,9 +42,11 @@ def check(today=None) -> dict:
     unconfirmed = [r for r in rows if r.status == 'proposed' and r.affects_status and not r.counsel_approved]
     clients = affected_clients(pending, timezone.now() - timedelta(days=30))
     us = Counter(r.status for r in rows if r.jurisdiction == 'US')
+    states = Counter(r.status for r in rows if r.jurisdiction != 'US')  # state and court rules (owner, 2026-10-30)
     return {
         'version': version,
         'counts': {'set': us.get('set', 0), 'proposed': us.get('proposed', 0), 'tbd': us.get('tbd', 0)},
+        'state_counts': {'set': states.get('set', 0), 'proposed': states.get('proposed', 0), 'tbd': states.get('tbd', 0)},
         'pending': sorted(({'key': r.key, 'place': place(r.jurisdiction), 'meaning': r.meaning, 'owner': r.get_owner_display(),
                             'counsel_item': r.counsel_item, 'clients': clients.get(r.jurisdiction, 0)} for r in pending),
                           key=lambda x: (-x['clients'], x['key'], x['place'])),

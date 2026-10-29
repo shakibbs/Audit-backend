@@ -63,9 +63,8 @@ def test_portal_generate_download_and_history(company, admin_user, signed_in):
     assert file.status_code == 200 and file['Content-Type'] == 'application/pdf'
     assert api.get('/api/reports/period?period=2026-09').status_code == 200  # the month's latest, not made again
     assert Report.objects.filter(status='ready').count() == 1
-    other = api.call('post', '/api/reports', {'name': 'Certification pack', 'period': 'Sep 2026'}).json()
-    assert other['status'] == 'unavailable' and other['url'] is None
-    assert [r['name'] for r in api.get('/api/reports').json()['runs']] == ['Certification pack', 'Period audit report']
+    assert api.call('post', '/api/reports', {'name': 'Certification pack', 'period': 'Sep 2026'}).status_code == 400  # from the bulk export
+    assert [r['name'] for r in api.get('/api/reports').json()['runs']] == ['Period audit report']
 
 
 def test_monthly_task_and_four_years(company):

@@ -83,3 +83,28 @@ def test_a_date_range_hold(company, admin_user, signed_in):
     VendorContract.objects.filter(pk=contract.pk).update(uploaded_at=OLD)
     place(signed_in(admin_user), 'date range', f'{(OLD - datetime.timedelta(days=1)):%Y-%m-%d} to {(OLD + datetime.timedelta(days=1)):%Y-%m-%d}')
     assert purge_contracts() == 0
+
+
+def test_a_date_range_inside_a_month_keeps_that_months_report(company, admin_user, signed_in):
+    """Owner, 2026-10-30: a hold on 10-20 Sep keeps the September report (it was checked only against 1 Sep)."""
+    from apps.reports.make import purge_old as purge_reports
+    from apps.reports.models import Report
+    period = OLD.date().replace(day=1)
+    made = []
+    for month in (period, (period - datetime.timedelta(days=1)).replace(day=1)):  # this month and the month before
+        r = Report(client=company, name='Period audit report', period=month, status='ready', made_by='CiV (automatic)')
+        r.file.save('r.pdf', ContentFile(b'%PDF'))
+        Report.objects.filter(pk=r.pk).update(made_at=OLD + datetime.timedelta(days=40))
+        made.append(r.pk)
+    place(signed_in(admin_user), 'date range', f'{period.replace(day=10):%Y-%m-%d} to {period.replace(day=20):%Y-%m-%d}')
+    assert purge_reports(now=timezone.now() + datetime.timedelta(days=60)) == 1  # only the month before goes
+    assert Report.objects.get(pk=made[0]).file and not Report.objects.get(pk=made[1]).file
+
+
+def test_staff_see_the_holds_on_the_client_page(client, company, admin_user, signed_in):
+    from apps.staff.models import StaffUser
+    from tests.conftest import PASSWORD
+    place(signed_in(admin_user), 'vendor', 'Acme Leads')
+    client.force_login(StaffUser.objects.create_superuser(email='boss@complyiv.com', name='Boss', password=PASSWORD))
+    page = client.get(f'/civ-admin/clients/client/{company.pk}/change/').content.decode()
+    assert 'Legal holds' in page and 'Acme Leads' in page and 'Active: its files are kept' in page

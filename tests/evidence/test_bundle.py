@@ -47,13 +47,22 @@ def test_one_zip_with_each_file_and_the_numbers_not_found(company, admin_user, s
 def test_the_certification_pack(company, admin_user, signed_in):
     z = zipfile.ZipFile(io.BytesIO(post(signed_in(admin_user), {'numbers': [PHONE], 'pack': True}).content))
     rows = z.read('certification/fingerprint-list.csv').decode().splitlines()
-    assert rows[0].startswith('number,record,tool,record_id') and 'e' * 64 in rows[1] and '(916) •••-0142' in rows[1]
+    assert rows[0].startswith('company,number,record,tool,record_id') and company.name in rows[1] and 'e' * 64 in rows[1] and '(916) •••-0142' in rows[1]
     assert z.read('certification/custodian-declaration-DRAFT.txt').decode().startswith('DRAFT · for counsel to review')
     assert 'Merkle tree' in z.read('certification/how-civ-captures-records.txt').decode()
 
 
 def test_the_pack_texts_pass_the_banned_word_check():
     assert banned_words(bundle.HOW_CIV_CAPTURES + bundle.HOW_TO_CHECK + bundle.CUSTODIAN_TEMPLATE) == []
+
+
+def test_every_pack_text_names_the_client(company, admin_user, signed_in):
+    """Owner, 2026-10-30: formal wording, and the client's name in every file of the pack."""
+    z = zipfile.ZipFile(io.BytesIO(post(signed_in(admin_user), {'numbers': [PHONE, '+14805550923'], 'pack': True}).content))
+    for name in z.namelist():
+        if name.endswith(('.txt', '.csv')):
+            got = z.read(name).decode()
+            assert company.name in got and '{company}' not in got, name
 
 
 def test_limits_and_who_can(company, admin_user, member_user, signed_in):

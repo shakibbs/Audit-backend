@@ -1,6 +1,6 @@
 """Plain words and pill color for each logged action, shared by the admin list and dashboard."""
 ACTION_LABEL = {
-    'sign_in': ('Signed in', 'green'), 'sign_in_failed': ('Failed sign-in', 'red'), 'sign_in_locked': ('Locked out', 'amber'),
+    'sign_in': ('Signed in', 'green'), 'sign_in_failed': ('Failed sign-in', 'red'), 'sign_in_locked': ('Locked out', 'amber'), 'account_locked_everywhere': ('Locked everywhere (attack)', 'red'),
     'sign_out': ('Signed out', 'gray'), 'staff_sign_in_failed': ('Failed staff sign-in', 'red'),
     'staff_sign_in_locked': ('Staff sign-in locked', 'amber'), 'password_reset_requested': ('Asked for reset', 'gray'),
     'password_reset_done': ('Reset password', 'teal'), 'password_changed': ('Changed password', 'teal'), 'password_link_sent': ('Password link sent', 'teal'),

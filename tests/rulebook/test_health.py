@@ -50,3 +50,14 @@ def test_admin_pages_and_tile(client):
     assert 'Needs a decision' in page and 'autodialed_modes' in page and 'Not confirmed by a lawyer' in page
     assert 'Every value this rule has had' in client.get('/civ-admin/rulebook/rulevalue/rule-history/calling_hours/').content.decode()
     assert 'Rules needing a decision' in client.get('/civ-admin/').content.decode()
+
+
+def test_federal_and_state_rules_add_up_to_all_rules(client):
+    """Owner, 2026-10-30: the dashboard said "149 rules in all" (federal only) while the Rulebook lists 158."""
+    from apps.rulebook.models import RuleValue
+    data = check()
+    federal, states = sum(data['counts'].values()), sum(data['state_counts'].values())
+    assert states > 0 and federal + states == RuleValue.objects.count()
+    client.force_login(StaffUser.objects.create_superuser(email='boss@complyiv.com', name='Boss', password=PASSWORD))
+    assert f'{federal + states} rules in all ({federal} federal, {states} state or court)' in client.get('/civ-admin/').content.decode()
+    assert 'State and court values today' in client.get('/civ-admin/rulebook/rulevalue/check/').content.decode()

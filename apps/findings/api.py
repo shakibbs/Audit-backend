@@ -2,6 +2,7 @@
 (step 2; Admins and the company's lawyer only) — owner, due date, status, the decision with its note, and a dispute.
 Every change is written to the access log; for the decision, only the note's fingerprint (spec §9)."""
 import hashlib
+from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import status
@@ -41,14 +42,29 @@ def can_decide(user) -> bool:
     return user.is_admin or user.is_counsel
 
 
+def in_month(rows: list[Finding], period: str) -> list[Finding]:
+    """Findings that were open during that month (owner, 2026-10-30: every page follows the month picker): first seen
+    before it ended, still found in it or later, and not resolved before it began."""
+    from datetime import datetime
+    first = datetime.strptime(period, '%Y-%m').date()
+    after = (first.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return [f for f in rows if f.first_seen.date() < after and f.period >= first
+            and not (f.resolved_at and f.resolved_at.date() < first)]
+
+
 class ActionsView(APIView):
+    """GET /api/actions[?period=YYYY-MM]: the findings of that month (all of them when no month is given)."""
     permission_classes = [IsClientUser]
 
     def get(self, request):
+        from apps.refs import month
         from apps.scoring.portal import impact
         today, client = timezone.localdate(), request.user.client
+        period = month(request.query_params.get('period'))
         rows = ranked(client)
-        gains = {m: impact(client, m) for m in {f.metric for f in rows if f.status != 'resolved'}}
+        if period:
+            rows = in_month(rows, period)
+        gains = {m: impact(client, m, period) for m in {f.metric for f in rows if f.status != 'resolved'}}
         return Response([row(f, i, today, gains.get(f.metric)) for i, f in enumerate(rows, 1)])
 
 

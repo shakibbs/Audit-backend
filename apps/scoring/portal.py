@@ -169,9 +169,9 @@ def projection(client, run: SnapshotRun, bands: dict, today: float, hard: dict) 
     return out
 
 
-def impact(client, metric: str) -> float | None:
-    """How much the Audit Score would rise if this one finding were fixed."""
-    run = run_for(client, None)
+def impact(client, metric: str, period: str | None = None) -> float | None:
+    """How much the Audit Score (of the chosen month, or the latest) would rise if this one finding were fixed."""
+    run = run_for(client, period)
     if run is None:
         return None
     bands = cutoffs(run.period)

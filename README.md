@@ -1524,3 +1524,101 @@ scorecards, findings, risk attestation and alerts are worked out again, not only
 (migration `clients/0009`) marks a run on its way; the session sends `updating` and `scoredAt`. The portal shows
 "Updating your scores…" while it runs (asking again every 15 s, then refreshing every page) and "Scores, findings and
 reports last worked out …" on Overview, Action Queue and Reports. Test: `tests/scoring/test_refresh_after_upload.py`.
+
+## Quote requests and the report cards (2026-10-30)
+
+Reports & Exports → **Litigation evidence package → Request a quote** now reaches CiV: `POST /api/reports` with that
+name makes a `QuoteRequest` (`apps/reports/models.py`, table `client_quote_request`, locked like the other client
+tables; migrations `reports/0004`, `0005`), writes `quote_requested` in the access log and emails every active staff
+member who can see quote requests (`apps/reports/emails.py`; a mail problem never loses the request). Asking again while
+one is open returns it. `GET /api/reports` gives the card `requestedAt` and lists the request in the history as
+`requested`. Staff panel → Clients → **Quote requests**: who asked, when, a note, and **Mark done (client contacted)**
+(logged as `quote_request_done`; the client can then ask again). The **Evidence file export** and **Certification pack**
+cards are made from the bulk export, so posting them returns 400 instead of adding a "Not available yet" row; migration
+`reports/0005` turned old litigation rows into quote requests and dropped the other old "Not available yet" rows.
+Test: `tests/reports/test_quote_requests.py`.
+
+### The litigation package, step by step (2026-10-30)
+
+`QuoteRequest.status` (migration `reports/0006`): **asked** → staff contact the client, write the price in the note and
+press **Accept (price agreed)** (the person who asked gets an email) → **accepted**: the portal card shows a box; an
+Admin or the lawyer types up to 25 numbers, `POST /api/reports/litigation {numbers}` turns them into phone codes in
+memory (never stored) and `apps/reports/litigation.py: make` builds one ZIP: the evidence files, the certification pack
+and a `chain-of-custody/` report per number (each record read from the tool, its fingerprint and seal, and every
+access-log line naming that masked number); staff get an email → **checking**: staff **Download** it from the request,
+fill in the custodian name and title and press **Release to the client** (or **Ask the client for the numbers again**);
+`release` adds `certification/custodian-declaration.txt` with that name and the date → **released**: the client
+downloads it from the card or History (`GET /api/reports/quote-<id>/file`, only their own, logged). Logged:
+`quote_request_accepted`, `litigation_package_made`, `litigation_package_released`, `litigation_package_downloaded`.
+Packages are private files, deleted after 4 years unless under a legal hold (`purge_old`). Test:
+`tests/reports/test_litigation_package.py`. The request page has no Save buttons (owner, 2026-10-30): the step
+buttons (Accept, Release, Ask again, **Mark done**) keep the note typed; once done, nothing can be typed.
+
+The package texts use formal wording and name the client in every file (owner, 2026-10-30): `00-package-contents.txt`
+(what each part holds), the Record Capture and Preservation Statement, the Procedure for Independent Verification of a
+Fingerprint, the Declaration of Custodian of Records, the Chain of Custody Report per number, the release record and
+`not-found.txt`; `fingerprint-list.csv` starts with a `company` column. The same texts go in the bulk export's
+certification pack (`apps/evidence/bundle.py: filled`).
+
+
+## Verify a file knows every file CiV holds (2026-10-30)
+
+Evidence Vault → Verify a file (`GET /api/hash-check`, `apps/anchoring/position.py: files_received`) now also finds
+Upload centre files, vendor contracts, proof-request files, documents CiV staff added on the client page and released
+litigation packages, by their fingerprint (kept even after a file is deleted at 4 years). The answer names the file and
+when CiV got it, e.g. "Upload centre · Internal do-not-contact list · optouts-sept.csv". Only the company's own files are
+searched. Test: `tests/anchoring/test_vault_fixes.py`.
+
+## Legal holds: whole month, and a tab for staff (2026-10-30)
+
+A date-range hold now keeps a monthly report when it overlaps **any day** of that month (`Holds.covers(..., until=)`,
+used by `apps/reports/make.py: purge_old`); before, only the 1st of the month was checked, so a hold on 10-20 Sep let the
+September report be deleted at 4 years. Staff panel → client page → **Legal holds** tab (`apps/evidence/admin.py`):
+every hold of that client, active first, read only (only the client's Admin or lawyer places or releases one, in the
+portal). Tests: `tests/evidence/test_holds.py`.
+
+## A staff password link closes when they change their password (2026-10-30)
+
+When a CiV staff member changes their own password in the panel (`apps/staff/password.py`), any unused password /
+welcome link still in their email is cancelled; opening it says the link expired or was already used, and they can ask
+for a new one. The access-log line says how many links were closed. (The old finding "the link stops working if the
+person signs in first" no longer happens since welcome links were rebuilt; checked.) Test:
+`tests/staff/test_link_closed_after_password_change.py`.
+
+## Wrong passwords lock the computer, not the person (2026-10-30)
+
+`apps/accounts/lockout.py`: 5 wrong passwords for one email **from one computer** (internet address, from
+`client_ip`) within 15 minutes lock that email on that computer only, so a stranger who knows someone's email cannot
+lock them out. 50 wrong passwords for one email **from all computers together** lock it everywhere for 15 minutes (an
+attack): one `account_locked_everywhere` line in the access log and one warning email to the person ("Your account is
+locked for 15 minutes…"). Same rule for the portal sign-in, My account's current password and the staff panel sign-in;
+the staff dashboard's "locked now" counts both kinds. Test: `tests/accounts/test_lock_per_computer.py`.
+
+## Rule counts add up (2026-10-30)
+
+The staff dashboard's Rulebook tile said "149 rules in all" while the Rulebook lists 158: it counted federal rules only.
+`apps/rulebook/health.py: check` now also gives `state_counts`; the tile says "158 rules in all (149 federal, 9 state or
+court)" and the Rulebook check page adds "State and court values today: … set · … proposed · … not set yet".
+Test: `tests/rulebook/test_health.py`.
+
+## Dashboard tiles open what they count (2026-10-30)
+
+Each staff Dashboard tile now opens a list of exactly what its number counts, and deleted companies are left out
+(`apps/admin_panel/dashboard.py`): Active clients → `?status__exact=active`; Client users ("… people in N companies")
+→ `?attention=users`; Open invites → `?attention=invites`; Connections working → `?attention=working`, with a second
+link in the foot for "N failed or stale"; Sign-ins · 24 h → the access log with `action=sign_in` and the new
+**Last 24 hours** filter (`within=24h`). Test: `tests/admin_panel/test_dashboard_tiles_match.py`.
+
+## Pages follow the month picker (2026-10-30, in progress)
+
+`GET /api/actions?period=YYYY-MM` gives the findings open during that month (first seen before it ended, still found in
+it or later, not resolved before it began; `apps/findings/api.py: in_month`), and each one's score gain is worked out on
+that month's saved scores (`impact(client, metric, period)`). Without a month: every finding, as before. Test:
+`tests/findings/test_actions_by_month.py`. `GET /api/consent?period=` counts only that month's contacts (its trend ends
+with that month); `/api/certificates?period=` lists certificates found by the end of it; `/api/consent-pages?period=` the
+pages seen during it (`apps/refs.py: month_span`). Test: `tests/consent/test_portal.py`. `/api/revocation?period=` and `/api/optouts?period=`: the opt-outs received in that
+month, each measured as of now (`revocation_page(..., period=)` adds `windowLabel`); without a month, the last 90 days.
+Test: `tests/optouts/test_measures.py`. `/api/who-contact?period=`: the four areas cover that month's contacts, stop
+requests and CRM opt-out removals (`apps/metrics/who.py: Span`), and an empty month says "No contacts in Sep 2026 to
+check."; without a month, the last 30 days. Test: `tests/metrics/test_who.py`.
+

@@ -9,12 +9,28 @@ from apps.admin_panel.base import CivModelAdmin
 from apps.clients.models import Client
 
 
+class Within(admin.SimpleListFilter):
+    """The Dashboard's "Sign-ins · 24 h" tile opens the last 24 hours (2026-10-30)."""
+    title = 'when'
+    parameter_name = 'within'
+
+    def lookups(self, request, model_admin):
+        return [('24h', 'Last 24 hours'), ('7d', 'Last 7 days')]
+
+    def queryset(self, request, queryset):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        hours = {'24h': 24, '7d': 24 * 7}.get(self.value())
+        return queryset.filter(at__gte=timezone.now() - timedelta(hours=hours)) if hours else queryset
+
+
 @admin.register(AccessEntry)
 class AccessEntryAdmin(CivModelAdmin):
     eyebrow = 'Records'
     page_sub = 'Every sign-in, sign-out and change. Rows can never be edited or deleted. Times are UTC.'
     list_display = ('when', 'who', 'what', 'object_shown', 'company', 'ip_address')
-    list_filter = ('actor_kind', 'action')
+    list_filter = (Within, 'actor_kind', 'action')
     search_fields = ('actor_label', 'action', 'object')
     date_hierarchy = 'at'
 

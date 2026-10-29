@@ -40,17 +40,30 @@ def last_month(today: date) -> date:
     return (today.replace(day=1) - timedelta(days=1)).replace(day=1)
 
 
+def month_last_day(first: date) -> date:
+    import calendar
+    return first.replace(day=calendar.monthrange(first.year, first.month)[1])
+
+
 def purge_old(now=None) -> int:
     now = now or timezone.now()
     n = 0
     from apps.evidence.holds import Holds
     holds = Holds()
     for report in Report.objects.filter(made_at__lt=now - KEEP, purged_at__isnull=True).exclude(file=''):
-        if holds.covers(report.client_id, report.period or report.made_at) or holds.covers(report.client_id, report.made_at):
+        month_end = month_last_day(report.period) if report.period else None
+        if holds.covers(report.client_id, report.period or report.made_at, until=month_end) or holds.covers(report.client_id, report.made_at):
             continue  # under a legal hold (Module 14)
         report.file.delete(save=False)
         report.purged_at = now
         report.save(update_fields=['file', 'purged_at'])
+        n += 1
+    from .models import QuoteRequest
+    for q in QuoteRequest.objects.filter(made_at__lt=now - KEEP).exclude(package=''):  # litigation packages: also 4 years
+        if holds.covers(q.client_id, q.made_at):
+            continue
+        q.package.delete(save=False)
+        q.save(update_fields=['package'])
         n += 1
     return n
 

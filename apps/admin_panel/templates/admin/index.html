@@ -19,11 +19,13 @@
 
     <div class="kpi-grid">
         {% for s in stats %}
-            <a class="card kpi" href="{{ s.url }}">
-                <span class="kpi-tag">{{ s.tag }}</span>
-                <span class="kpi-val">{{ s.value }}</span>
-                <span class="kpi-foot">{{ s.foot }}</span>
-            </a>
+            <div class="card kpi">
+                <a class="kpi-main" href="{{ s.url }}">
+                    <span class="kpi-tag">{{ s.tag }}</span>
+                    <span class="kpi-val">{{ s.value }}</span>
+                </a>
+                <span class="kpi-foot">{{ s.foot }}{% if s.extra %} · <a class="kpi-extra" href="{{ s.extra.url }}">{{ s.extra.text }}</a>{% endif %}</span>
+            </div>
         {% endfor %}
     </div>
 

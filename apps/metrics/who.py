@@ -38,19 +38,36 @@ def flag(c, known, source_name, flagged_on):
             'contactedOn': c.occurred_at.strftime('%b %-d'), 'channel': c.get_channel_display()}
 
 
-def window(client):
-    since = timezone.now() - timedelta(days=DAYS)
-    return ContactEvent.objects.filter(client=client, direction='outbound', is_primary=True, is_test=False, occurred_at__gte=since)
+class Span:
+    """The time the page covers: the chosen month (the month picker, owner 2026-10-30) or the last 30 days."""
+    def __init__(self, period: str | None = None):
+        from datetime import UTC, datetime, time
+
+        from apps.refs import month_span
+        found = month_span(period)
+        if found:
+            self.start, self.end = (datetime.combine(d, time.min, tzinfo=UTC) for d in found)
+            self.words = f'in {found[0]:%b %Y}'
+        else:
+            self.end = timezone.now()
+            self.start, self.words = self.end - timedelta(days=DAYS), f'in the last {DAYS} days'
 
 
-def dnc_area(client, contacts) -> dict:
+def window(client, span: Span | None = None):
+    span = span or Span()
+    return ContactEvent.objects.filter(client=client, direction='outbound', is_primary=True, is_test=False,
+                                       occurred_at__gte=span.start, occurred_at__lt=span.end)
+
+
+def dnc_area(client, contacts, span: Span | None = None) -> dict:
+    span = span or Span()
     checks, flags = [], []
     lapsed = ConsentResult.objects.filter(contact__in=contacts, variant='strict', frozen=False, codes__contains=['NP_RELATIONSHIP_LAPSED']).count()
     if contacts.exists():
         checks.append(check('fail' if lapsed else 'pass', 'Expired customer relationship used', many(lapsed, 'call') if lapsed else 'None', 'records', 'M40',
                             'Calls more than 3 months after an inquiry or 18 months after a purchase, from your CRM records.'))
     else:
-        checks.append(unmeasured('Expired customer relationship used', 'M40', f'No contacts in the last {DAYS} days to check.'))
+        checks.append(unmeasured('Expired customer relationship used', 'M40', f'No contacts {span.words} to check.'))
     if not DncCheck.objects.filter(client=client).exists():
         why = 'Your DNC check records are not supplied. Upload them on the Source Registry.'
         return {'id': 'dnc', 'checks': checks + [unmeasured('National registry checked', 'M13', why),
@@ -74,7 +91,7 @@ def dnc_area(client, contacts) -> dict:
         checks.append(check('pass' if share >= 99 else 'warn' if share >= 90 else 'fail', 'National registry checked', f'{share}% of contacts', 'list', 'M13',
                             f'{covered:,} of {total:,} contacts had a DNC check within {MAX_AGE} days before them.'))
     else:
-        checks.append(unmeasured('National registry checked', 'M13', f'No contacts in the last {DAYS} days to check.'))
+        checks.append(unmeasured('National registry checked', 'M13', f'No contacts {span.words} to check.'))
     checks.append(check('fail' if flags else 'pass', 'Called after your provider flagged the number', many(len(flags), 'contact') if flags else 'None',
                         'list', 'M39', 'Contacts after your DNC check said the number is listed.'))
     checks.append(check('warn' if old else 'pass', 'Registry copy older than 31 days', many(old, 'contact') if old else 'None', 'list', 'M49',
@@ -90,12 +107,13 @@ def dnc_area(client, contacts) -> dict:
     return {'id': 'dnc', 'checks': checks, 'flags': flags[:50]}
 
 
-def internal_area(client, contacts) -> dict:
+def internal_area(client, contacts, span: Span | None = None) -> dict:
+    span = span or Span()
     checks = []
-    removed = CrmUpdate.objects.filter(client=client, cleared_optout=True).count()
+    removed = CrmUpdate.objects.filter(client=client, cleared_optout=True, updated_at__gte=span.start, updated_at__lt=span.end).count()
     checks.append(check('fail' if removed else 'pass', 'Removed from the list too early', many(removed, 'number') if removed else 'None', 'records', 'M44',
                         'Opt-out marks cleared in your CRM (for example by a re-uploaded sheet). Requests must be honored for 5 years.'))
-    stop_checks, stop_flags = stops_reached(client, contacts)
+    stop_checks, stop_flags = stops_reached(client, contacts, span)
     checks += stop_checks
     checks.append(unmeasured('Called by another of your brands', 'M43', 'Comes when CiV reads more than one of your brands.'))
     if not InternalListEntry.objects.filter(client=client).exists():
@@ -109,7 +127,7 @@ def internal_area(client, contacts) -> dict:
             flags.append(flag(c, 'Joined your do-not-call list', 'Your internal list', entry.added_on))
     last = UploadedFile.objects.filter(client=client, source=Source.INTERNAL_LIST).first()
     if not contacts.exists():
-        checks.insert(0, unmeasured('Called after joining your list', 'M12', f'No contacts in the last {DAYS} days to check.'))
+        checks.insert(0, unmeasured('Called after joining your list', 'M12', f'No contacts {span.words} to check.'))
         return {'id': 'idn', 'checks': checks, 'flags': stop_flags}
     checks.insert(0, check('fail' if flags else 'pass', 'Called after joining your list', many(len(flags), 'contact') if flags else 'None', 'list', 'M12',
                            f'{len(numbers):,} numbers were contacted after they joined your list (uploaded {last.received_at:%-d %b}).'))
@@ -121,21 +139,22 @@ def ai_running(client) -> bool:
     return ConversationReview.objects.filter(client=client).exclude(result='not_reviewed').exists()
 
 
-def stops_reached(client, contacts) -> tuple[list, list]:
+def stops_reached(client, contacts, span: Span | None = None) -> tuple[list, list]:
     """M41 stop requests (texted STOP or said in plain words) that never reached every tool by the deadline, and M42 the
     share marked in time (Module 9 step 3 checks). Only opt-outs that count; left out until there is something checked."""
     from statistics import median
 
     from apps.conversations.models import ConversationReview
     from apps.optouts.models import OptOutEvent
-    since = timezone.now() - timedelta(days=DAYS)
-    asked = OptOutEvent.objects.filter(client=client, counts=True, method__in=['keyword', 'ai'], at__gte=since).prefetch_related('mark_checks')
+    span = span or Span()
+    asked = OptOutEvent.objects.filter(client=client, counts=True, method__in=['keyword', 'ai'], at__gte=span.start,
+                                       at__lt=span.end).prefetch_related('mark_checks')
     checked = [e for e in asked if any(c.marked is not None for c in e.mark_checks.all())]
     if not checked and not ai_running(client):
         return [unmeasured('Stop requests that never reached your list', 'M41', 'No stop request checked in your tools yet.'),
                 unmeasured('Added within 10 business days', 'M42', 'No stop request checked in your tools yet.')], []
     never = [e for e in checked if any(c.missed for c in e.mark_checks.all())]
-    read = ConversationReview.objects.filter(client=client, reviewed_at__gte=since).exclude(result='not_reviewed').count()
+    read = ConversationReview.objects.filter(client=client, reviewed_at__gte=span.start, reviewed_at__lt=span.end).exclude(result='not_reviewed').count()
     out = [check('fail' if never else 'pass', 'Stop requests that never reached your list', f'{len(never):,} of {len(checked):,}', 'records', 'M41',
                  f'{many(len(checked), "stop request")} checked in your tools ({read:,} calls and texts reviewed by AI); '
                  f'{len(never):,} never reached every tool by the deadline.')]
@@ -185,7 +204,8 @@ def litigation_area(client, contacts) -> dict:
             'flags': flags[:50]}
 
 
-def reassigned_area(client, contacts) -> dict:
+def reassigned_area(client, contacts, span: Span | None = None) -> dict:
+    span = span or Span()
     checks = []
     results = ConsentResult.objects.filter(contact__in=contacts, variant='strict', proof__isnull=False).select_related('proof', 'contact')
     total = old = 0
@@ -199,7 +219,7 @@ def reassigned_area(client, contacts) -> dict:
     if not RndQuery.objects.filter(client=client).exists():
         checks.append(unmeasured('Covered by the safe harbor', 'M11', 'Your reassigned-number query logs are not supplied.'))
     elif not n:
-        checks.append(unmeasured('Covered by the safe harbor', 'M11', f'No contacts in the last {DAYS} days to check.'))
+        checks.append(unmeasured('Covered by the safe harbor', 'M11', f'No contacts {span.words} to check.'))
     else:
         asked = sum(1 for c in contacts.only('phone_token', 'occurred_at') if RndQuery.objects.filter(
             client=client, phone_token=c.phone_token, result='no', queried_on__lte=c.occurred_at.date(),
@@ -281,8 +301,10 @@ AREAS = {'dnc': ('National & state DNC', '47 C.F.R. §64.1200(c)(2)'), 'idn': ('
          'rnd': ('Reassigned numbers', '47 C.F.R. §64.1200(m)'), 'lit': ('Litigation signals', 'Targeting multiplier')}
 
 
-def who_contact(client) -> dict:
-    contacts = window(client)
-    areas = [dnc_area(client, contacts), internal_area(client, contacts), reassigned_area(client, contacts), litigation_area(client, contacts)]
+def who_contact(client, period: str | None = None) -> dict:
+    span = Span(period)
+    contacts = window(client, span)
+    areas = [dnc_area(client, contacts, span), internal_area(client, contacts, span), reassigned_area(client, contacts, span),
+             litigation_area(client, contacts)]
     return {'areas': [{'flags': [], **a, 'title': AREAS[a['id']][0], 'law': AREAS[a['id']][1]} for a in areas],
             'services': services(client), 'leadSources': lead_sources(client)}

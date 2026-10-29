@@ -18,12 +18,15 @@ class Holds:
         with all_clients():
             self.rows = list(LegalHold.objects.filter(released_at__isnull=True))
 
-    def covers(self, client_id: int, when=None, tokens=(), vendors=()) -> bool:
+    def covers(self, client_id: int, when=None, tokens=(), vendors=(), until=None) -> bool:
+        """`until`: the file covers the days from `when` to `until` (a monthly report: its whole month, 2026-10-30), so a
+        date-range hold that overlaps any of them keeps it."""
         day = when.date() if isinstance(when, datetime) else when
+        last = (until.date() if isinstance(until, datetime) else until) or day
         for h in self.rows:
             if h.client_id != client_id:
                 continue
-            if h.scope == LegalHold.Scope.DATES and day and h.starts and h.ends and h.starts <= day <= h.ends:
+            if h.scope == LegalHold.Scope.DATES and day and h.starts and h.ends and h.starts <= last and day <= h.ends:
                 return True
             if h.scope == LegalHold.Scope.NUMBER and h.phone_token in set(tokens):
                 return True

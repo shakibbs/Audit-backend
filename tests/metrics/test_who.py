@@ -126,3 +126,16 @@ def test_uploaded_vendor_lead_files_are_shown_and_managed_like_crm_vendors(compa
     assert api.call('patch', f"/api/who-contact/{file_row['id']}", {'column': 'national', 'checked': True}).json()['checked']['national'] is True
     again = {r['name']: r for r in api.get('/api/who-contact').json()['leadSources']}
     assert again[file_row['name']]['checked']['national'] is True
+
+
+def test_who_you_contact_follows_the_month(company, member_user):
+    """Owner, 2026-10-30: the month picker — the checks cover that month's contacts and say so when there are none."""
+    this = TODAY.replace(day=1)
+    last = (this - timedelta(days=1)).replace(day=1)
+    call(company, days_ago=(TODAY - this).days + 3)  # last month only
+    empty = {c['name']: c for c in next(a for a in who_contact(company, f'{this:%Y-%m}')['areas'] if a['id'] == 'dnc')['checks']}
+    assert any(f'No contacts in {this:%b %Y} to check.' in str(c) for c in empty.values())
+    full = {c['name']: c for c in next(a for a in who_contact(company, f'{last:%Y-%m}')['areas'] if a['id'] == 'dnc')['checks']}
+    assert not any('No contacts' in str(c) for c in full.values())
+    api = browser_for(member_user)
+    assert api.get(f'/api/who-contact?period={last:%Y-%m}').status_code == 200

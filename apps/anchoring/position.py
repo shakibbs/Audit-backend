@@ -67,8 +67,9 @@ def position(client, typed: str, day: date) -> dict | None:
 
 
 def hash_check(client, sha: str) -> dict:
-    """Is this file one CiV holds? A record read from a tool, or (2026-10-23) a report or evidence file CiV made for
-    this company. Only the fingerprint is sent; the file never leaves the browser."""
+    """Is this file one CiV holds? A record read from a tool, a report or evidence file CiV made for this company
+    (2026-10-23), or a file the company or CiV staff gave CiV (2026-10-30). Only the fingerprint is sent; the file never
+    leaves the browser."""
     sha = sha.lower().strip()
     found = Fingerprint.objects.filter(client=client, sha256=sha).select_related('anchor').first()
     if found is None:
@@ -87,9 +88,34 @@ def made_by_civ(client, sha: str) -> dict:
     if report:
         return {**empty, 'found': True, 'artifact': f'{report.name} · {report.period:%b %Y}' if report.period else report.name,
                 'capturedAt': report.made_at}
+    received = files_received(client, sha)
+    if received:
+        return {**empty, 'found': True, 'artifact': received[0], 'capturedAt': received[1]}
     made = AccessEntry.objects.filter(client_id=client.pk, action__in=['evidence_file_downloaded', 'evidence_bundle_downloaded'],
                                       object__endswith=f'sha256 {sha}').order_by('at').first()
     if made:
         kind = 'Evidence bundle' if made.action == 'evidence_bundle_downloaded' else 'Evidence file'
         return {**empty, 'found': True, 'artifact': f"{kind} · {made.object.split(' · sha256')[0]}", 'capturedAt': made.at}
     return empty
+
+
+def files_received(client, sha: str):
+    """(what it is, when CiV got it) for a file given to CiV or a litigation package CiV released (2026-10-30): Upload
+    centre files, vendor contracts, proof-request files, documents CiV staff added. The fingerprint is kept even after
+    the file itself is deleted (4 years)."""
+    from apps.documents.models import ClientDocument
+    from apps.provenance.models import ProofRequest
+    from apps.reports.models import QuoteRequest
+    from apps.uploads.models import UploadedFile
+    from apps.vendors.models import VendorContract
+    if f := UploadedFile.objects.filter(client=client, sha256=sha).order_by('received_at').first():
+        return f'Upload centre · {f.get_source_display()} · {f.original_name}', f.received_at
+    if c := VendorContract.objects.filter(client=client, sha256=sha).order_by('uploaded_at').first():
+        return f'Vendor contract · {c.name} · {c.original_name}', c.uploaded_at
+    if p := ProofRequest.objects.filter(client=client, file_sha256=sha).order_by('answered_at').first():
+        return f'Proof request file · {p.masked_label or "number hidden"} · {p.original_name}', p.answered_at
+    if d := ClientDocument.objects.filter(client=client, sha256=sha).order_by('uploaded_at').first():
+        return f'Document · {d.get_kind_display()} · {d.title or d.original_name}', d.uploaded_at
+    if q := QuoteRequest.objects.filter(client=client, package_sha256=sha, status=QuoteRequest.Status.RELEASED).first():
+        return f'Litigation evidence package · released {q.released_at:%d %b %Y}', q.released_at
+    return None

@@ -80,3 +80,19 @@ def test_m09_counts_not_marked_and_contacted_after_the_deadline(company):
 def test_m09_not_measured_before_any_deadline_passed(company):
     optout(company, 1)
     assert unprocessed(company, *span())['display'] == 'Not measured'
+
+
+def test_the_revocation_page_and_list_follow_the_month(company, member_user, signed_in):
+    """Owner, 2026-10-30: the month picker — opt-outs received in that month, measured as of now."""
+    from apps.optouts.measures import revocation_page
+    this = NOW.date().replace(day=1)
+    last = (this - timedelta(days=1)).replace(day=1)
+    days_into = (NOW.date() - this).days
+    check(company, optout(company, days_into + 3), hours=5)  # last month, stopped later
+    check(company, optout(company, 0), hours=2)  # this month
+    page = revocation_page(company, period=f'{last:%Y-%m}')
+    assert page['tests'] == 1 and page['windowLabel'] == last.strftime('%b %Y') and page['windowFrom'] == last.isoformat()
+    assert revocation_page(company)['windowLabel'] is None  # no month: the last 90 days, as before
+    api = signed_in(member_user)
+    assert len(api.get(f'/api/optouts?period={last:%Y-%m}').json()) == 1 and len(api.get('/api/optouts').json()) == 2
+    assert api.get(f'/api/revocation?period={this:%Y-%m}').json()['tests'] == 1

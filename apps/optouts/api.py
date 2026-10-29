@@ -63,9 +63,14 @@ class OptOutsView(APIView):
             rules = RuleSet()
         except NoRulebook:
             rules = None
-        # One row per number: its latest opt-out.
+        # One row per number: its latest opt-out (in the chosen month, when one is given: the month picker, 2026-10-30).
+        from apps.refs import month_span
+        found = OptOutEvent.objects.filter(client=request.user.client)
+        span = month_span(request.query_params.get('period'))
+        if span:
+            found = found.filter(at__date__gte=span[0], at__date__lt=span[1])
         seen, events = set(), []
-        for event in OptOutEvent.objects.filter(client=request.user.client).order_by('-at'):
+        for event in found.order_by('-at'):
             if event.phone_token not in seen:
                 seen.add(event.phone_token)
                 events.append(event)

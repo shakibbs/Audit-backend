@@ -44,3 +44,33 @@ def test_verify_a_file_knows_reports_and_evidence_files(company, admin_user, sig
     record('evidence_file_downloaded', client_id=company.pk, object=f'(916) •••-0142 · pdf · sha256 {other}')
     assert api.call('get', f'/api/hash-check?hash={other}').json()['artifact'].startswith('Evidence file · (916)')
     assert api.call('get', f"/api/hash-check?hash={'0' * 64}").json()['found'] is False
+
+
+def test_verify_a_file_knows_files_given_to_civ(company, other_company, admin_user, signed_in, api):
+    """Owner, 2026-10-30: uploads, vendor contracts, proof files, staff documents and released packages are found too."""
+    from django.utils import timezone as tz
+    from apps.documents.models import ClientDocument
+    from apps.reports.models import QuoteRequest
+    from apps.uploads.models import UploadedFile
+    from apps.vendors.models import VendorContract
+    signed_in(admin_user)
+
+    def sha(text):
+        return hashlib.sha256(text.encode()).hexdigest()
+
+    UploadedFile.objects.create(client=company, source=UploadedFile._meta.get_field('source').choices[0][0], original_name='optouts-sept.csv', sha256=sha('a'))
+    VendorContract.objects.create(client=company, key='acme', name='Acme Leads', original_name='acme.pdf', sha256=sha('b'), uploaded_by='Dana')
+    ClientDocument.objects.create(client=company, kind='agreement', original_name='msa.pdf', sha256=sha('c'))
+    QuoteRequest.objects.create(client=company, name='Litigation evidence package', asked_by='Dana', status='released',
+                                package_sha256=sha('d'), released_at=tz.now())
+    from apps.provenance.models import ProofRequest
+    ProofRequest.objects.create(client=company, batch_key='k', batch_label='Bulk import', batch_size=1, phone_token='ab' * 32,
+                                masked_label='(916) •••-0142', due_at=tz.now(), original_name='form.png', file_sha256=sha('f'), answered_at=tz.now())
+    UploadedFile.objects.create(client=other_company, source=UploadedFile._meta.get_field('source').choices[0][0], original_name='theirs.csv', sha256=sha('e'))
+    check = lambda t: api.call('get', f'/api/hash-check?hash={sha(t)}').json()  # noqa: E731
+    assert check('a')['found'] and 'optouts-sept.csv' in check('a')['artifact'] and check('a')['capturedAt']
+    assert check('b')['artifact'] == 'Vendor contract · Acme Leads · acme.pdf'
+    assert check('c')['artifact'] == 'Document · Service agreement · msa.pdf'
+    assert check('d')['artifact'].startswith('Litigation evidence package · released')
+    assert check('f')['artifact'] == 'Proof request file · (916) •••-0142 · form.png'
+    assert check('e')['found'] is False  # another company's file is never found

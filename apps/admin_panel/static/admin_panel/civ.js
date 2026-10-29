@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('click', function (event) {
   var button = event.target.closest('button[formaction].civ-btn');
   if (!button || !button.form || button.form.dataset.civStart === undefined) return;
+  if (button.hasAttribute('data-civ-keeps-form')) return;  // this button uses what was typed (quote request steps)
   if (civFormState(button.form) === button.form.dataset.civStart) return;
   var go = window.confirm('You have changes on this page that are not saved.\n\n'
     + 'Press Cancel, then Save, to keep them.\nPress OK to continue without saving: the changes will be lost.');
