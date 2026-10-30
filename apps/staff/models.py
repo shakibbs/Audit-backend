@@ -44,3 +44,6 @@ class StaffWelcome(models.Model):
     class Meta:
         db_table = 'staff_welcome'
         ordering = ['-sent_at']
+
+    def __str__(self):  # shown on delete pages instead of "StaffWelcome object (4)" (owner, 2026-10-31)
+        return f'Password link for {self.user.email} (sent {self.sent_at:%-d %b %Y})'

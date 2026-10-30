@@ -14,6 +14,7 @@ import urllib.request
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from ..localtime import LocalTimes
 from ..connector import CONNECTORS, Connector, Page, Record, raise_for_status
 
 API = 'https://api.convoso.com/v1'
@@ -35,7 +36,7 @@ def zone(name: str) -> ZoneInfo:
         raise ConvosoError(f'Unknown account time zone "{name}"') from None
 
 
-class Convoso(Connector):
+class Convoso(LocalTimes, Connector):
     mode = 'poll'
     source_grade = 'C'
     counts = ('calls',)
@@ -60,8 +61,11 @@ class Convoso(Connector):
             raise ConvosoError(str(answer.get('text') or answer.get('code') or 'Convoso refused the request'))
         return answer.get('data') or {}
 
+    def naive(self, row: dict) -> datetime:
+        return datetime.strptime(row['call_date'], WHEN)
+
     def called_at(self, row: dict) -> datetime:
-        return datetime.strptime(row['call_date'], WHEN).replace(tzinfo=self.tz).astimezone(UTC)
+        return self.reading(row, self.naive(row))[0]
 
     def calls_between(self, start: datetime, end: datetime) -> list[dict]:
         """Every call from start up to (not including) end, oldest first."""
@@ -75,6 +79,7 @@ class Convoso(Connector):
             offset += len(chunk)
             if len(chunk) < PAGE or offset >= int(data.get('total_found') or 0):
                 break
+        self.remember(rows, self.naive)  # in Convoso's own order (oldest first): the clock-change hour
         return sorted((r for r in rows if start <= self.called_at(r) < end), key=lambda r: (self.called_at(r), str(r['id'])))
 
     def count_between(self, measure: str, start: datetime, end: datetime) -> int:
@@ -86,7 +91,7 @@ class Convoso(Connector):
     def record(self, row: dict) -> Record:
         numbers = [row.get('phone_number'), row.get('number_dialed'), row.get('caller_id_displayed')]
         return Record(source_record_id=str(row['id']), raw=json.dumps(row, sort_keys=True, separators=(',', ':')).encode(),
-                      content_kind='call', changed_at=self.called_at(row), phones=list(dict.fromkeys(n for n in numbers if n)))
+                      content_kind='call', changed_at=self.called_at(row), time_note=self.reading(row, self.naive(row))[1], phones=list(dict.fromkeys(n for n in numbers if n)))
 
     def fetch_one(self, record_id: str) -> Record | None:
         """TO CONFIRM on a real account: the call log filtered by its ID."""

@@ -28,6 +28,7 @@ class ContactEvent(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
     answered = models.BooleanField(null=True)  # None = the tool does not say
     length_seconds = models.PositiveIntegerField(null=True, blank=True)
+    time_note = models.CharField(max_length=120, blank=True)  # a time in the clock-change hour (apps.sync.localtime), else empty
     disposition = models.CharField(max_length=120, blank=True)  # the tool's own result code, kept as is (AI judges stops)
     sms_status = models.CharField(max_length=30, blank=True)
     campaign = models.CharField(max_length=200, blank=True)

@@ -70,7 +70,7 @@ def test_emails_are_kept_in_small_letters_and_a_duplicate_in_capitals_is_refused
 def test_test_connection_never_crashes_and_fits_its_box(company, monkeypatch):
     from apps.connections import testers
     conn = Connection.objects.create(client=company, provider='twilio', status=Status.UNTESTED)
-    conn.set_credentials({'account': 'AC1', 'key': 'k'})
+    conn.set_credentials({'account': 'AC' + '1' * 32, 'key': 'k'})
     conn.save()
     monkeypatch.setitem(testers.TESTERS, 'twilio', lambda creds: (_ for _ in ()).throw(ValueError('bad JSON')))
     assert run_test(conn)[0] == Status.FAILED

@@ -23,7 +23,15 @@ class AlertsView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        return Response([row(a) for a in Alert.objects.filter(client=request.user.client).select_related('client')[:500]])
+        """[?period=YYYY-MM]: the alerts open at some point in that month (the month picker, owner 2026-10-30): raised
+        before it ended and not resolved before it began. Without a month: every alert."""
+        from django.db.models import Q
+
+        from apps.refs import month_span
+        alerts = Alert.objects.filter(client=request.user.client)
+        if span := month_span(request.query_params.get('period')):
+            alerts = alerts.filter(first_at__date__lt=span[1]).filter(Q(resolved_at__isnull=True) | Q(resolved_at__date__gte=span[0]))
+        return Response([row(a) for a in alerts.select_related('client')[:500]])
 
 
 class ReviewView(APIView):

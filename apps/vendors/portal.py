@@ -30,8 +30,16 @@ def current_rows(client, now) -> list[dict]:
     return out
 
 
-def vendors_page(client, now=None) -> dict:
+def vendors_page(client, now=None, period: str | None = None) -> dict:
+    """The Vendor Ledger as of now, or as of the end of the month picker's month (owner, 2026-10-30)."""
+    from datetime import UTC, datetime, time
+
+    from apps.refs import month_span
     now = now or timezone.now()
+    span = month_span(period)
+    if span:
+        now = min(now, datetime.combine(span[1], time.min, tzinfo=UTC) - timedelta(seconds=1))
+    when = f'in {span[0]:%b %Y}' if span else 'this month'
     rows = current_rows(client, now)
     if not rows:  # no vendor yet: say so (owner decision 2026-10-22: a real client never sees the sample vendors)
         return {'gradeMix': 'Not measured', 'gradeMixNote': 'No vendor named in your CRM records or uploaded vendor lead files',
@@ -62,5 +70,5 @@ def vendors_page(client, now=None) -> dict:
     n_drops = len(dropped)
     return {'gradeMix': mix['display'] if not mix['notMeasured'] else 'Not measured', 'gradeMixNote': mix.get('note') or mix.get('notMeasured') or '',
             'disputeCandidates': total_disputes, 'alerts': n_drops,
-            'alertNote': f'{n_drops} vendor{"" if n_drops == 1 else "s"} fell 10 points or more this month' if n_drops else 'No score fell 10 points or more this month',
+            'alertNote': f'{n_drops} vendor{"" if n_drops == 1 else "s"} fell 10 points or more {when}' if n_drops else f'No score fell 10 points or more {when}',
             'vendors': out}

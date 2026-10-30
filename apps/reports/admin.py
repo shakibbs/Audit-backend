@@ -22,9 +22,12 @@ class ReportAdmin(CivModelAdmin):
     exclude = ('file', 'banned')
     readonly_fields = [f.name for f in Report._meta.fields if f.name not in ('file', 'banned')] + ['banned_shown', 'download']
 
+    # Plain words (owner, 2026-10-31): "None found" in grey, or the words that held the report back in red.
     @admin.display(description='Banned words')
     def banned_shown(self, report):
-        return ', '.join(report.banned) if report.banned else 'None'
+        if not report.banned:
+            return format_html('<span class="civ"><span class="tiny">{}</span></span>', 'None found')
+        return format_html('<span class="civ"><span class="pill pill-red">{}</span></span>', ', '.join(report.banned))
 
     @admin.display(description='File')
     def download(self, report):

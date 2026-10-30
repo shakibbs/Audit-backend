@@ -60,3 +60,7 @@ class StatusChange(models.Model):
     class Meta:
         db_table = 'client_status_change'
         ordering = ['-changed_at']
+
+    def __str__(self):  # shown on delete pages instead of "StatusChange object (7)" (owner, 2026-10-31)
+        old = self.get_old_status_display() if self.old_status else 'new'
+        return f'Stage change: {old} → {self.get_new_status_display()} ({self.changed_at:%-d %b %Y})'

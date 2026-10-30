@@ -42,3 +42,16 @@ def test_before_the_first_nightly_save_it_is_worked_out_on_the_spot(company, mem
     page = signed_in(member_user).get('/api/vendors').json()
     assert page['vendors'][0]['name'] == 'SolarLeads Inc' and page['vendors'][0]['notEnoughData'] is True
     assert not VendorMonth.objects.exists()  # nothing saved by reading the page
+
+
+def test_the_vendor_ledger_follows_the_month(company, member_user, signed_in):
+    """Owner, 2026-10-30: the month picker — September's scores, compared with August."""
+    month(company, date(2026, 8, 1), 'vendor e', 90.0)
+    month(company, date(2026, 9, 1), 'vendor e', 78.0)
+    month(company, date(2026, 10, 1), 'vendor e', 86.4)
+    sep = vendors_page(company, NOW, period='2026-09')
+    row = sep['vendors'][0]
+    assert (row['score'], row['monthOnMonth'], row['alert']) == (78.0, -12.0, True)
+    assert sep['alertNote'] == '1 vendor fell 10 points or more in Sep 2026'
+    assert vendors_page(company, NOW)['vendors'][0]['score'] == 86.4  # no month: this month, as before
+    assert signed_in(member_user).get('/api/vendors?period=2026-09').json()['vendors'][0]['score'] == 78.0

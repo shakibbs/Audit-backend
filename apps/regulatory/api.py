@@ -59,6 +59,9 @@ class RegChangesView(APIView):
         read = set(RegChangeRead.objects.filter(client_id=client).values_list('reg_change_id', flat=True))
         reviews = {r.rule_update_id: r for r in RuleUpdateReview.objects.filter(client_id=client)}
         changes = RegChange.objects.prefetch_related('rule_updates')
+        from apps.refs import month_span
+        if span := month_span(request.query_params.get('period')):  # changes announced by the end of that month (2026-10-30)
+            changes = changes.filter(announced_on__lt=span[1])
         return Response([change_row(c, read, reviews) for c in changes])
 
 

@@ -1,5 +1,6 @@
-"""Module 15 step 3: the insurer pages for a signed-in buyer, from each shared company's newest attestation snapshot
-only (owner decision 2026-10-22: newest only). Fields CiV does not measure yet are null or empty, never sample values.
+"""Module 15 step 3: the insurer pages for a signed-in buyer, from each shared company's newest attestation snapshot,
+or (owner, 2026-10-30, option B) the snapshot of a month the insurer picks: only months from when that company started
+sharing with this insurer. Fields CiV does not measure yet are null or empty, never sample values.
 The buyer scope already hides companies that do not share right now; each opened sheet goes into that company's log."""
 from django.utils import timezone
 from rest_framework.response import Response
@@ -23,6 +24,36 @@ MEASURED = ('vendorTermsShare', 'consentProof', 'prerecordedShare', 'purchasedSh
 
 def newest():
     return AttestationSnapshot.objects.order_by('client_id', '-period', '-version').distinct('client_id')
+
+
+def shared_since(user) -> dict[int, object]:
+    """{company id: first month this insurer may see} for every company sharing with this user's insurer now."""
+    from .models import BuyerLink
+    today, out = timezone.localdate(), {}
+    for link in BuyerLink.objects.filter(org=user.org).select_related('client', 'org'):
+        if link.active(today):
+            first = link.granted_at.date().replace(day=1)
+            out[link.client_id] = min(first, out.get(link.client_id, first))
+    return out
+
+
+def chosen(request):
+    """The month picked in the top bar, as its first day, or None (the newest)."""
+    from apps.refs import month_span
+    span = month_span(request.query_params.get('period'))
+    return span[0] if span else None
+
+
+def sheet_of(client_id: int, month):
+    return AttestationSnapshot.objects.filter(client_id=client_id, period=month).order_by('-version').first()
+
+
+def buyer_periods(user) -> list[dict]:
+    """The insurer's month picker: months with a sheet of a sharing company, from when that company started sharing."""
+    months = set()
+    for client_id, first in shared_since(user).items():
+        months |= set(AttestationSnapshot.objects.filter(client_id=client_id, period__gte=first).values_list('period', flat=True))
+    return [{'id': m.strftime('%Y-%m'), 'label': m.strftime('%b %Y')} for m in sorted(months, reverse=True)]
 
 
 def insured(snap: AttestationSnapshot) -> dict:
@@ -61,8 +92,13 @@ def as_buyer(response: Response) -> Response:
     return response
 
 
-def own_sheet(client) -> AttestationSnapshot:
-    """A client previewing its insurer's view (owner decision 2026-10-22): its own newest sheet, made now if none yet."""
+def own_sheet(client, month=None) -> AttestationSnapshot | None:
+    """A client's own sheet, as its insurer sees it (owner decision 2026-10-22): the newest, made now if none yet; or
+    that month's (the month picker, 2026-10-30), None when that month has none."""
+    if month is not None and month != timezone.localdate().replace(day=1):
+        return sheet_of(client.pk, month)
+    if month is not None and (snap := sheet_of(client.pk, month)):
+        return snap
     snap = AttestationSnapshot.objects.filter(client=client).order_by('-period', '-version').first()
     if snap is None:
         from .attestation import save
@@ -80,18 +116,29 @@ class InsuredsView(APIView):
     permission_classes = [IsBuyerUser | IsClientUser]
 
     def get(self, request):
+        month = chosen(request)
         if previewing(request.user):
-            return as_buyer(Response([insured(own_sheet(request.user.client))]))
+            sheet = own_sheet(request.user.client, month)
+            return as_buyer(Response([insured(sheet)] if sheet else []))
         if not isinstance(request.user, BuyerUser):
             return Response({'detail': 'Switch to the Underwriter view to see this.'}, status=403)
-        rows = sorted((insured(s) for s in newest()), key=lambda i: i['name'].lower())
+        if month is None:
+            sheets = list(newest())
+        else:  # that month's sheet of each company that shared with this insurer by then
+            sheets = [s for cid, first in shared_since(request.user).items() if month >= first and (s := sheet_of(cid, month))]
+        rows = sorted((insured(s) for s in sheets), key=lambda i: i['name'].lower())
         return as_buyer(Response(rows))
 
 
 def one(request, ref: str) -> Response:
-    pk = ref.removeprefix('c-')
-    snap = newest().filter(client_id=number(pk)).first() if number(pk) else None
+    pk, month = number(ref.removeprefix('c-')), chosen(request)
+    snap = newest().filter(client_id=pk).first() if pk else None
     if snap is None:
         return as_buyer(Response({'detail': 'This company does not share with you.'}, status=404))
+    if month is not None:
+        first = shared_since(request.user).get(pk)
+        snap = sheet_of(pk, month) if first and month >= first else None
+        if snap is None:
+            return as_buyer(Response({'detail': f'No sheet for {month:%b %Y}.'}, status=404))
     seen(request, snap.client_id)
     return as_buyer(Response(insured(snap)))

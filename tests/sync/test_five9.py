@@ -184,3 +184,13 @@ def test_the_real_soap_request_and_answers(conn, monkeypatch):
     assert body.find(f'.//{{{f9.NS}}}runReport/folderName').text == 'Call Log Reports'  # a well-formed SOAP envelope
     with pytest.raises(f9.Five9Error, match='Access denied'):
         adapter.soap('isReportRunning', '<identifier>rep7</identifier>')
+
+
+def test_a_call_without_a_call_id_keeps_its_id_when_five9_changes_it():
+    """Owner, 2026-10-31: no CALL ID column — Ringing → Answered and the length filled in is the same call, not a new one."""
+    from apps.sync.connectors.five9 import steady_id
+    before = {k: v for k, v in call(1, DAY, disposition='Ringing').items() if k != 'CALL ID'}
+    after = {**before, 'DISPOSITION': 'Answered', 'LENGTH': '00:03:10'}
+    other = {**before, 'DNIS': '9165559999'}
+    assert steady_id(before) == steady_id(after) != steady_id(other)
+    assert steady_id(before).startswith('nocallid-')

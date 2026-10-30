@@ -33,7 +33,11 @@ class UploadsView(APIView):
     parser_classes = [MultiPartParser]
 
     def get(self, request):
-        return Response([row(u) for u in UploadedFile.objects.filter(client=request.user.client)[:200]])
+        from apps.refs import month_span
+        files = UploadedFile.objects.filter(client=request.user.client)
+        if span := month_span(request.query_params.get('period')):  # files uploaded in the chosen month (2026-10-30)
+            files = files.filter(received_at__date__gte=span[0], received_at__date__lt=span[1])
+        return Response([row(u) for u in files[:200]])
 
     def post(self, request):
         user = request.user

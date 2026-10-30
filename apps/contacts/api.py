@@ -72,7 +72,7 @@ def flags(c: ContactEvent, copies: int, result=None) -> list[str]:
 
 def ledger_row(c: ContactEvent, copies: int, result=None, extra=(None, None)) -> dict:
     category, sha = extra
-    return {'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'phoneDisplay': c.masked_label, 'phoneE164': number_ref(c.phone_token),
+    return {'timeNote': c.time_note or None, 'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'phoneDisplay': c.masked_label, 'phoneE164': number_ref(c.phone_token),
             'channel': c.get_channel_display(),
             'category': category.capitalize() if category else ('Marketing' if c.direction == 'outbound' else 'Unknown'),
             'bases': [b['basis'] for b in (result.bases if result else [])], 'status': portal_status(result),
@@ -110,6 +110,9 @@ class ContactsView(APIView):
         for name in ('channel', 'direction'):
             if value := request.query_params.get(name):
                 rows = rows.filter(**{name: value.lower()})
+        from apps.refs import month_span
+        if span := month_span(request.query_params.get('period')):  # the month picker (owner, 2026-10-30)
+            rows = rows.filter(occurred_at__date__gte=span[0], occurred_at__date__lt=span[1])
         rows = list(rows.order_by('-occurred_at')[:LIMIT])
         groups = [c.dedupe_group for c in rows if c.dedupe_group]
         copies = {}

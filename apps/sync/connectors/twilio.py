@@ -11,6 +11,7 @@ import base64
 import hashlib
 import hmac
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -18,7 +19,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from email.utils import parsedate_to_datetime
 
-from ..connector import CONNECTORS, BadSignature, Connector, Page, Record, raise_for_status
+from ..connector import CONNECTORS, AccessRemoved, BadSignature, Connector, Page, Record, raise_for_status
 
 API = 'https://api.twilio.com'
 WINDOW = timedelta(hours=1)  # one hour per request series, read whole: a busy day was re-read for every batch (QA 2026-10-23)
@@ -54,6 +55,16 @@ def happened_at(row: dict, stream: Stream = TEXTS) -> datetime:
 sent_at = happened_at  # texts
 
 
+# A Twilio Account SID is "AC" and 32 letters or digits (owner, 2026-10-31): checked before it goes into an address.
+SID = re.compile(r'AC[0-9a-fA-F]{32}')
+BAD_SID = "This doesn't look like a Twilio Account SID. It starts with AC and is 34 characters long."
+
+
+def account_sid(text: str) -> str | None:
+    text = (text or '').strip()
+    return text if SID.fullmatch(text) else None
+
+
 class Twilio(Connector):
     mode = 'poll'
     source_grade = 'C'
@@ -61,10 +72,12 @@ class Twilio(Connector):
     def __init__(self, connection):
         super().__init__(connection)
         creds = connection.get_credentials()
-        self.sid, self.token = creds.get('account', ''), creds.get('key', '')
+        self.sid, self.token = account_sid(creds.get('account', '')), creds.get('key', '')
 
     # --- reading -------------------------------------------------------------------------------------------
     def _get(self, path_or_url: str, params: dict | None = None) -> dict:
+        if self.sid is None:  # a bad Account SID never goes into an address: staff must fix the connection
+            raise AccessRemoved(BAD_SID)
         url = path_or_url if path_or_url.startswith('http') else API + path_or_url
         if params:
             url += '?' + urllib.parse.urlencode(params)
@@ -96,7 +109,7 @@ class Twilio(Connector):
     def fetch_one(self, record_id: str) -> Record | None:
         stream = CALLS if record_id.startswith('CA') else TEXTS
         try:
-            row = self._get(f'/2010-04-01/Accounts/{self.sid}/{stream.resource}/{record_id}.json')
+            row = self._get(f'/2010-04-01/Accounts/{self.sid}/{stream.resource}/{urllib.parse.quote(record_id, safe="")}.json')
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 return None

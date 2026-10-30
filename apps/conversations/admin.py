@@ -2,6 +2,7 @@
 ("allowed contact again", the new owner after "wrong number") while the AI has not passed. Staff can re-read a
 conversation from the client's tool to decide (in memory, shown once, every opening logged) and report a wrong answer,
 which fails the AI's exam at once."""
+from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -53,6 +54,15 @@ class ExamRunAdmin(CivModelAdmin):
         return f'{100 * r.right / r.cases:.1f}% ({r.right} of {r.cases})' if r.cases else '-'
 
 
+EXAMPLE_TURNS = '[\n  {"who": "business", "text": "Hi, is this John?"},\n  {"who": "customer", "text": "Please stop calling me."}\n]'
+
+
+class TurnsField(forms.JSONField):
+    """A new question's Turns box opens empty, with a grey example, never the word "null" (owner, 2026-10-31)."""
+    def prepare_value(self, value):
+        return '' if value is None else super().prepare_value(value)
+
+
 @admin.register(ExamCase)
 class ExamCaseAdmin(CivModelAdmin):
     eyebrow = 'AI'
@@ -60,6 +70,13 @@ class ExamCaseAdmin(CivModelAdmin):
     list_display = ('added_at', 'channel', 'expected', 'note', 'added_by')
     list_filter = ('channel', 'expected')
     fields = ('channel', 'turns', 'expected', 'moment', 'note')
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'turns':
+            field = TurnsField(label='Turns', help_text=db_field.help_text, encoder=db_field.encoder, decoder=db_field.decoder)
+            field.widget = forms.Textarea(attrs={'rows': 6, 'placeholder': EXAMPLE_TURNS, 'class': 'vLargeTextField'})
+            return field
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         obj.added_by = obj.added_by or request.user.email

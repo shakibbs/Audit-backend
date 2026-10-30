@@ -42,6 +42,7 @@ def normalize_record(client, connection, record, phone_tokens) -> None:
     person = codes.token(number)
     fields.update(locate(number))  # worked out while the number is in memory; only state / zones / country kept
     fields['masked_label'] = mask(number)
+    fields['time_note'] = getattr(record, 'time_note', '')  # Convoso / Five9 clock-change hour
     caller = fields.pop('caller_id', None)
     fields['caller_id_token'] = (codes.token(caller) or '') if caller else ''
     contact, _ = ContactEvent.objects.update_or_create(

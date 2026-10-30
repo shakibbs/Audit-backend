@@ -72,3 +72,32 @@ def test_the_whole_insurer_journey_without_test_access(company, admin_user, sign
         assert b.get('/api/litigation').status_code == 200
         assert b.get('/api/rating-engine').json()['url'] == ''
         assert b.get('/api/contacts').status_code in (401, 403)
+
+
+def test_the_insurer_picks_a_month_but_only_from_when_sharing_began(company, admin_user, signed_in):
+    """Owner, 2026-10-30 (option B): the insurer's own month picker; months before the company started sharing stay hidden."""
+    from datetime import date, datetime, UTC
+    signed_in(admin_user).call('post', '/api/buyer-links', {'name': 'Falcon Risk', 'email': 'a.lee@falconrisk.com'})
+    newest = AttestationSnapshot.objects.get(client=company)
+    BuyerLink.objects.update(granted_at=datetime(2026, 9, 12, tzinfo=UTC))  # shared since 12 Sep
+    for month in (date(2026, 8, 1), date(2026, 9, 1)):
+        AttestationSnapshot.objects.create(client=company, period=month, payload={**newest.payload, 'company': company.name}, sha256=f'{month:%m}' * 32)
+    b = underwriter(BuyerOrg.objects.get())
+    months = [p['id'] for p in b.get('/api/session').json()['periods']]
+    assert '2026-09' in months and '2026-08' not in months  # August was before sharing began
+    assert [r['name'] for r in b.get('/api/insureds?period=2026-09').json()] == [company.name]
+    assert b.get('/api/insureds?period=2026-08').json() == []
+    assert b.get(f'/api/insureds/c-{company.pk}?period=2026-09').json()['sheetHash'] == '09' * 6
+    assert b.get(f'/api/insureds/c-{company.pk}?period=2026-08').status_code == 404
+
+
+def test_the_clients_shared_pages_follow_its_month(company, admin_user, signed_in):
+    """The client's "Shared with your insurer" pages show the sheet of the month it picked."""
+    from datetime import date
+    api = signed_in(admin_user)
+    api.call('post', '/api/buyer-links', {'name': 'Falcon Risk', 'email': 'a.lee@falconrisk.com'})
+    newest = AttestationSnapshot.objects.get(client=company)
+    AttestationSnapshot.objects.create(client=company, period=date(2026, 9, 1), payload=newest.payload, sha256='9' * 64)
+    assert api.get('/api/insureds/own?period=2026-09').json()['sheetHash'] == '9' * 12
+    assert api.get('/api/insureds/own?period=2026-07').status_code == 404
+    assert api.get('/api/insureds/own').json()['sheetHash'] == newest.sha256[:12]

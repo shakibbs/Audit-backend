@@ -144,3 +144,17 @@ def test_files_go_after_four_years_and_others_never_see_them(company, admin_user
     assert purge_old() == 1
     req.refresh_from_db()
     assert not req.file and req.purged_at and req.file_sha256
+
+
+def test_lead_provenance_follows_the_month(company, admin_user):
+    """Owner, 2026-10-30: the month picker — proof requests sent in that month; every card names the month."""
+    upload(company, 50)
+    send(company)
+    sent = ProofRequest.objects.first().sent_at.date()
+    month, before = sent.replace(day=1), (sent.replace(day=1) - timedelta(days=1)).replace(day=1)
+    api = browser_for(admin_user)
+    assert len(api.get(f'/api/proof-requests?period={month:%Y-%m}').json()['requests']) == ProofRequest.objects.count()
+    assert api.get(f'/api/proof-requests?period={before:%Y-%m}').json()['requests'] == []
+    page = api.get(f'/api/provenance?period={before:%Y-%m}').json()
+    assert page['period'] == before.strftime('%B %Y')
+    assert api.get(f'/api/leads?period={before:%Y-%m}').status_code == 200

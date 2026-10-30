@@ -1620,5 +1620,78 @@ pages seen during it (`apps/refs.py: month_span`). Test: `tests/consent/test_por
 month, each measured as of now (`revocation_page(..., period=)` adds `windowLabel`); without a month, the last 90 days.
 Test: `tests/optouts/test_measures.py`. `/api/who-contact?period=`: the four areas cover that month's contacts, stop
 requests and CRM opt-out removals (`apps/metrics/who.py: Span`), and an empty month says "No contacts in Sep 2026 to
-check."; without a month, the last 30 days. Test: `tests/metrics/test_who.py`.
+check."; without a month, the last 30 days. Test: `tests/metrics/test_who.py`. `/api/contacts?period=`: the Contact
+Ledger lists only that month's contacts (without a month, all of them). Test: `tests/consent/test_portal.py`.
+`/api/provenance`, `/api/leads` and `/api/proof-requests` take `?period=` too (`chosen_month`; uploads and proof requests
+made in that month). Test: `tests/provenance/test_requests.py`. `/api/vendors?period=`: the Vendor Ledger as of the end
+of that month (`vendors_page(..., period=)`), its alert note naming the month. Test: `tests/vendors/test_portal.py`. `/api/alerts?period=`: alerts raised before the
+month ended and not resolved before it began. Test: `tests/findings/test_alerts_by_month.py`. `/api/vault?period=`: records read and days sealed in that month, the
+coverage strip ending with it. Test: `tests/anchoring/test_vault_fixes.py`. `/api/sources?period=` adds `inMonth` to
+each row (records read from that tool, files uploaded for that source); `/api/uploads?period=` lists that month's
+files. Test: `tests/sync/test_visible.py`. `/api/rulebook?period=`: the rules in force on the last day of that month
+(`asOf`); `/api/reg-changes?period=`: changes announced by the end of it. Test: `tests/regulatory/test_portal_api.py`.
+**Insurer months (owner, 2026-10-30, option B):** a buyer's session lists `periods` (months with a sheet of a sharing
+company, from the month that company started sharing with this insurer: `apps/buyers/portal.py: shared_since,
+buyer_periods`); `/api/insureds?period=` and `/api/insureds/<id>?period=` give that month's sheets, never a month before
+sharing began ("No sheet for Aug 2026"); the client's own `/api/insureds/own?period=` gives its sheet of that month.
+Test: `tests/buyers/test_insurer_pages.py`.
 
+
+## The clock-change hour (2026-10-31)
+
+Convoso and Five9 give call times in local time (`apps/sync/localtime.py`). The November hour that happens twice: read
+in the tool's own order, a call after 1:50 am that says 1:10 am is the second 1:10 am; when the order cannot tell, the
+earlier reading is kept with the note "Clock-change hour: could be 1 hour later". The March hour that never happens
+(2:30 am) is read as 3:30 am, with a note. Every other time is read as before. The note is kept on the contact
+(`ContactEvent.time_note`, migration `contacts/0008`) and sent as `timeNote` in the Contact Ledger. Test:
+`tests/sync/test_clock_change.py`.
+
+## A Five9 call without a call ID is counted once (2026-10-31)
+
+When a Five9 report has no call ID column, the call's ID is made only from what never changes for one call (start
+time, the numbers, campaign, agent, call type: `apps/sync/connectors/five9.py: steady_id`), not from the whole row, so a
+later change (Ringing → Answered, the length filled in) updates the call instead of saving it again. Calls with a call
+ID are read as before. Test: `tests/sync/test_five9.py`.
+
+## The Twilio Account SID is checked (2026-10-31)
+
+Before an Account SID goes into a Twilio address, it must be "AC" and 32 letters or digits
+(`apps/sync/connectors/twilio.py: account_sid`). Test connection says "This doesn't look like a Twilio Account SID. It
+starts with AC and is 34 characters long." and sends nothing; the reader stops with the same words (the connection is
+marked to reconnect). A record ID from Twilio is made safe before it goes into an address. Test:
+`tests/sync/test_twilio.py`.
+
+## Small items: plain words in the staff panel (2026-10-31)
+
+1. A rule's page shows its value as the portal does ("Mon–Fri except US federal holidays", "Not set yet"), never the
+   stored code (`{'except': ...}`, `null`): `apps/rulebook/admin.py: value_shown`. Test: `tests/rulebook/test_plain_value.py`.
+2. Client reports list: the Banned words column says "None found" (grey) instead of "None", and the words that held a
+   report back in red (`apps/reports/admin.py: banned_shown`). Test: `tests/reports/test_banned_words_shown.py`.
+3. Delete pages name things in plain words: "Password link for dana@complyiv.com (sent 3 Oct 2026)" instead of
+   "StaffWelcome object (4)", "Stage change: Trial → Active (5 Oct 2026)" instead of "StatusChange object (7)".
+   Test: `tests/admin_panel/test_plain_names.py`.
+4. Access log: the "What" filter lists actions in the same plain words as the What column, A–Z (`apps/access_log/admin.py:
+   What`, same `?action__exact=` address). Test: `tests/access_log/test_plain_filter.py`.
+5. Rulebook places in plain names in the staff panel: "Federal", "Florida (FL)", "5th Circuit court" (filter, Place
+   column, Rulebook check page; `apps/rulebook/health.py: place`). The portal is unchanged. Test:
+   `tests/rulebook/test_plain_value.py`.
+6. "Buyer" becomes "insurer" in the staff panel: the permission ticks on a staff member's page say "insurer invite",
+   "insurer person", "sharing with an insurer" (model names and migration `buyers/0011`, which also renames the existing
+   permission labels; who has which permission is unchanged). The Access log column says "IP address" (`access_log/0005`).
+   Test: `tests/admin_panel/test_permission_words.py`.
+7. A new AI exam question's Turns box opens empty, with a grey example conversation as a hint, never the word "null"
+   (`apps/conversations/admin.py: TurnsField`). Test: `tests/conversations/test_exam_turns_box.py`.
+8. The path at the top of a staff page (`templates/unfold/helpers/header_title.html`, a copy of django-unfold 0.108.0's,
+   and `templatetags/civ_path.py`): a name is never shown twice in a row; on a phone only a short back link ("‹ Quote
+   requests"). On pages with tabs, the page title is moved above the tab bar (`civ.js`). Test:
+   `tests/admin_panel/test_page_path.py`.
+9. Plain messages in the staff panel: an empty list says "Nothing here yet" (not "This page yielded into no results"),
+   the sign-out page "You are signed out of the CiV staff panel.", a wrong sign-in "Wrong email or password. Check both
+   and try again." (no "case-sensitive"); a password link to someone already on the team is titled "Choose a new
+   password for the CiV staff panel" (new members still get the welcome); "No proof files to check" / "1 proof file";
+   Django's "you are 6 hours ahead of server time" note is hidden. Templates copied from django-unfold 0.108.0:
+   `unfold/helpers/empty_results.html`, `registration/logged_out.html`. Test: `tests/admin_panel/test_plain_messages.py`.
+10. A CiV staff password may not contain the person's email name or name, ignoring dots, dashes, capitals and added
+    digits ("qa.super.staff1" is refused: "Your password can't contain your email name."): `apps/staff/passwords.py`,
+    in `AUTH_PASSWORD_VALIDATORS`. Client users are not changed yet. Existing passwords keep working. Test:
+    `tests/staff/test_password_not_own_name.py`.

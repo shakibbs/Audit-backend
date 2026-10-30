@@ -23,14 +23,23 @@ class VaultView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
+        """[?period=YYYY-MM] (the month picker, owner 2026-10-30): records read and days sealed in that month, and the
+        coverage strip ending with it. Without a month: everything up to today."""
         from django.utils import timezone
+
+        from apps.refs import month_span
         client = request.user.client
-        held = Fingerprint.objects.filter(client=client).count()
-        anchors = MerkleAnchor.objects.filter(client=client)
+        prints, anchors = Fingerprint.objects.filter(client=client), MerkleAnchor.objects.filter(client=client)
+        chosen = month_span(request.query_params.get('period'))
+        if chosen:
+            prints = prints.filter(fetched_at__date__gte=chosen[0], fetched_at__date__lt=chosen[1])
+            anchors = anchors.filter(day__gte=chosen[0], day__lt=chosen[1])
+        held = prints.count()
         last = anchors.order_by('-day').first()
         with_records = {d.replace(day=1) for d in Fingerprint.objects.filter(client=client).dates('fetched_at', 'month')}
         today = timezone.localdate()
-        span = months(min([client.start_date, *with_records]) if with_records else client.start_date, today)
+        end = min(today, chosen[1] - timedelta(days=1)) if chosen else today
+        span = months(min([client.start_date, *with_records]) if with_records else client.start_date, end)
         this_month, first = today.replace(day=1), client.start_date.replace(day=1)
 
         def state(m):
@@ -40,6 +49,7 @@ class VaultView(APIView):
         coverage = [{'label': m.strftime('%b %Y'), 'state': state(m)} for m in span[-12:]]
         return Response({'artifacts': f'{held:,}', 'anchors': anchors.count(), 'lastAnchor': last.day.isoformat() if last else None,
                          'engagedSince': client.start_date.isoformat(), 'coverage': coverage,
+                         'period': chosen[0].strftime('%b %Y') if chosen else None,
                          'deletedUnderRetention': deleted_under_retention(client)})
 
 

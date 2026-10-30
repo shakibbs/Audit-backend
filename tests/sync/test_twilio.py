@@ -47,7 +47,7 @@ class FakeTwilioAPI:
         hits = sorted((r for r in rows if lo <= tw.happened_at(r, stream) <= hi), key=lambda r: tw.happened_at(r, stream), reverse=True)
         chunk = hits[page * self.page_size:(page + 1) * self.page_size]
         more = (page + 1) * self.page_size < len(hits)
-        nxt = f'/2010-04-01/Accounts/AC1/{resource}.json?' + urllib.parse.urlencode({**params, 'Page': page + 1}) if more else None
+        nxt = f'/2010-04-01/Accounts/AC{"1" * 32}/{resource}.json?' + urllib.parse.urlencode({**params, 'Page': page + 1}) if more else None
         return {stream.list_key: chunk, 'next_page_uri': nxt}
 
 
@@ -63,7 +63,7 @@ def conn(company):
     company.start_date = date(2026, 10, 1)
     company.save()
     c = Connection(client=company, provider='twilio', status=Status.CONNECTED)
-    c.set_credentials({'account': 'AC1', 'key': TOKEN})
+    c.set_credentials({'account': 'AC' + '1' * 32, 'key': TOKEN})
     c.save()
     return c
 
@@ -153,3 +153,17 @@ def test_signature_matches_twilios_official_library(conn):
         adapter.parse_event(body, {'_url': SIGNED_URL, 'X-Twilio-Signature': 'x' + OFFICIAL_SIGNATURE[1:]})
     with pytest.raises(BadSignature):
         adapter.parse_event(body.replace(b'STOP', b'OKAY'), {'_url': SIGNED_URL, 'X-Twilio-Signature': OFFICIAL_SIGNATURE})
+
+
+def test_a_bad_account_sid_never_goes_into_an_address():
+    """Owner, 2026-10-31: the Account SID is checked (AC + 32 letters or digits) before anything is sent to Twilio."""
+    from unittest import mock
+
+    from apps.connections.testers import test_twilio
+    from apps.sync.connectors.twilio import BAD_SID, account_sid
+    assert account_sid(' AC' + 'f' * 32 + ' ') == 'AC' + 'f' * 32
+    for bad in ('AC1', 'AC' + 'f' * 31 + '/', '../Accounts', 'AC' + 'f' * 32 + '?x=1', ''):
+        assert account_sid(bad) is None
+    with mock.patch('apps.connections.testers._get') as sent:
+        assert test_twilio({'account': 'AC123/../x', 'key': 'k'}) == ('failed', BAD_SID)
+        sent.assert_not_called()

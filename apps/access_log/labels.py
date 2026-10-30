@@ -1,6 +1,10 @@
 """Plain words and pill color for each logged action, shared by the admin list and dashboard."""
 ACTION_LABEL = {
     'sign_in': ('Signed in', 'green'), 'sign_in_failed': ('Failed sign-in', 'red'), 'sign_in_locked': ('Locked out', 'amber'), 'account_locked_everywhere': ('Locked everywhere (attack)', 'red'),
+    'quote_requested': ('Quote requested', 'teal'), 'quote_request_accepted': ('Quote accepted', 'teal'),
+    'quote_request_done': ('Quote request done', 'gray'), 'litigation_package_made': ('Litigation package made', 'teal'),
+    'litigation_package_released': ('Litigation package released', 'green'),
+    'litigation_package_downloaded': ('Litigation package downloaded', 'gray'),
     'sign_out': ('Signed out', 'gray'), 'staff_sign_in_failed': ('Failed staff sign-in', 'red'),
     'staff_sign_in_locked': ('Staff sign-in locked', 'amber'), 'password_reset_requested': ('Asked for reset', 'gray'),
     'password_reset_done': ('Reset password', 'teal'), 'password_changed': ('Changed password', 'teal'), 'password_link_sent': ('Password link sent', 'teal'),

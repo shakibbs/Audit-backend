@@ -74,3 +74,17 @@ def test_verify_a_file_knows_files_given_to_civ(company, other_company, admin_us
     assert check('d')['artifact'].startswith('Litigation evidence package · released')
     assert check('f')['artifact'] == 'Proof request file · (916) •••-0142 · form.png'
     assert check('e')['found'] is False  # another company's file is never found
+
+
+def test_the_vault_follows_the_month(company, admin_user, signed_in, api):
+    """Owner, 2026-10-30: the month picker — records read and days sealed in that month; the strip ends with it."""
+    import uuid
+    from datetime import datetime, UTC
+    from apps.ledger.models import Fingerprint
+    signed_in(admin_user)
+    for when in (datetime(2026, 9, 5, tzinfo=UTC), datetime(2026, 9, 9, tzinfo=UTC), datetime(2026, 10, 2, tzinfo=UTC)):
+        Fingerprint.objects.create(client=company, job_id=uuid.uuid4(), source_system='vicidial', source_record_id=str(uuid.uuid4()),
+                                   content_kind='call', source_grade='B', sha256=uuid.uuid4().hex * 2, fetched_at=when)
+    sep = api.call('get', '/api/vault?period=2026-09').json()
+    assert sep['artifacts'] == '2' and sep['period'] == 'Sep 2026' and sep['coverage'][-1]['label'] == 'Sep 2026'
+    assert api.call('get', '/api/vault').json()['artifacts'] == '3'  # no month: everything held

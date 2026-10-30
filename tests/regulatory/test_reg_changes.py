@@ -67,7 +67,7 @@ def test_staff_add_a_change_in_the_admin_and_it_is_logged(client, staff, ruleboo
 def test_rulebook_page_lists_rules_and_is_read_only(client, staff, rulebook):
     page = client.get('/civ-admin/rulebook/rulevalue/?q=calling_hours')
     text = page.content.decode()
-    assert page.status_code == 200 and 'calling_hours' in text and 'Florida' not in text  # places show as codes, e.g. FL
+    assert page.status_code == 200 and 'calling_hours' in text and 'Florida (FL)' in text  # places in plain names (owner, 2026-10-31)
     assert client.get('/civ-admin/rulebook/rulevalue/add/').status_code == 403
     rule = rulebook.rules.get(key='calling_hours', jurisdiction='FL')
     assert client.post(f'/civ-admin/rulebook/rulevalue/{rule.pk}/change/', {'shown': 'x'}).status_code == 403

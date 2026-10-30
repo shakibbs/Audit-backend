@@ -27,7 +27,7 @@ def test_needs_a_decision_counts_clients_that_contacted_where_it_applies(company
                                     source_grade='B', channel='call', direction='outbound', occurred_at=timezone.now(), recipient_state=state)
     data = check()
     pending = {(r['key'], r['place']): r for r in data['pending']}
-    assert ('calling_hours', 'FL') in pending and pending[('calling_hours', 'FL')]['clients'] == 1
+    assert ('calling_hours', 'Florida (FL)') in pending and pending[('calling_hours', 'Florida (FL)')]['clients'] == 1
     assert pending[('autodialed_modes', 'Federal')]['clients'] == 2  # federal rules reach every client with contacts
     assert data['pending'][0]['clients'] >= data['pending'][-1]['clients']  # most affected first
     assert any(r['key'] == 'conv_review_accuracy_pass_mark' for r in data['unconfirmed'])

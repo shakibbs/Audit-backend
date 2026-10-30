@@ -44,8 +44,12 @@ class ProofRequestsView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
+        from apps.refs import month_span
         client = request.user.client
-        rows = ProofRequest.objects.filter(client=client).select_related('answered_by').order_by('-sent_at', 'pk')[:500]
+        rows = ProofRequest.objects.filter(client=client)
+        if span := month_span(request.query_params.get('period')):  # requests sent in the chosen month
+            rows = rows.filter(sent_at__date__gte=span[0], sent_at__date__lt=span[1])
+        rows = rows.select_related('answered_by').order_by('-sent_at', 'pk')[:500]
         return Response({'canAnswer': can_answer(request.user), 'lists': rates(client), 'requests': [row(r) for r in rows]})
 
 
@@ -97,6 +101,17 @@ def month_bounds(today):
     return start, nxt - timedelta(days=1)
 
 
+def chosen_month(request):
+    """(first day, last day) of the month picker's month (owner, 2026-10-30), or of this month."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.refs import month_span
+    span = month_span(request.query_params.get('period'))
+    return (span[0], span[1] - timedelta(days=1)) if span else month_bounds(timezone.localdate())
+
+
 def missing_items(client) -> list[dict]:
     """Module 7 checklist items failing on the client's consent pages, counted in certificates from each page."""
     from apps.captures.api import ITEMS, latest
@@ -116,14 +131,17 @@ def missing_items(client) -> list[dict]:
     return [{'label': k, 'count': v} for k, v in sorted(counts.items(), key=lambda kv: -kv[1])]
 
 
-def uploads(client) -> list[dict]:
+def uploads(client, start=None, end=None) -> list[dict]:
     from apps.consent.models import ConsentProof
     from apps.imports.models import ImportBatch
 
     from .requests import EVIDENCE, UPLOADS, batch_key, batch_label, tokens_of
     by_key = {r['batchKey']: r for r in rates(client)}
     out = []
-    for batch in ImportBatch.objects.filter(client=client, kind__in=UPLOADS).order_by('-starts')[:50]:
+    batches = ImportBatch.objects.filter(client=client, kind__in=UPLOADS)
+    if start and end:  # uploads made in the chosen month
+        batches = batches.filter(starts__date__gte=start, starts__date__lte=end)
+    for batch in batches.order_by('-starts')[:50]:
         tokens = tokens_of(batch)
         with_evidence = ConsentProof.objects.filter(client=client, phone_token__in=tokens, kind__in=EVIDENCE, withdrawn_at__isnull=True) \
             .values('phone_token').distinct().count()
@@ -140,12 +158,11 @@ class ProvenanceView(APIView):
 
     def get(self, request):
         from django.db.models import Count
-        from django.utils import timezone
 
         from .ladder import untraced
         from .models import Provenance
         client = request.user.client
-        start, end = month_bounds(timezone.localdate())
+        start, end = chosen_month(request)
         month = Provenance.objects.filter(client=client, first_contact_at__date__gte=start, first_contact_at__date__lte=end)
         total = month.count()
         counts = dict(month.values_list('basis').annotate(n=Count('id')))
@@ -156,7 +173,7 @@ class ProvenanceView(APIView):
         return Response({
             'period': start.strftime('%B %Y'), 'numbers': total, 'ladder': ladder,
             'topSources': [{'name': t['source_name'], 'basis': Provenance.Basis(t['basis']).label, 'count': t['n']} for t in top],
-            'untraced': untraced(client, start, end)[:200], 'uploads': uploads(client), 'missing': missing_items(client),
+            'untraced': untraced(client, start, end)[:200], 'uploads': uploads(client, start, end), 'missing': missing_items(client),
         })
 
 
@@ -168,15 +185,13 @@ class LeadsView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        from django.utils import timezone
-
         from apps.captures.api import ITEMS, latest
         from apps.captures.checklist import evaluate
         from apps.captures.models import ConsentPage
         from apps.certificates.models import CertificateClaim
         from apps.imports.models import CrmCreation
         client = request.user.client
-        start, end = month_bounds(timezone.localdate())
+        start, end = chosen_month(request)
         from apps.vendors.models import VendorLead
         inspected = (CrmCreation.objects.filter(client=client, created_at__date__gte=start, created_at__date__lte=end).count()
                      + VendorLead.objects.filter(client=client, received_at__date__gte=start, received_at__date__lte=end).count())
@@ -188,7 +203,7 @@ class LeadsView(APIView):
             if not good:
                 continue
             items = evaluate({s.viewport: s.measurements for s in good}, client.name)['items']
-            leads = CertificateClaim.objects.filter(client=client, page=page.address, seen_at__date__gte=start).count()
+            leads = CertificateClaim.objects.filter(client=client, page=page.address, seen_at__date__gte=start, seen_at__date__lte=end).count()
             judged += leads
             if all(v != 'fail' for k, v in items.items() if ITEMS.get(k, ('', ''))[1] in ('no_proof', 'wording')):
                 passed += leads
@@ -209,7 +224,7 @@ class VendorsView(APIView):
 
     def get(self, request):
         from apps.vendors.portal import vendors_page
-        return Response(vendors_page(request.user.client))
+        return Response(vendors_page(request.user.client, period=request.query_params.get('period')))
 
 
 class SearchView(APIView):

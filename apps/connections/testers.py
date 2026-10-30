@@ -21,7 +21,10 @@ def _get(url: str, user: str, password: str) -> dict:
 
 
 def test_twilio(creds: dict) -> tuple[str, str]:
-    sid, token = creds.get('account', ''), creds.get('key', '')
+    from apps.sync.connectors.twilio import BAD_SID, account_sid
+    sid, token = account_sid(creds.get('account', '')), creds.get('key', '')
+    if sid is None:  # checked before it goes into the address; nothing is sent (owner, 2026-10-31)
+        return Status.FAILED, BAD_SID
     try:
         account = _get(f'https://api.twilio.com/2010-04-01/Accounts/{sid}.json', sid, token)
     except urllib.error.HTTPError as error:

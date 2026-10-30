@@ -67,5 +67,5 @@ def test_another_client_sees_nothing(traced, other_admin):
 def test_the_admin_client_page_has_a_provenance_tile(traced, client):
     client.force_login(StaffUser.objects.create_superuser(email='team@complyiv.com', name='Team', password=PASSWORD))
     html = client.get(f'/civ-admin/clients/client/{traced.pk}/change/').content.decode()
-    assert 'Lead provenance' in html and '4%' in html and '0 proof file(s) to check' in html
+    assert 'Lead provenance' in html and '4%' in html and 'No proof files to check' in html
     assert client.get(f'/civ-admin/provenance/proofrequest/?client__id__exact={traced.pk}').status_code == 200

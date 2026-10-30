@@ -17,7 +17,7 @@ class AccessEntry(models.Model):
     client_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     action = models.CharField(max_length=64, db_index=True)
     object = models.CharField(max_length=254, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField('IP address', null=True, blank=True)
 
     class Meta:
         db_table = 'access_log'

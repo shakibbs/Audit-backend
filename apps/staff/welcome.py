@@ -22,10 +22,17 @@ def send_welcome(user: StaffUser, request=None) -> StaffWelcome:
         made = StaffWelcome.objects.create(user=user, token_hash=token_hash, expires_at=timezone.now() + INVITE_LIFETIME)
     base = request.build_absolute_uri('/') if request else f'{settings.ADMIN_URL}/'
     link = f"{base.rstrip('/')}{reverse('staff_welcome')}?token={token}"
-    send(user.email, 'Welcome to the CiV team panel', name=user.name, heading='Welcome to the CiV team',
-         lines=['You have been added to the Comply iV admin panel.',
-                'Click the button to choose your own password. The link works once, for 7 days.'],
-         button='Choose your password', link=link, note='Nobody at CiV will ever ask you for your password.')
+    if user.has_usable_password():  # someone already on the team: a new password, not a welcome (owner, 2026-10-31)
+        send(user.email, 'Choose a new password for the CiV staff panel', name=user.name, heading='Choose a new password',
+             lines=['A CiV admin sent you a link to choose a new password for the Comply iV staff panel.',
+                    'Click the button to choose it. The link works once, for 7 days.'],
+             button='Choose a new password', link=link,
+             note='If you did not expect this, tell a CiV admin. Nobody at CiV will ever ask you for your password.')
+    else:
+        send(user.email, 'Welcome to the CiV team panel', name=user.name, heading='Welcome to the CiV team',
+             lines=['You have been added to the Comply iV admin panel.',
+                    'Click the button to choose your own password. The link works once, for 7 days.'],
+             button='Choose your password', link=link, note='Nobody at CiV will ever ask you for your password.')
     from apps.access_log.recorder import record
     by = getattr(request, 'user', None) if request else None
     record('welcome_link_sent', request=request, actor_kind='staff' if by and by.is_authenticated else 'system',

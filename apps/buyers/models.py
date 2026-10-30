@@ -56,6 +56,7 @@ class BuyerUser(AbstractBaseUser):
 
     class Meta:
         db_table = 'buyer_user'
+        verbose_name, verbose_name_plural = 'insurer person', 'insurer people'  # plain words (owner, 2026-10-31)
         ordering = ['org__name', 'name']
 
     def __str__(self) -> str:
@@ -74,6 +75,7 @@ class BuyerLink(models.Model):
 
     class Meta:
         db_table = 'buyer_link'
+        verbose_name, verbose_name_plural = 'sharing with an insurer', 'sharing with insurers'  # plain words (owner, 2026-10-31)
         ordering = ['-granted_at']
 
     def active(self, today) -> bool:
@@ -99,6 +101,7 @@ class BuyerInvite(models.Model):
 
     class Meta:
         db_table = 'buyer_invite'
+        verbose_name, verbose_name_plural = 'insurer invite', 'insurer invites'  # plain words (owner, 2026-10-31)
 
     def __str__(self):
         return f'Invite to {self.email} (from {self.client})'

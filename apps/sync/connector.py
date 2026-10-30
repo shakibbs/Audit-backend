@@ -10,6 +10,7 @@ class Record:
     content_kind: str  # apps.ledger.models.ContentKind
     changed_at: datetime  # when the tool says it changed
     phones: list[str] = field(default_factory=list)  # numbers in the record; turned into phone codes, never kept
+    time_note: str = ''  # a call in the clock-change hour (apps.sync.localtime), else empty
 
 
 @dataclass

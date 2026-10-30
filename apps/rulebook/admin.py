@@ -9,6 +9,20 @@ from .models import RuleValue
 STATUS_PILL = {'set': 'green', 'proposed': 'amber', 'tbd': 'gray'}
 
 
+class Place(admin.SimpleListFilter):
+    """The place filter in plain names (owner, 2026-10-31): Federal first, then A–Z; same address as before."""
+    title = 'place'
+    parameter_name = 'jurisdiction__exact'
+
+    def lookups(self, request, model_admin):
+        from .health import place
+        found = RuleValue.objects.values_list('jurisdiction', flat=True).distinct()
+        return sorted(((j, place(j)) for j in found), key=lambda pair: (pair[0] != 'US', pair[1]))
+
+    def queryset(self, request, queryset):
+        return queryset.filter(jurisdiction=self.value()) if self.value() else queryset
+
+
 @admin.register(RuleValue)
 class RuleValueAdmin(CivModelAdmin):
     eyebrow = 'Rules'
@@ -16,12 +30,17 @@ class RuleValueAdmin(CivModelAdmin):
                 'Rulebook file, reviewed and pushed. Set = decided · Proposed = runs, results provisional · '
                 'TBD = never scored (rule pending).')
     list_display = ('key', 'place', 'shown', 'status_pill', 'owner', 'counsel_item', 'affects', 'version', 'history_link')
-    list_filter = ('status', 'owner', 'section', 'jurisdiction', 'affects_status', 'version')
+    list_filter = ('status', 'owner', 'section', Place, 'affects_status', 'version')
     search_fields = ('key', 'meaning', 'shown', 'counsel_item')
     list_per_page = 200
     fields = ('key', 'jurisdiction', 'section', 'meaning', 'shown', 'status', 'owner', 'counsel_item', 'affects_status',
-              'counsel_approved', 'value', 'provisional_shown', 'variants_shown', 'effective_from', 'effective_to', 'version',
+              'counsel_approved', 'value_shown', 'provisional_shown', 'variants_shown', 'effective_from', 'effective_to', 'version',
               'changed_by', 'approved_by', 'source_url')
+
+    # The value in plain words, as the portal shows it (owner, 2026-10-31): never "null" or {'end': '20:00', ...}.
+    @admin.display(description='Value')
+    def value_shown(self, rule):
+        return 'Not set yet' if rule.value in (None, '', [], {}) else (rule.shown or str(rule.value))
 
     # Empty draft and variant values show a dash, not "null" (2026-10-23).
     @admin.display(description='Provisional')
@@ -34,7 +53,8 @@ class RuleValueAdmin(CivModelAdmin):
 
     @admin.display(description='Place', ordering='jurisdiction')
     def place(self, rule):
-        return 'Federal' if rule.jurisdiction == 'US' else rule.jurisdiction
+        from .health import place
+        return place(rule.jurisdiction)
 
     @admin.display(description='Status', ordering='status')
     def status_pill(self, rule):

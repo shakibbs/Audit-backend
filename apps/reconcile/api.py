@@ -82,13 +82,17 @@ class OwnInsuredView(APIView):
         if isinstance(request.user, BuyerUser):
             from apps.buyers.portal import one
             return one(request, ref)
-        from apps.buyers.portal import as_buyer, insured, own_sheet, previewing
+        from apps.buyers.portal import as_buyer, chosen, insured, own_sheet, previewing
+        month = chosen(request)  # the month picker (owner, 2026-10-30)
+        sheet = own_sheet(request.user.client, month)
+        if sheet is None:
+            return Response({'detail': f'No sheet for {month:%b %Y}.'}, status=404)
         if previewing(request.user):  # its own company exactly as its insurer sees it: real data only
-            return as_buyer(Response(insured(own_sheet(request.user.client))))
+            return as_buyer(Response(insured(sheet)))
         # Its own company: exactly the sheet its insurer receives (one source, owner 2026-10-23), plus its own statements.
         if ref not in ('own', f'c-{request.user.client_id}'):
             return Response({'detail': 'You can see only your own company.'}, status=404)
         from apps.buyers.attestation import statements
-        out = insured(own_sheet(request.user.client))
+        out = insured(sheet)
         out['statementRows'] = statements(request.user.client)['statementRows']
         return Response(out)

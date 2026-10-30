@@ -72,3 +72,12 @@ window.addEventListener('load', function () {
     + ' tab' + (tabs.length > 1 ? 's' : '') + '.';
   tabs[0].click();
 });
+
+// The page title above its tabs (owner, 2026-10-31): Unfold draws a page's tab bar first, so move the heading up.
+document.addEventListener('DOMContentLoaded', function () {
+  var content = document.getElementById('content');
+  var head = content && content.querySelector('.civ-page-head');
+  if (head && content.firstElementChild !== head && head.compareDocumentPosition(content.firstElementChild) & Node.DOCUMENT_POSITION_PRECEDING) {
+    content.prepend(head);
+  }
+});

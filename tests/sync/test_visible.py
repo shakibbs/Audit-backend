@@ -83,3 +83,23 @@ def test_records_completeness_box(company, member_user):
     assert data['completenessNote'] == 'CiV received only 70% of the texts compared with what Twilio billed · September 2026'
     PeriodIntegrity.objects.filter(pk=month.pk).update(completeness=0.912, incomplete=False)
     assert api.get('/api/data-health').json()['completenessNote'] == 'Every connected tool compared with its bill, its own count or its working days · September 2026'
+
+
+def test_source_registry_says_what_each_source_gave_in_the_month(company, tools, member_user):
+    """Owner, 2026-10-30: the month picker — records read from each tool and files uploaded in that month."""
+    import uuid
+    from datetime import UTC, datetime
+
+    from apps.ledger.models import Fingerprint
+    from apps.uploads.models import UploadedFile
+    for when in (datetime(2026, 9, 3, tzinfo=UTC), datetime(2026, 9, 4, tzinfo=UTC), datetime(2026, 10, 1, tzinfo=UTC)):
+        Fingerprint.objects.create(client=company, job_id=uuid.uuid4(), source_system='convoso', source_record_id=str(uuid.uuid4()),
+                                   content_kind='call', source_grade='B', sha256=uuid.uuid4().hex * 2, fetched_at=when)
+    f = UploadedFile.objects.create(client=company, source='internal_list', original_name='dnc.csv', sha256='a' * 64)
+    UploadedFile.objects.filter(pk=f.pk).update(received_at=datetime(2026, 9, 10, tzinfo=UTC))
+    api = browser_for(member_user)
+    rows = {r['name']: r for r in api.get('/api/sources?period=2026-09').json()}
+    assert rows['Convoso']['inMonth'] == 2 and rows['Internal do-not-contact list']['inMonth'] == 1
+    assert 'inMonth' not in api.get('/api/sources').json()[0]  # no month: as before (the top bar)
+    assert [u['fileName'] for u in api.get('/api/uploads?period=2026-09').json()] == ['dnc.csv']
+    assert api.get('/api/uploads?period=2026-10').json() == []

@@ -181,3 +181,13 @@ button.civ-btn { border: 0; cursor: pointer; }
   #content fieldset { min-width: 0; max-width: 100%; }  /* form sections otherwise stretch to fit long words */
   #content .form-rows { overflow-wrap: anywhere; }
 }
+
+/* The path at the top (owner, 2026-10-31): the full path on a computer, one short back link on a phone. */
+.civ-path-short { display: none; }
+@media (max-width: 640px) {
+  .civ-path-full { display: none; }
+  .civ-path-short { display: inline; }
+}
+
+/* Django's "Note: you are 6 hours ahead of server time" under date boxes is hidden (owner, 2026-10-31): CiV stores world time. */
+.timezonewarning { display: none !important; }

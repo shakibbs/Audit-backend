@@ -1,0 +1,28 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+
+{% load i18n unfold %}{% comment %}Copy of django-unfold 0.108.0 with plain words (owner, 2026-10-31).{% endcomment %}
+
+{% block title %}
+    {{ title }} | {{ site_title }}
+{% endblock %}
+
+{% block content %}
+    <div id="page" class="bg-white flex min-h-screen dark:bg-base-900 ">
+        <div class="flex grow items-center justify-center mx-auto px-4">
+            <div class="w-full sm:w-96">
+                <h1 class="font-semibold mb-4 text-font-important-light text-xl tracking-tight dark:text-font-important-dark">
+                    You are signed out
+                </h1>
+
+                <p class="leading-relaxed mb-10">
+                    You are signed out of the CiV staff panel.
+                </p>
+
+                {% url "admin:index" as login_url %}
+                {% component "unfold/components/button.html" with href=login_url variant="primary" class="w-full" %}
+                    Sign in again <span class="material-symbols-outlined relative right-0 transition-all group-hover:-right-1 text-sm">arrow_forward</span>
+                {% endcomponent %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -25,12 +25,26 @@ class Within(admin.SimpleListFilter):
         return queryset.filter(at__gte=timezone.now() - timedelta(hours=hours)) if hours else queryset
 
 
+class What(admin.SimpleListFilter):
+    """The "What" filter in plain words, A–Z, like the What column (owner, 2026-10-31): never codes like sign_in_failed.
+    Same address as before (?action__exact=), so the Dashboard's links keep working."""
+    title = 'what'
+    parameter_name = 'action__exact'
+
+    def lookups(self, request, model_admin):
+        actions = AccessEntry.objects.values_list('action', flat=True).distinct()
+        return sorted(((a, action_label(a)[0]) for a in actions), key=lambda pair: pair[1].lower())
+
+    def queryset(self, request, queryset):
+        return queryset.filter(action=self.value()) if self.value() else queryset
+
+
 @admin.register(AccessEntry)
 class AccessEntryAdmin(CivModelAdmin):
     eyebrow = 'Records'
     page_sub = 'Every sign-in, sign-out and change. Rows can never be edited or deleted. Times are UTC.'
     list_display = ('when', 'who', 'what', 'object_shown', 'company', 'ip_address')
-    list_filter = (Within, 'actor_kind', 'action')
+    list_filter = (Within, 'actor_kind', What)
     search_fields = ('actor_label', 'action', 'object')
     date_hierarchy = 'at'
 

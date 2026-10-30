@@ -131,6 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 12}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {'NAME': 'apps.staff.passwords.NoOwnNameValidator'},  # staff: not their email name or name (owner, 2026-10-31)
 ]
 
 # Session cookie: not readable by page scripts; HTTPS-only outside local development.

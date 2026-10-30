@@ -1,0 +1,23 @@
+{% load civ_path %}{% comment %}
+  Copy of django-unfold 0.108.0's header_title.html (owner, 2026-10-31): a repeated name is shown once, and on a phone
+  only a short link back to the page before ("‹ Quote requests") instead of a squashed "C › C. › Q".
+{% endcomment %}{% spaceless %}
+    {% with shown=parts|plain_path %}
+    <span class="civ-path-full">
+    {% for part in shown %}
+        <{% if part.link and part.link != "" %}a href="{{ part.link }}"{% else %}span{% endif %} class="align-middle inline-block leading-5 min-w-0 truncate tracking-tight">
+        {{ part.title|capfirst }}
+        </{% if part.link %}a{% else %}span{% endif %} >
+
+        {% if not forloop.last %}
+            <span class="material-symbols-outlined inline-block align-middle leading-5 mx-2 text-base-400 dark:text-base-500">chevron_right</span>
+        {% endif %}
+    {% endfor %}
+    </span>
+    <span class="civ-path-short">
+    {% if shown|length > 1 %}{% with back=shown|slice:"-2:-1"|first %}
+        {% if back.link %}<a href="{{ back.link }}" class="align-middle inline-block leading-5 truncate tracking-tight">‹ {{ back.title|capfirst }}</a>{% else %}<span class="align-middle inline-block leading-5 truncate tracking-tight">‹ {{ back.title|capfirst }}</span>{% endif %}
+    {% endwith %}{% else %}{% with only=shown|first %}<span class="align-middle inline-block leading-5 truncate tracking-tight">{{ only.title|capfirst }}</span>{% endwith %}{% endif %}
+    </span>
+    {% endwith %}
+{% endspaceless %}

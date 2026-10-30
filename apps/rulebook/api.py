@@ -15,8 +15,8 @@ SHOWN_KEY = {'direct_violation_grade': 'direct_contact_cap_grade'}
 NOTE = 'Some rules are not yet confirmed by a lawyer. Proposed values run and results are marked provisional; TBD rules are never scored.'
 
 
-def in_force_today(version) -> list[RuleValue]:
-    today = timezone.localdate()
+def in_force_today(version, today=None) -> list[RuleValue]:
+    today = today or timezone.localdate()
     rows = RuleValue.objects.filter(version=version).order_by('key', 'jurisdiction', 'effective_from')
     return [r for r in rows if (r.effective_from is None or r.effective_from <= today) and (r.effective_to is None or today <= r.effective_to)]
 
@@ -29,14 +29,21 @@ class RulebookView(APIView):
             version = current_version('internal')
         except NoRulebook:
             return Response({'detail': 'No rulebook yet.'}, status=404)
-        rows = in_force_today(version)
+        from datetime import timedelta
+
+        from apps.refs import month_span
+        # The month picker (owner, 2026-10-30): the rules in force on the last day of that month (today for this month).
+        span = month_span(request.query_params.get('period'))
+        day = min(timezone.localdate(), span[1] - timedelta(days=1)) if span else timezone.localdate()
+        rows = in_force_today(version, day)
         federal = [r for r in rows if r.jurisdiction == 'US']
         count = {s: sum(1 for r in federal if r.status == s) for s in ('set', 'proposed', 'tbd')}
         settings = [{'key': SHOWN_KEY.get(r.key, r.key), 'place': 'Federal' if r.jurisdiction == 'US' else r.jurisdiction,
                      'section': r.section, 'meaning': r.meaning, 'value': r.shown, 'owner': r.owner, 'status': r.status,
                      'counselItem': r.counsel_item or None, 'since': r.effective_from} for r in rows]
         return Response({'version': f'Rulebook v{version.version}', 'versionStatus': version.status,
-                         'note': NOTE if version.status != 'approved' else None, **count, 'settings': settings, 'impact': []})
+                         'note': NOTE if version.status != 'approved' else None, **count, 'settings': settings, 'impact': [],
+                         'asOf': day.isoformat()})
 
 
 def hours_text(value) -> str:

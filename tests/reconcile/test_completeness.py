@@ -27,7 +27,7 @@ def rulebook(db):
 
 def twilio(client):
     c = Connection(client=client, provider='twilio', status=Status.CONNECTED)
-    c.set_credentials({'account': 'AC1', 'key': 'k'})
+    c.set_credentials({'account': 'AC' + '1' * 32, 'key': 'k'})
     c.save()
     return c
 
@@ -189,7 +189,7 @@ class Reply(io.BytesIO):
 
 def test_the_twilio_usage_request(company, monkeypatch):
     conn = twilio(company)
-    pages = [{'usage_records': [{'count': '600', 'category': 'sms-outbound'}], 'next_page_uri': '/2010-04-01/Accounts/AC1/Usage/Records/Daily.json?Page=1'},
+    pages = [{'usage_records': [{'count': '600', 'category': 'sms-outbound'}], 'next_page_uri': '/2010-04-01/Accounts/AC{"1" * 32}/Usage/Records/Daily.json?Page=1'},
              {'usage_records': [{'count': '400', 'category': 'sms-outbound'}], 'next_page_uri': None}]
     asked = []
 

@@ -54,11 +54,11 @@ def save_page(staff_client, company, rows, initial=0):
 @pytest.mark.django_db
 def test_new_client_and_its_connection_are_saved_together(staff_client):
     with TWILIO_OK:
-        response = save_page(staff_client, None, [connection_row(0, account='AC123', key=SECRET)])
+        response = save_page(staff_client, None, [connection_row(0, account='AC' + 'a' * 32, key=SECRET)])
     assert response.status_code == 302, response.content.decode()[:2000]
     company = Client.objects.get(name='New Solar Co')
     saved = company.connections.get()
-    assert saved.status == Status.CONNECTED and saved.get_credentials() == {'account': 'AC123', 'key': SECRET}
+    assert saved.status == Status.CONNECTED and saved.get_credentials() == {'account': 'AC' + 'a' * 32, 'key': SECRET}
     company.refresh_from_db()
     assert company.access_level == 1
     assert AccessEntry.objects.filter(action='connection_added', client_id=company.pk).exists()
@@ -67,7 +67,7 @@ def test_new_client_and_its_connection_are_saved_together(staff_client):
 @pytest.mark.django_db
 def test_key_is_locked_and_never_shown_on_the_page(staff_client, company):
     with TWILIO_OK:
-        save_page(staff_client, company, [connection_row(0, account='AC123', key=SECRET)])
+        save_page(staff_client, company, [connection_row(0, account='AC' + 'a' * 32, key=SECRET)])
     with db.cursor() as cursor:
         cursor.execute('SELECT credentials FROM connection')
         assert SECRET not in cursor.fetchone()[0]
@@ -78,7 +78,7 @@ def test_key_is_locked_and_never_shown_on_the_page(staff_client, company):
 @pytest.mark.django_db
 def test_editing_with_empty_key_keeps_the_saved_one(staff_client, company):
     with TWILIO_OK:
-        save_page(staff_client, company, [connection_row(0, account='AC123', key=SECRET)])
+        save_page(staff_client, company, [connection_row(0, account='AC' + 'a' * 32, key=SECRET)])
         saved = Connection.objects.get()
         save_page(staff_client, company, [connection_row(0, saved, label='Main')], initial=1)
     saved.refresh_from_db()
@@ -116,7 +116,7 @@ def test_oauth_tool_refuses_a_key_then_sends_a_connect_link(staff_client, compan
 @pytest.mark.django_db
 def test_test_button_on_a_row(staff_client, company):
     saved = Connection(client=company, provider='twilio')
-    saved.set_credentials({'account': 'AC1', 'key': SECRET})
+    saved.set_credentials({'account': 'AC' + '1' * 32, 'key': SECRET})
     saved.save()
     with TWILIO_OK:
         response = staff_client.post(f'/civ-admin/clients/client/{company.pk}/connections/{saved.pk}/test/')

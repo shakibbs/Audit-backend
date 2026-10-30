@@ -110,4 +110,4 @@ def provenance_tile(client) -> tuple:
     to_check = ProofRequest.objects.filter(client=client, answer=ProofRequest.Answer.PROOF, review='').count()
     url = reverse('admin:provenance_proofrequest_changelist') + f'?client__id__exact={client.pk}'
     value = f'{round(100 * untraced / total)}%' if total else '-'
-    return ('Lead provenance', value, f'untraced this month · {to_check} proof file(s) to check', url)
+    return ('Lead provenance', value, f"untraced this month · {'No' if not to_check else to_check} proof file{'' if to_check == 1 else 's'} to check", url)

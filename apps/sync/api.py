@@ -1,6 +1,6 @@
 """Client API: the Source Registry list and the Overview's Data health card, from the real connections and sync.
 The upload rows keep the names the Upload centre offers; no upload is tracked here yet."""
-from django.db.models import Max
+from django.db.models import Count, Max
 from django.utils import timezone
 from django.utils.timesince import timesince
 from rest_framework.response import Response
@@ -73,10 +73,26 @@ class SourcesView(APIView):
     permission_classes = [IsClientUser]
 
     def get(self, request):
-        connections = request.user.client.connections.all()
+        """[?period=YYYY-MM] (the month picker, owner 2026-10-30): each row also says how much it gave CiV in that month
+        (records read from a tool, files uploaded for an Upload centre source). Status and last sync are always now."""
+        from apps.ledger.models import Fingerprint
+        from apps.refs import month_span
+        from apps.uploads.models import Source, UploadedFile
+        client = request.user.client
+        connections = client.connections.all()
         cursors = {c.connection_id: c for c in SyncCursor.objects.filter(connection__in=connections)}
         rows = [tool_row(c, cursors.get(c.pk)) for c in connections]
-        rows += [upload_row(request.user.client, i, name, blocks) for i, (name, blocks) in enumerate(UPLOAD_ROWS, 1)]
+        rows += [upload_row(client, i, name, blocks) for i, (name, blocks) in enumerate(UPLOAD_ROWS, 1)]
+        if span := month_span(request.query_params.get('period')):
+            read = dict(Fingerprint.objects.filter(client=client, fetched_at__date__gte=span[0], fetched_at__date__lt=span[1])
+                        .values_list('source_system').annotate(n=Count('id')))
+            files = dict(UploadedFile.objects.filter(client=client, received_at__date__gte=span[0], received_at__date__lt=span[1])
+                         .values_list('source').annotate(n=Count('id')))
+            keys = {label: key for key, label in Source.choices}
+            for connection, row in zip(connections, rows):
+                row['inMonth'] = read.get(connection.provider, 0)
+            for (name, _), row in zip(UPLOAD_ROWS, rows[len(connections):]):
+                row['inMonth'] = files.get(keys.get(name), 0)
         return Response(rows)
 
 

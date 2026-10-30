@@ -22,6 +22,7 @@ from datetime import UTC, datetime, time, timedelta
 from xml.sax.saxutils import escape
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from ..localtime import LocalTimes
 from ..connector import CONNECTORS, Connector, Page, Record, raise_for_status
 
 API = 'https://api.five9.com/wsadmin/v12/AdminWebService'
@@ -46,6 +47,17 @@ def zone(name: str) -> ZoneInfo:
         raise Five9Error(f'Unknown report time zone "{name}"') from None
 
 
+# A report without a call ID (owner, 2026-10-31): the call's ID comes only from what never changes for one call, so a
+# later change (Ringing → Answered, the length filled in) updates it instead of counting it again.
+STEADY = (('TIMESTAMP', 'CALL TIMESTAMP'), ('DATE',), ('TIME',), ('ANI',), ('DNIS',), ('NUMBER', 'NUMBER1'), ('CAMPAIGN',),
+          ('AGENT', 'AGENT NAME'), ('CALL TYPE',))
+
+
+def steady_id(row: dict) -> str:
+    parts = '|'.join(column(row, *names) for names in STEADY)
+    return 'nocallid-' + hashlib.sha256(parts.encode()).hexdigest()[:32]
+
+
 def column(row: dict, *names: str) -> str:
     """The first non-empty value among loosely matching column names (case and spaces ignored)."""
     wanted = [n.replace(' ', '').upper() for n in names]
@@ -55,7 +67,7 @@ def column(row: dict, *names: str) -> str:
     return ''
 
 
-class Five9(Connector):
+class Five9(LocalTimes, Connector):
     mode = 'poll'
     source_grade = 'C'
     min_poll_minutes = 10
@@ -111,20 +123,30 @@ class Five9(Connector):
         raise TimeoutError('Five9 report still running; tried again next turn')
 
     # --- rows ------------------------------------------------------------------------------------------------
-    def called_at(self, row: dict) -> datetime:
+    def naive(self, row: dict) -> datetime:
         text = column(row, 'TIMESTAMP', 'CALL TIMESTAMP') or f"{column(row, 'DATE')} {column(row, 'TIME')}".strip()
         for fmt in TIME_FORMATS:
             try:
-                return datetime.strptime(text, fmt).replace(tzinfo=self.tz).astimezone(UTC)
+                return datetime.strptime(text, fmt)
             except ValueError:
                 continue
         raise Five9Error(f'Unreadable call time "{text}"')
 
+    def called_at(self, row: dict) -> datetime:
+        return self.reading(row, self.naive(row))[0]
+
+    def rows_of(self, text: str) -> list[dict]:
+        """The report's rows, read in its own order (the clock-change hour, apps.sync.localtime)."""
+        rows = [r for r in csv.DictReader(io.StringIO(text)) if any((v or '').strip() for v in r.values())]
+        self.remember(rows, self.naive)
+        return rows
+
     def record(self, row: dict) -> Record:
         raw = json.dumps(row, sort_keys=True, separators=(',', ':')).encode()
-        call_id = column(row, 'CALL ID', 'CALLID', 'SESSION ID') or hashlib.sha256(raw).hexdigest()[:32]
+        call_id = column(row, 'CALL ID', 'CALLID', 'SESSION ID') or steady_id(row)
         phones = [p for p in (column(row, 'DNIS'), column(row, 'ANI'), column(row, 'NUMBER', 'NUMBER1')) if p]
         return Record(source_record_id=call_id, raw=raw, content_kind='call', changed_at=self.called_at(row),
+                      time_note=self.reading(row, self.naive(row))[1],
                       phones=list(dict.fromkeys(phones)))
 
     def count_between(self, measure: str, start: datetime, end: datetime) -> int:
@@ -138,12 +160,12 @@ class Five9(Connector):
         if begin >= safe_now:
             return Page([], cursor, False)
         end = min(begin + WINDOW, safe_now)
-        rows = [r for r in csv.DictReader(io.StringIO(self.report_csv(begin, end))) if any((v or '').strip() for v in r.values())]
+        rows = self.rows_of(self.report_csv(begin, end))
         records = sorted((self.record(r) for r in rows), key=lambda rec: (rec.changed_at, rec.source_record_id))
         return Page(records, end.isoformat(), end < safe_now)
 
     def rows_in(self, start: datetime, end: datetime) -> list[Record]:
-        rows = [r for r in csv.DictReader(io.StringIO(self.report_csv(start, end))) if any((v or '').strip() for v in r.values())]
+        rows = self.rows_of(self.report_csv(start, end))
         return sorted((self.record(r) for r in rows), key=lambda rec: (rec.changed_at, rec.source_record_id))
 
     def list_all(self, cursor: str, limit: int) -> Page:

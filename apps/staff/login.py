@@ -12,6 +12,9 @@ FAILED = 'staff_sign_in_failed'
 
 
 class StaffLoginForm(AdminAuthenticationForm):
+    # Plain words (owner, 2026-10-31): emails are always small letters in CiV, so no "may be case-sensitive".
+    error_messages = {**AdminAuthenticationForm.error_messages, 'invalid_login': 'Wrong email or password. Check both and try again.'}
+
     def clean(self):
         email = (self.cleaned_data.get('username') or '').strip().lower()
         if email and is_locked(email, FAILED, request=self.request):

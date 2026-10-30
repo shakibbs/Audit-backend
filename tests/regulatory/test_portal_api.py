@@ -1,6 +1,6 @@
 """Portal API for the Rulebook and Regulatory Changes pages: everyone reads; the company's lawyer reviews drafts and
 suggests changes; each company sees only its own reviews, reads and suggestions."""
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django.test import Client as BrowserClient
@@ -132,3 +132,17 @@ def test_vendor_clauses_draft_is_reviewed_by_lawyers_and_approved_by_civ(ruleboo
     approve(RuleUpdate.objects.get(key='vendor_required_clauses'), staff)
     rule = RuleSet('internal').get('vendor_required_clauses', on=date(2026, 10, 22))
     assert rule.status == 'set' and len(rule.value) == 12
+
+
+def test_rulebook_and_changes_follow_the_month(rulebook, member_user):
+    """Owner, 2026-10-30: the month picker — rules in force on the month's last day; changes announced by then."""
+    from apps.regulatory.models import RegChange
+    api = browser_for(member_user)
+    page = api.get('/api/rulebook?period=2026-09').json()
+    assert page['asOf'] == '2026-09-30' and page['settings']
+    first = RegChange.objects.order_by('announced_on').first()
+    month = first.announced_on.replace(day=1)
+    before = (month - timedelta(days=1)).replace(day=1)
+    titles = lambda q: [c['title'] for c in api.get(f'/api/reg-changes{q}').json()]  # noqa: E731
+    assert first.title in titles(f'?period={month:%Y-%m}') and first.title not in titles(f'?period={before:%Y-%m}')
+    assert len(titles('')) == RegChange.objects.count()

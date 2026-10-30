@@ -31,7 +31,7 @@ def conn(client, provider):
 
 def text_in(client, body, at=JUNE, sid='SM1', number=SARAH):
     c = conn(client, 'twilio')
-    c.set_credentials({'account': 'AC1', 'key': 'k'})
+    c.set_credentials({'account': 'AC' + '1' * 32, 'key': 'k'})
     c.save()
     row = {'sid': sid, 'date_sent': format_datetime(at), 'date_created': format_datetime(at), 'from': number, 'to': '+14805550000',
            'body': body, 'status': 'received', 'direction': 'inbound'}

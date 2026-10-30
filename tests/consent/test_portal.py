@@ -136,3 +136,16 @@ def test_consent_integrity_follows_the_month(company, member_user):
     assert now['contacts'] == 1 and before['contacts'] == 2
     assert before['period'] == last.strftime('%B %Y') and now['period'] == this.strftime('%B %Y')
     assert api.get(f'/api/consent?period={this:%Y-%m}').json()['contacts'] == 1
+
+
+def test_the_contact_ledger_follows_the_month(company, member_user):
+    """Owner, 2026-10-30: the month picker — the ledger lists only that month's contacts."""
+    this = NOW.date().replace(day=1)
+    last = (this - timedelta(days=1)).replace(day=1)
+    now_one = contact(company)
+    old_one = contact(company, at=NOW.replace(day=1) - timedelta(days=3), person='b2' * 16)
+    api = browser_for(member_user)
+    ids = lambda q: [r['id'] for r in api.get(f'/api/contacts{q}').json()]  # noqa: E731
+    assert ids(f'?period={last:%Y-%m}') == [f'ce-{old_one.pk}']
+    assert ids(f'?period={this:%Y-%m}') == [f'ce-{now_one.pk}']
+    assert len(ids('')) == 2  # no month: every contact, as before
