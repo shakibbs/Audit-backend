@@ -1719,3 +1719,7 @@ marked to reconnect). A record ID from Twilio is made safe before it goes into a
     another connection" after (small letters; `templates/unfold/helpers/edit_inline/inline_add.html`, a copy of
     django-unfold 0.108.0's, and `add_button_text`); after the first click the button switches to "Add another…" (`civ.js`).
     Test: `tests/admin_panel/test_add_button_words.py`.
+The clock-change note is also in each number's evidence file (`timeNote` in the JSON, next to the time in the PDF),
+2026-11-07.
+The own-name password rule now applies to client and insurer people too (2026-11-07): a new portal password may not
+contain the person's email name or name. Existing passwords keep working.

@@ -219,7 +219,7 @@ def number_file(client, ref: str) -> dict | None:
         'epoch': f'Owner {current.number}' if current else 'Owner 1',
         'epochCertainty': 'known' if len(epochs) > 1 else 'unknown',
         'worstStatus': worst_of(counted), 'counts': counts,
-        'contacts': [{'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'channel': c.get_channel_display(), 'dialMode': c.dial_mode or None,
+        'contacts': [{'id': f'ce-{c.pk}', 'occurredAt': c.occurred_at, 'timeNote': c.time_note or None, 'channel': c.get_channel_display(), 'dialMode': c.dial_mode or None,
                       'status': portal_status(results.get(c.pk)), 'code': (results[c.pk].primary_code or '—') if c.pk in results else '—',
                       'bases': [{'basis': b['basis'], 'status': b['status'].upper()} for b in (results[c.pk].bases if c.pk in results else [])],
                       'labels': [c.direction, *([f'owner {c.epoch.number}'] if c.epoch_id else []), *([] if c.is_primary else ['copy from another tool']),

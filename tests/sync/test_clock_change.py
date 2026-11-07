@@ -1,6 +1,8 @@
 """Owner, 2026-10-31: Convoso and Five9 give local time; the November hour that happens twice and the March hour that
 never happens are read carefully, every other time as before."""
 from datetime import UTC, datetime
+
+import pytest
 from zoneinfo import ZoneInfo
 
 from apps.sync.localtime import LocalTimes, NEVER, TWICE, to_utc
@@ -31,3 +33,21 @@ def test_the_order_of_the_calls_picks_the_second_one():
 def test_the_missing_march_hour_moves_forward():
     utc, note = to_utc(datetime(2027, 3, 14, 2, 30), NY)
     assert utc.astimezone(NY).hour == 3 and note == NEVER.format(t='2:30 am', moved='3:30 am')
+
+
+@pytest.mark.django_db
+def test_the_note_reaches_the_ledger_and_the_evidence_file(company, member_user):
+    """The note is shown in the portal and printed in the evidence file (owner, 2026-11-07)."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.contacts.api import number_ref
+    from apps.contacts.models import ContactEvent
+    from tests.regulatory.test_portal_api import browser_for
+    c = ContactEvent.objects.create(client=company, phone_token='ab' * 32, phone_token_kid='k1', source_system='five9', source_record_id='x1',
+                                    source_grade='B', channel='call', direction='outbound', occurred_at=timezone.now() - timedelta(days=1),
+                                    masked_label='(916) •••-0001', time_note=TWICE)
+    api = browser_for(member_user)
+    assert api.get(f'/api/contacts/ce-{c.pk}').json()['timeNote'] == TWICE
+    assert api.get(f"/api/evidence/{number_ref(c.phone_token)}").json()['contacts'][0]['timeNote'] == TWICE

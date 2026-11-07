@@ -42,7 +42,8 @@ def render(data: dict) -> bytes:
                   table([['Owner', 'From', 'To', 'Why']] + [[o['number'], o['from'] or 'the start', o['to'] or 'now', o['reason']] for o in data['owners']],
                         [50, 160, 160, 350]), Spacer(1, 6)]
     parts += [Paragraph('<b>Contacts</b>', body),
-              table([['When (UTC)', 'Channel', 'Result', 'Reason']] + [[P(c['occurredAt']), c['channel'], c['status'], P(c['code'])] for c in data['contacts']],
+              table([['When (UTC)', 'Channel', 'Result', 'Reason']] + [[P(f"{c['occurredAt']}" + (f" · {c['timeNote']}" if c.get('timeNote') else '')), c['channel'], c['status'], P(c['code'])]
+                                                                for c in data['contacts']],
                     [170, 60, 90, 400]), Spacer(1, 6),
               Paragraph('<b>Proof elements</b>', body),
               table([['#', 'Element', 'Present', 'Tier', 'Source', 'Fingerprint']] + [[e['number'], P(e['element']),
