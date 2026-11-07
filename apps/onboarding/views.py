@@ -13,9 +13,13 @@ from apps.onboarding.steps import MANUAL_CODES, STEPS
 
 @require_POST
 def toggle_step(request, client_id, step):
-    if not request.user.has_perm('clients.change_client') or step not in MANUAL_CODES:
+    if not request.user.has_perm('clients.change_client'):
         raise PermissionDenied
     client = get_object_or_404(Client, pk=client_id)
+    if step not in MANUAL_CODES:  # back to the page with a reason, not a bare "403" (owner, 2026-11-07)
+        known = any(s.code == step for s in STEPS)
+        messages.error(request, 'That step is ticked by CiV automatically.' if known else 'No such step.')
+        return redirect(reverse('admin:clients_client_change', args=[client.pk]))
     label = next(s.label for s in STEPS if s.code == step)
     tick = OnboardingTick.objects.filter(client=client, step=step).first()
     if tick:

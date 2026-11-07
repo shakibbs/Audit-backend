@@ -26,3 +26,12 @@ def test_places_have_plain_names(client):
     client.force_login(StaffUser.objects.create_superuser(email='boss@complyiv.com', name='Boss', password=PASSWORD))
     page = client.get('/civ-admin/rulebook/rulevalue/').content.decode()
     assert '5th Circuit court' in page and '>5th_circuit<' not in page and 'Florida (FL)' in page
+
+
+def test_rule_history_not_found_and_back_link(client):
+    load(RULEBOOK_DIR / 'v3.0.yaml')
+    client.force_login(StaffUser.objects.create_superuser(email='boss@complyiv.com', name='Boss', password=PASSWORD))
+    assert client.get('/civ-admin/rulebook/rulevalue/rule-history/made_up_rule/').status_code == 404
+    page = client.get('/civ-admin/rulebook/rulevalue/rule-history/calling_hours/?from=list').content.decode()
+    assert 'Back to the Rulebook<' in page
+    assert 'Back to the Rulebook check' in client.get('/civ-admin/rulebook/rulevalue/rule-history/calling_hours/').content.decode()

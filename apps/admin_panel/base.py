@@ -38,6 +38,12 @@ class CivModelAdmin(ModelAdmin):
     access_log_deletes = True  # False where delete_model writes its own line
     access_log_inlines = False  # True: also log changes made in this page's tabs (pages whose tabs do not log themselves)
 
+    def get_search_results(self, request, queryset, search_term):
+        """A search made only of quote marks (' or ") found everything; now it finds nothing (owner, 2026-11-07)."""
+        if search_term and not search_term.replace("'", '').replace('"', '').strip():
+            return queryset.none(), False
+        return super().get_search_results(request, queryset, search_term)
+
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         # No "Save and add another" on any page (owner, 2026-10-24): "Save" and "Save and continue editing" stay.
         return super().changeform_view(request, object_id, form_url, {**(extra_context or {}), 'show_save_and_add_another': False})

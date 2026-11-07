@@ -81,3 +81,12 @@ document.addEventListener('DOMContentLoaded', function () {
     content.prepend(head);
   }
 });
+
+// After the first "Add a connection" click, the button says "Add another connection" (owner, 2026-11-07).
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('a.add-row');
+  if (!button) return;
+  button.querySelectorAll('span').forEach(function (span) {
+    if (!span.children.length) span.textContent = span.textContent.replace(/^Add an? /, 'Add another ');
+  });
+});

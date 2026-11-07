@@ -15,3 +15,13 @@ def plain_path(parts):
             continue
         out.append(part)
     return out
+
+
+@register.filter
+def add_button_text(inline_admin_formset) -> str:
+    """ "Add a connection" when the tab has none yet, "Add another connection" after (owner, 2026-11-07)."""
+    name = str(inline_admin_formset.opts.verbose_name)
+    name = name if name[:2].isupper() else name[:1].lower() + name[1:]
+    if inline_admin_formset.formset.initial_form_count():
+        return f'Add another {name}'
+    return f"Add {'an' if name[:1].lower() in 'aeiou' else 'a'} {name}"

@@ -13,6 +13,8 @@ class LegalHoldInline(TabularInline):
     can_delete = False
     verbose_name = 'legal hold'
     verbose_name_plural = 'Legal holds'
+    template_after = 'admin_panel/inline_empty.html'
+    empty_text = 'No legal holds. The client places them in the portal (Evidence Vault).'
     fields = ('hold_on', 'target', 'reason', 'set_by', 'set_at', 'state')
     readonly_fields = fields
     ordering = ('released_at', '-set_at')  # active ones first

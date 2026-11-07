@@ -63,7 +63,7 @@ class RuleValueAdmin(CivModelAdmin):
     @admin.display(description='History')
     def history_link(self, rule):
         from django.urls import reverse
-        return format_html('<a href="{}">History</a>', reverse('admin:rulebook_rulevalue_rule_history', args=[rule.key]))
+        return format_html('<a href="{}?from=list">History</a>', reverse('admin:rulebook_rulevalue_rule_history', args=[rule.key]))
 
     def get_urls(self):
         from django.urls import path
@@ -91,9 +91,17 @@ class RuleValueAdmin(CivModelAdmin):
         from django.template.response import TemplateResponse
         from django.urls import reverse
 
+        from django.http import Http404
+
         from .health import history
+        if not RuleValue.objects.filter(key=key).exists():  # a made-up rule name: not found, not an empty page (2026-11-07)
+            raise Http404('No rule with that name.')
+        # Back to where it was opened from: the Rulebook list or the Rulebook check.
+        from_list = request.GET.get('from') == 'list'
+        back = (reverse('admin:rulebook_rulevalue_changelist'), 'Back to the Rulebook') if from_list else \
+            (reverse('admin:rulebook_rulevalue_check'), 'Back to the Rulebook check')
         return TemplateResponse(request, 'rulebook/history.html', {**self.admin_site.each_context(request), 'title': f'History · {key}',
-                                                                   'key': key, 'rows': history(key), 'back_url': reverse('admin:rulebook_rulevalue_check')})
+                                                                   'key': key, 'rows': history(key), 'back_url': back[0], 'back_text': back[1]})
 
     @admin.display(description='Changes results', boolean=True, ordering='affects_status')
     def affects(self, rule):

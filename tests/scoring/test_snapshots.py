@@ -55,7 +55,7 @@ def test_a_locked_month_is_never_overwritten_a_change_makes_a_revised_version(co
     new = snapshot(company, SEP, now=datetime(2026, 10, 18, 4, tzinfo=UTC), recheck_locked=True)
     assert (new.version, new.revised) == (2, True)
     assert SnapshotRun.objects.filter(period=SEP).count() == 2  # the first version is kept
-    assert periods(company)[1] == {'id': '2026-09', 'label': 'Sep 2026', 'revisedOn': '2026-10-18'}
+    assert next(p for p in periods(company) if p['id'] == '2026-09') == {'id': '2026-09', 'label': 'Sep 2026', 'revisedOn': '2026-10-18'}
 
 
 def test_nightly_run_saves_every_month_once_and_rechecks_on_sundays(company):

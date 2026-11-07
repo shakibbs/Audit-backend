@@ -29,7 +29,9 @@ class ClientForm(forms.ModelForm):
             if not data.get('admin_name', '').strip():
                 self.add_error('admin_name', "Enter the client Admin's name.")
             email = data.get('admin_email', '')
-            if not email:
+            if 'admin_email' in self.errors:
+                pass  # typed but not a real email: "Enter a valid email address." alone (owner, 2026-11-07)
+            elif not email:
                 self.add_error('admin_email', "Enter the client Admin's email.")
             elif taken(email):
                 self.add_error('admin_email', 'That email already has an account.')

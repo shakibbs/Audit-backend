@@ -1,0 +1,2 @@
+{% comment %}After a read-only tab's table: says so when there is nothing in it (owner, 2026-11-07).{% endcomment %}
+{% if not inline_admin_formset.formset.forms %}<p class="civ tiny" style="margin:0;padding:14px 16px">{{ inline_admin_formset.opts.empty_text }}</p>{% endif %}

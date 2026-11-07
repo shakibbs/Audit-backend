@@ -45,7 +45,11 @@ def unfold_config(portal_url: str) -> dict:
             'important-dark': '#eef3fa', 'default-dark': '#eef3fa', 'subtle-dark': '#9fb0c7',
         }},
         'STYLES': [lambda request: static('admin_panel/civ.css')],
+        # The browser tab icon: the teal "iV" square, same as the portal (owner, 2026-11-07).
+        'SITE_FAVICONS': [{'rel': 'icon', 'sizes': 'any', 'type': 'image/svg+xml', 'href': lambda request: static('admin_panel/icon.svg')}],
         'SCRIPTS': [lambda request: static('admin_panel/civ.js')],
+        # The search box: menu pages under the menu's own section names, and companies and people (2026-11-07).
+        'COMMAND': {'search_models': False, 'search_callback': 'apps.admin_panel.search.search'},
         'SIDEBAR': {
             'show_search': True,
             'show_all_applications': False,

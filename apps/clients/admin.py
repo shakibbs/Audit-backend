@@ -95,8 +95,12 @@ class ClientAdmin(CivModelAdmin):
     def get_inlines(self, request, obj):
         if not obj:
             return [ConnectionInline, ContractInline, DocumentInline]
-        # Consent pages and legal holds are read only: shown when viewing, left out of a save (nothing in them is sent back).
-        return self.inlines if request.method == 'GET' else [i for i in self.inlines if i not in (ConsentPageInline, LegalHoldInline)]
+        # Consent pages and legal holds are read only. On a save they are kept when the page sent them (a browser always
+        # does), so they are still there when the page comes back with an error (owner, 2026-11-07).
+        if request.method == 'GET':
+            return self.inlines
+        sent = lambda inline: f'{inline(self.model, self.admin_site).get_formset(request, obj).get_default_prefix()}-TOTAL_FORMS' in request.POST  # noqa: E731
+        return [i for i in self.inlines if i not in (ConsentPageInline, LegalHoldInline) or sent(i)]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('contract').annotate(

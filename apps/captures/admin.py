@@ -23,6 +23,8 @@ class ConsentPageInline(TabularInline):
     can_delete = False
     verbose_name = 'consent page'
     verbose_name_plural = 'Consent pages'
+    template_after = 'admin_panel/inline_empty.html'
+    empty_text = "No consent pages yet. They appear here once CiV finds them in this client's certificates."
     fields = ('address', 'seen', 'photo_taken', 'photos', 'checklist')
     readonly_fields = fields
     ordering = ('-last_seen_at',)

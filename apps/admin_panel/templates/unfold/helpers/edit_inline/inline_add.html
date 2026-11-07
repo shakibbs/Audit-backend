@@ -1,0 +1,15 @@
+{% load unfold civ_path %}{% comment %}
+  Copy of django-unfold 0.108.0's inline_add.html (owner, 2026-11-07): "Add a connection" when there is none yet,
+  "Add another connection" after, in small letters.
+{% endcomment %}
+{% for inline_admin_form in inline_admin_formset %}
+    {% if forloop.last and inline_admin_formset.has_add_permission %}
+        <a href="#" class="add-row flex items-center font-medium -ml-1.5 -my-1.5 select-none text-primary-600 dark:text-primary-500 {% if inline_admin_formset.formset.total_form_count >= inline_admin_formset.formset.max_num %}hidden{% endif %}">
+            <span class="flex items-center justify-center h-[38px] w-[38px]">
+                <span class="material-symbols-outlined bg-primary-600 flex items-center justify-center rounded-full text-base text-white h-[18px] w-[18px]">add</span>
+            </span>
+
+            <span>{{ inline_admin_formset|add_button_text }}</span>
+        </a>
+    {% endif %}
+{% endfor %}

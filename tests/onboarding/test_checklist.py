@@ -44,7 +44,12 @@ def test_staff_ticks_and_unticks_a_manual_step(staff_client, company):
 
 @pytest.mark.django_db
 def test_automatic_steps_cannot_be_ticked_by_hand(staff_client, company):
-    assert staff_client.post(f'/civ-admin/clients/client/{company.pk}/onboarding/dialer/').status_code == 403
+    # Refused with a reason on the client page, not a bare 403 (owner, 2026-11-07); nothing is ticked.
+    from apps.onboarding.models import OnboardingTick
+    sent = staff_client.post(f'/civ-admin/clients/client/{company.pk}/onboarding/dialer/', follow=True).content.decode()
+    assert 'That step is ticked by CiV automatically.' in sent and not OnboardingTick.objects.filter(step='dialer').exists()
+    made_up = staff_client.post(f'/civ-admin/clients/client/{company.pk}/onboarding/made-up/', follow=True).content.decode()
+    assert 'No such step.' in made_up
     assert staff_client.get(f'/civ-admin/clients/client/{company.pk}/onboarding/agreement/').status_code == 405
 
 

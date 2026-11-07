@@ -1695,3 +1695,27 @@ marked to reconnect). A record ID from Twilio is made safe before it goes into a
     digits ("qa.super.staff1" is refused: "Your password can't contain your email name."): `apps/staff/passwords.py`,
     in `AUTH_PASSWORD_VALIDATORS`. Client users are not changed yet. Existing passwords keep working. Test:
     `tests/staff/test_password_not_own_name.py`.
+11. Rule history: a made-up rule name gives "not found" (404), not an empty page; opened from the Rulebook list, its
+    button says "Back to the Rulebook" and goes there (from the Rulebook check, "Back to the Rulebook check"). Test:
+    `tests/rulebook/test_plain_value.py`.
+12. The staff search box (`apps/admin_panel/search.py`, Unfold's `COMMAND.search_callback`): menu pages under the
+    menu's own section names ("Client reports · Records"), plus client companies, client people, insurers, insurer people
+    and CiV staff by name or email (up to 8 of each, only for staff allowed to see them). Test:
+    `tests/admin_panel/test_search_box.py`.
+13. The staff panel's browser tab shows the teal "iV" icon (`static/admin_panel/icon.svg`, Unfold `SITE_FAVICONS`), the
+    same as the portal. Test: `tests/admin_panel/test_tab_icon.py`.
+14. Staff panel lists: a search made only of quote marks (`'`, `''`, `"`) finds nothing instead of every row
+    (`CivModelAdmin.get_search_results`); names with an apostrophe ("Joe's Solar") are found as before. Test:
+    `tests/admin_panel/test_quote_search.py`.
+15. Client page: the read-only Consent pages and Legal holds tabs stay on the page when a save comes back with an error
+    (kept on a save when the page sent them, which a browser always does), and say so when empty ("No consent pages
+    yet…", "No legal holds…"; `templates/admin_panel/inline_empty.html`). Test: `tests/clients/test_read_only_tabs.py`.
+16. Ticking an automatic or made-up onboarding step (only possible by tampering) goes back to the client page with
+    "That step is ticked by CiV automatically." or "No such step." instead of a bare 403 page; nothing is ticked. Test:
+    `tests/onboarding/test_checklist.py`.
+17. Add client: a typed but invalid Admin email shows only "Enter a valid email address." (not also "Enter the client
+    Admin's email."); an empty box shows only the second (`apps/clients/forms.py`). Test: `tests/clients/test_one_email_error.py`.
+18. Tab add buttons in the staff panel say "Add a connection" / "Add an invitation" when the tab has none yet, "Add
+    another connection" after (small letters; `templates/unfold/helpers/edit_inline/inline_add.html`, a copy of
+    django-unfold 0.108.0's, and `add_button_text`); after the first click the button switches to "Add another…" (`civ.js`).
+    Test: `tests/admin_panel/test_add_button_words.py`.
