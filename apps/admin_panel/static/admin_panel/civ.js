@@ -90,3 +90,34 @@ document.addEventListener('click', function (event) {
     if (!span.children.length) span.textContent = span.textContent.replace(/^Add an? /, 'Add another ');
   });
 });
+
+// An eye button inside every password box shows or hides what was typed; it starts hidden (owner, 2026-11-16).
+// Covers the staff sign-in page, the welcome page, Change my password and any later password box.
+var CIV_EYE = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+var CIV_EYE_OFF = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/>';
+function civPasswordEyes() {
+  document.querySelectorAll('input[type="password"]:not([data-civ-eye])').forEach(function (input) {
+    input.setAttribute('data-civ-eye', '1');
+    var box = document.createElement('span');
+    box.className = 'civ-pw';
+    input.parentNode.insertBefore(box, input);
+    box.appendChild(input);
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'civ-pw-eye';
+    function draw(shown) {
+      button.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+      button.setAttribute('aria-pressed', shown ? 'true' : 'false');
+      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (shown ? CIV_EYE_OFF : CIV_EYE) + '</svg>';
+    }
+    draw(false);
+    button.addEventListener('click', function () {
+      var shown = input.type === 'password';
+      input.type = shown ? 'text' : 'password';
+      draw(shown);
+    });
+    box.appendChild(button);
+  });
+}
+document.addEventListener('DOMContentLoaded', civPasswordEyes);
+document.addEventListener('htmx:afterSwap', civPasswordEyes);

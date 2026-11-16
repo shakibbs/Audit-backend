@@ -1737,3 +1737,8 @@ still missing." So a new client is not shown a grade-F factor while still settin
 `templates/unfold/layouts/skeleton.html` (a copy of django-unfold 0.108.0's) no longer loads Unfold's chart library
 (196 KB, loaded so that every page waited for it). No staff page draws a chart; add it back if one ever does.
 Test: `tests/admin_panel/test_no_chart_library.py`.
+
+## Password eye button on staff pages (2026-11-16)
+
+`civ.js` adds an eye button inside every password box in the staff panel (sign-in, welcome, Change my password and any
+later one) that shows or hides what was typed; it starts hidden. Styles in `civ.css`. Test: `tests/admin_panel/test_password_eye.py`.

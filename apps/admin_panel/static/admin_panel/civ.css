@@ -191,3 +191,9 @@ button.civ-btn { border: 0; cursor: pointer; }
 
 /* Django's "Note: you are 6 hours ahead of server time" under date boxes is hidden (owner, 2026-10-31): CiV stores world time. */
 .timezonewarning { display: none !important; }
+
+/* The eye button inside password boxes (civ.js, owner 2026-11-16). */
+.civ-pw { position: relative; display: block; width: 100%; }
+.civ-pw input { padding-right: 2.5rem !important; }
+.civ-pw-eye { position: absolute; top: 0; bottom: 0; right: 0; width: 2.5rem; display: grid; place-items: center; color: #8a9a9c; background: none; border: 0; cursor: pointer; }
+.civ-pw-eye:hover { color: #13b5a2; }
