@@ -1731,3 +1731,9 @@ worst case only from 30 days after the client's start date (`apps/scoring/extra.
 B3). Before that they are "not measured", with the note "… not uploaded yet. Counted as the worst case from <date> if
 still missing." So a new client is not shown a grade-F factor while still setting up. Test:
 `tests/scoring/test_setting_up_grace.py`.
+
+## Staff pages without the chart library (2026-11-16)
+
+`templates/unfold/layouts/skeleton.html` (a copy of django-unfold 0.108.0's) no longer loads Unfold's chart library
+(196 KB, loaded so that every page waited for it). No staff page draws a chart; add it back if one ever does.
+Test: `tests/admin_panel/test_no_chart_library.py`.
