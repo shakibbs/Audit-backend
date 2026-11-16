@@ -121,3 +121,27 @@ function civPasswordEyes() {
 }
 document.addEventListener('DOMContentLoaded', civPasswordEyes);
 document.addEventListener('htmx:afterSwap', civPasswordEyes);
+
+// Load on hover (owner, 2026-11-16): when the mouse rests on a link for a moment, the browser fetches that page in the
+// background, so the click opens it almost at once, like the client portal. Only plain pages: the dashboard, a list, an
+// "add" page and a record's page. Never a download, a file, a photo, a password link or any link that does something:
+// those all have more parts in their address and do not match. Browsers without this feature (Firefox, Safari) simply
+// load pages as before.
+(function () {
+  if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules'))) return;
+  var rules = document.createElement('script');
+  rules.type = 'speculationrules';
+  rules.textContent = JSON.stringify({
+    prefetch: [{
+      source: 'document',
+      where: { or: [
+        { href_matches: '/civ-admin/' },
+        { href_matches: '/civ-admin/:app/:model/' },
+        { href_matches: '/civ-admin/:app/:model/add/' },
+        { href_matches: '/civ-admin/:app/:model/:id/change/' },
+      ] },
+      eagerness: 'moderate',
+    }],
+  });
+  document.head.appendChild(rules);
+})();

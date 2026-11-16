@@ -1756,3 +1756,10 @@ later one) that shows or hides what was typed; it starts hidden. Styles in `civ.
 - Speed: the DNC, internal-list and reassigned checks no longer look up each contact one by one; 300,000 contacts in a
   month take about 6 s for the whole page (was minutes). Tests: `tests/metrics/test_glance.py`, `test_per_source.py`,
   `test_who_numbers.py`.
+
+## Staff pages load on hover (2026-11-16)
+
+`civ.js` adds browser "speculation rules": when the mouse rests on a link, Brave, Chrome and Edge fetch that page in the
+background, so the click opens it almost at once (Firefox and Safari load pages as before). Only four address shapes are
+loaded early: the dashboard, a list, an "add" page and a record's page. Downloads, files, photos, password links and every
+other action link have more parts in their address and never match. Test: `tests/admin_panel/test_load_on_hover.py`.
