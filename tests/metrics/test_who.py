@@ -101,6 +101,17 @@ def test_services_say_what_was_uploaded(company):
     assert services['Internal do-not-contact list']['note'].startswith('Uploaded') and services['DNC check records']['note'] == 'Not supplied · blocks M13'
 
 
+def test_state_dnc_is_not_checked_without_state_rows(company):
+    """Owner, 2026-11-16: with no state rows in the DNC check file, State DNC says "Not checked", never "Checked by you"."""
+    dnc = lambda: next(s for s in who_contact(company)['services'] if s['name'] == 'DNC check records')['covers']
+    assert dnc() == {'national': 'none', 'state': 'none'}
+    up = upload(company, Source.DNC_CHECKS)
+    DncCheck.objects.create(client=company, upload=up, phone_token='p1', checked_on=TODAY, listed=False, list_name='national')
+    assert dnc() == {'national': 'list', 'state': 'none'}
+    DncCheck.objects.create(client=company, upload=up, phone_token='p1', checked_on=TODAY, listed=False, list_name='CA')
+    assert dnc() == {'national': 'list', 'state': 'list'}
+
+
 def test_nothing_real_yet_says_not_measured(company):
     """Owner, 2026-10-23: every area and check comes from the backend; with no data each check says "Not measured"."""
     data = who_contact(company)

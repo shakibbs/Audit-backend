@@ -2,10 +2,12 @@
 DNC check records and internal list, reassigned-number query logs, CRM opt-out marks, AI review). A check CiV cannot
 run yet (it needs data the client has not supplied, or a later module) is sent as "Not measured", never with a result."""
 import hashlib
+from bisect import bisect_right
 from collections import Counter
 from datetime import timedelta
 
-from django.db.models import Count
+from django.db.models import Count, DateField, Min, Exists, ExpressionWrapper, OuterRef
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from apps.consent.models import ConsentResult
@@ -14,6 +16,7 @@ from apps.imports.models import CrmCreation, CrmUpdate, ImportBatch
 from apps.provenance.models import Provenance
 from apps.uploads.models import DncCheck, InternalListEntry, RndQuery, Source, UploadedFile
 
+from .glance import NATIONAL, glance
 from .models import LeadSourceCheck
 
 DAYS = 30
@@ -74,25 +77,37 @@ def dnc_area(client, contacts, span: Span | None = None) -> dict:
                                                  unmeasured('Called after your provider flagged the number', 'M39', 'Needs your DNC check records.'),
                                                  unmeasured('Registry copy older than 31 days', 'M49', 'Needs your DNC check records. The law allows a copy no more than 31 days old.'),
                                                  unmeasured('State lists checked', 'M13', 'Needs your DNC check records.')], 'flags': []}
+    # The check rows of the numbers contacted, read once (not two lookups per contact; owner 2026-11-16: big clients).
+    dates: dict[str, list] = {}  # every check day per number, oldest first
+    first_listed: dict[str, tuple] = {}  # the earliest "listed" row per number
+    for token, day, listed_row, name in DncCheck.objects.filter(client=client, phone_token__in=contacts.values('phone_token')) \
+            .order_by('phone_token', 'checked_on', 'pk').values_list('phone_token', 'checked_on', 'listed', 'list_name'):
+        dates.setdefault(token, []).append(day)
+        if listed_row and token not in first_listed:
+            first_listed[token] = (day, name)
     total = covered = old = 0
-    for c in contacts.only('phone_token', 'occurred_at', 'masked_label', 'channel'):
-        day = c.occurred_at.date()
-        latest = DncCheck.objects.filter(client=client, phone_token=c.phone_token, checked_on__lte=day).order_by('-checked_on').first()
+    hits = []  # (contact id, list day, list name) of every contact after a "listed" result
+    for pk, token, at_time in contacts.values_list('pk', 'phone_token', 'occurred_at'):
+        day = at_time.date()
+        before = dates.get(token, [])
+        at = bisect_right(before, day)  # checks on or before the contact's day
         total += 1
-        if latest and (day - latest.checked_on).days <= MAX_AGE:
+        if at and (day - before[at - 1]).days <= MAX_AGE:
             covered += 1
-        elif latest:
+        elif at:
             old += 1
-        listed = DncCheck.objects.filter(client=client, phone_token=c.phone_token, checked_on__lte=day, listed=True).order_by('checked_on').first()
-        if listed:
-            flags.append(flag(c, f'Flagged by your DNC check ({listed.list_name})', 'Your DNC check records', listed.checked_on))
+        listed = first_listed.get(token)
+        if listed and listed[0] <= day:
+            hits.append((pk, *listed))
+    shown = ContactEvent.objects.in_bulk([h[0] for h in hits[:50]])  # full rows only for the flags shown
+    flags = [flag(shown[pk], f'Flagged by your DNC check ({name})', 'Your DNC check records', day) for pk, day, name in hits[:50]]
     if total:
         share = round(100 * covered / total)
         checks.append(check('pass' if share >= 99 else 'warn' if share >= 90 else 'fail', 'National registry checked', f'{share}% of contacts', 'list', 'M13',
                             f'{covered:,} of {total:,} contacts had a DNC check within {MAX_AGE} days before them.'))
     else:
         checks.append(unmeasured('National registry checked', 'M13', f'No contacts {span.words} to check.'))
-    checks.append(check('fail' if flags else 'pass', 'Called after your provider flagged the number', many(len(flags), 'contact') if flags else 'None',
+    checks.append(check('fail' if hits else 'pass', 'Called after your provider flagged the number', many(len(hits), 'contact') if hits else 'None',
                         'list', 'M39', 'Contacts after your DNC check said the number is listed.'))
     checks.append(check('warn' if old else 'pass', 'Registry copy older than 31 days', many(old, 'contact') if old else 'None', 'list', 'M49',
                         'The law allows a copy no more than 31 days old.'))
@@ -120,16 +135,22 @@ def internal_area(client, contacts, span: Span | None = None) -> dict:
         checks.insert(0, unmeasured('Called after joining your list', 'M12', 'Your internal do-not-call list is not supplied. Upload it on the Source Registry.'))
         return {'id': 'idn', 'checks': checks, 'flags': stop_flags}
     flags, numbers = [], set()
-    for c in contacts.only('phone_token', 'occurred_at', 'masked_label', 'channel'):
-        entry = InternalListEntry.objects.filter(client=client, phone_token=c.phone_token, added_on__lte=c.occurred_at.date()).order_by('added_on').first()
-        if entry:
-            numbers.add(c.phone_token)
-            flags.append(flag(c, 'Joined your do-not-call list', 'Your internal list', entry.added_on))
+    # When each contacted number first joined the list, read once (owner 2026-11-16: big clients).
+    joined = dict(InternalListEntry.objects.filter(client=client, phone_token__in=contacts.values('phone_token'))
+                  .values('phone_token').annotate(first=Min('added_on')).values_list('phone_token', 'first'))
+    hits = []
+    for pk, token, at_time in contacts.values_list('pk', 'phone_token', 'occurred_at'):
+        added = joined.get(token)
+        if added and added <= at_time.date():
+            numbers.add(token)
+            hits.append((pk, added))
+    shown = ContactEvent.objects.in_bulk([h[0] for h in hits[:50]])  # full rows only for the flags shown
+    flags = [flag(shown[pk], 'Joined your do-not-call list', 'Your internal list', added) for pk, added in hits[:50]]
     last = UploadedFile.objects.filter(client=client, source=Source.INTERNAL_LIST).first()
     if not contacts.exists():
         checks.insert(0, unmeasured('Called after joining your list', 'M12', f'No contacts {span.words} to check.'))
         return {'id': 'idn', 'checks': checks, 'flags': stop_flags}
-    checks.insert(0, check('fail' if flags else 'pass', 'Called after joining your list', many(len(flags), 'contact') if flags else 'None', 'list', 'M12',
+    checks.insert(0, check('fail' if hits else 'pass', 'Called after joining your list', many(len(hits), 'contact') if hits else 'None', 'list', 'M12',
                            f'{len(numbers):,} numbers were contacted after they joined your list (uploaded {last.received_at:%-d %b}).'))
     return {'id': 'idn', 'checks': checks, 'flags': (flags + stop_flags)[:50]}
 
@@ -221,9 +242,10 @@ def reassigned_area(client, contacts, span: Span | None = None) -> dict:
     elif not n:
         checks.append(unmeasured('Covered by the safe harbor', 'M11', f'No contacts {span.words} to check.'))
     else:
-        asked = sum(1 for c in contacts.only('phone_token', 'occurred_at') if RndQuery.objects.filter(
-            client=client, phone_token=c.phone_token, result='no', queried_on__lte=c.occurred_at.date(),
-            queried_on__gte=c.occurred_at.date() - timedelta(days=31)).exists())
+        # One query for all contacts, not one per contact (owner 2026-11-16: big clients).
+        dated = contacts.annotate(day=TruncDate('occurred_at'), since=ExpressionWrapper(TruncDate('occurred_at') - timedelta(days=31), output_field=DateField()))
+        asked = dated.filter(Exists(RndQuery.objects.filter(client=client, phone_token=OuterRef('phone_token'), result='no',
+                                                            queried_on__lte=OuterRef('day'), queried_on__gte=OuterRef('since')))).count()
         share = round(100 * asked / n)
         checks.append(check('pass' if share >= 99 else 'warn', 'Covered by the safe harbor', f'{share}% of contacts', 'list', 'M11',
                             'Contacts preceded by your own reassigned-number check (answer "no") within the month before.'))
@@ -247,9 +269,9 @@ def services(client) -> list[dict]:
         return f'Uploaded {last.received_at:%-d %b} · {count:,} numbers'
     dnc = DncCheck.objects.filter(client=client)
     return [
-        {'name': 'DNC check records', 'note': note(Source.DNC_CHECKS, 'M13'),
-         'covers': {'national': 'list' if dnc.filter(list_name__iexact='national').exists() else 'none',
-                    'state': 'list' if dnc.exclude(list_name__iexact='national').exists() else 'stated'}},
+        {'name': 'DNC check records', 'note': note(Source.DNC_CHECKS, 'M13'),  # a row with no list name counts as national, like the glance
+         'covers': {'national': 'list' if dnc.filter(NATIONAL).exists() else 'none',
+                    'state': 'list' if dnc.exclude(NATIONAL).exists() else 'none'}},  # never "Checked by you" without a file (owner 2026-11-16)  # never "Checked by you" without a file (owner 2026-11-16)
         {'name': 'Internal do-not-contact list', 'note': note(Source.INTERNAL_LIST, 'M12'),
          'covers': {'internal': 'list' if InternalListEntry.objects.filter(client=client).exists() else 'none'}},
         {'name': 'Reassigned-number query logs', 'note': note(Source.RND_QUERIES, 'M11'),
@@ -261,12 +283,34 @@ def source_id(key: str) -> str:
     return 'ls-' + hashlib.sha256(key.encode()).hexdigest()[:12]  # stable across uploads and batch rebuilds
 
 
-def lead_sources(client) -> list[dict]:
+def marked_by(mark) -> str:
+    """"Dana Reyes (Admin) · 2 Oct 2026": who switched a list on for a lead source, and when."""
+    user = mark.set_by
+    who = 'Someone who has left' if user is None else f"{user.name or user.email} ({'Admin' if user.is_admin else 'Lawyer' if user.is_counsel else 'Member'})"
+    return f'{who} · {mark.set_at:%-d %b %Y}'
+
+
+def _found(facts, tokens: set, keep: bool) -> dict:
+    out = {'found': facts.found(tokens) if facts else None}
+    return {**out, '_tokens': tokens} if keep else out
+
+
+def lead_sources(client, contacts=None, found: bool = True, keep_tokens: bool = False) -> list[dict]:
     """Vendors the CRM names or the client's uploaded vendor lead files name (websites when none is named), and each
     uploaded list (CRM import batches and Upload centre vendor lead files), with the client's own switches.
-    Owner, 2026-10-24: lead files uploaded to CiV are shown and managed like the CRM's vendors and lists."""
+    Owner, 2026-10-24: lead files uploaded to CiV are shown and managed like the CRM's vendors and lists.
+    Owner, 2026-11-16: each row also says what CiV found for its numbers ("found", per list; apps/metrics/per_source.py)."""
     from apps.vendors.models import VendorLead
-    marks = {(m.source_key, m.column): m.checked for m in LeadSourceCheck.objects.filter(client=client)}
+
+    from .per_source import Facts, tokens_by_vendor
+    facts = Facts(client, contacts if contacts is not None else window(client)) if found else None  # a switch save needs no counts
+    by_vendor = tokens_by_vendor(client) if found else {}
+    found_marks = list(LeadSourceCheck.objects.filter(client=client).select_related('set_by'))
+    marks = {(m.source_key, m.column): m.checked for m in found_marks}
+    who_marked = {(m.source_key, m.column): marked_by(m) for m in found_marks if m.checked}
+
+    def by(key):  # who switched each list on, and when (owner 2026-11-16)
+        return {col: who_marked.get((key, col)) for col in COLUMNS}
     rows = []
     vendors: dict[str, list] = {}  # name in lower case → [name as first seen, leads]
     for name, n in list(Counter(CrmCreation.objects.filter(client=client).exclude(vendor='').values_list('vendor', flat=True)).items()) \
@@ -276,23 +320,28 @@ def lead_sources(client) -> list[dict]:
     if not vendors:
         for name, n in Provenance.objects.filter(client=client, basis='cert_domain').values_list('source_name').annotate(n=Count('id')).values_list('source_name', 'n'):
             vendors[name.lower()] = [name, n]
+            if found:
+                by_vendor[name.lower()] = set(Provenance.objects.filter(client=client, basis='cert_domain', source_name=name).values_list('phone_token', flat=True))
     for name, n in sorted(vendors.values(), key=lambda v: -v[1])[:20]:
         key = f'vendor:{name}'
         rows.append({'id': source_id(key), 'key': key, 'group': 'vendor', 'name': name, 'note': many(n, 'lead'),
-                     'checked': {col: marks.get((key, col), False) for col in COLUMNS}})
+                     'checked': {col: marks.get((key, col), False) for col in COLUMNS}, 'markedBy': by(key), 'found': facts and facts.found(by_vendor.get(name.lower())),
+                     **({'_tokens': by_vendor.get(name.lower())} if keep_tokens else {})})
     lists = []
     for batch in ImportBatch.objects.filter(client=client, kind__in=[ImportBatch.Kind.BULK, ImportBatch.Kind.SMALL]).order_by('-starts')[:20]:
         key = f'upload:{batch.system}|{batch.source_system}|{batch.created_by or batch.list_id}|{batch.starts:%Y%m%dT%H%M%S}'
         size = batch.updated_count if batch.system == 'crm_update' else batch.created_count
         lists.append((batch.starts, {'id': source_id(key), 'key': key, 'group': 'upload', 'name': f'Uploaded list · {batch.starts:%-d %b %Y}',
-                                     'note': f'{size:,} numbers', 'checked': {col: marks.get((key, col), False) for col in COLUMNS}}))
+                                     'note': f'{size:,} numbers', 'checked': {col: marks.get((key, col), False) for col in COLUMNS}, 'markedBy': by(key),
+                                     **_found(facts, {t for ts in batch.records.values_list('phone_tokens', flat=True) for t in (ts or [])}, keep_tokens)}))
     for upload in UploadedFile.objects.filter(client=client, source=Source.VENDOR_LEADS).order_by('-received_at')[:20]:
         key = f'upload:file|{upload.pk}'
         numbers = VendorLead.objects.filter(upload=upload).values('phone_token').distinct().count()
         lists.append((upload.received_at, {'id': source_id(key), 'key': key, 'group': 'upload',
                                            'name': f'Vendor lead file · {upload.received_at:%-d %b %Y}',
                                            'note': f'{many(numbers, "number")} · {upload.original_name}'[:120],
-                                           'checked': {col: marks.get((key, col), False) for col in COLUMNS}}))
+                                           'checked': {col: marks.get((key, col), False) for col in COLUMNS}, 'markedBy': by(key),
+                                           **_found(facts, set(VendorLead.objects.filter(upload=upload).values_list('phone_token', flat=True)), keep_tokens)}))
     rows += [row for _, row in sorted(lists, key=lambda t: t[0], reverse=True)[:20]]
     return rows
 
@@ -307,4 +356,4 @@ def who_contact(client, period: str | None = None) -> dict:
     areas = [dnc_area(client, contacts, span), internal_area(client, contacts, span), reassigned_area(client, contacts, span),
              litigation_area(client, contacts)]
     return {'areas': [{'flags': [], **a, 'title': AREAS[a['id']][0], 'law': AREAS[a['id']][1]} for a in areas],
-            'services': services(client), 'leadSources': lead_sources(client)}
+            'glance': glance(client, contacts, span.words), 'services': services(client), 'leadSources': lead_sources(client, contacts)}

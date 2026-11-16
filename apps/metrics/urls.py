@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .api import ConductView, MetricsView, WhoContactView
+from .api import ConductView, MetricsView, WhoContactView, WhoNumbersView
 
 urlpatterns = [path('metrics', MetricsView.as_view()), path('conduct', ConductView.as_view()),
-               path('who-contact', WhoContactView.as_view()), path('who-contact/<str:ref>', WhoContactView.as_view())]
+               path('who-contact', WhoContactView.as_view()), path('who-contact/numbers', WhoNumbersView.as_view()), path('who-contact/<str:ref>', WhoContactView.as_view())]

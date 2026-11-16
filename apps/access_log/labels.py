@@ -28,7 +28,7 @@ ACTION_LABEL = {
     'law_change_suggested': ('Law change suggested', 'teal'),
     'rule_update_approved': ('Rule updated', 'green'), 'rule_update_rejected': ('Rule update rejected', 'gray'),
     'proof_request_answered': ('Proof request answered', 'teal'), 'proof_file_opened': ('Proof file opened', 'gray'),
-    'proof_reviewed': ('Proof checked', 'teal'), 'upload_received': ('File uploaded', 'teal'), 'lead_source_marked': ('Lead source check marked', 'gray'),
+    'proof_reviewed': ('Proof checked', 'teal'), 'upload_received': ('File uploaded', 'teal'), 'lead_source_marked': ('Lead source check marked', 'gray'), 'who_numbers_viewed': ('Phone numbers viewed (Who You Contact)', 'gray'),
     'buyer_invite_resend': ('Insurer invite resent', 'teal'), 'buyer_invite_cancel': ('Insurer invite cancelled', 'gray'),
     'buyer_deleted': ('Insurer deleted by CiV (records kept)', 'red'), 'buyer_restored': ('Insurer restored by CiV', 'green'), 'buyer_user_deleted': ('Insurer person deleted by CiV', 'amber'),
     'attestation_viewed': ('Insurer opened your sheet', 'teal'), 'attestation_sent': ('Sheet sent to insurer software', 'teal'),

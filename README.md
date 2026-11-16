@@ -1742,3 +1742,17 @@ Test: `tests/admin_panel/test_no_chart_library.py`.
 
 `civ.js` adds an eye button inside every password box in the staff panel (sign-in, welcome, Change my password and any
 later one) that shows or hides what was typed; it starts hidden. Styles in `civ.css`. Test: `tests/admin_panel/test_password_eye.py`.
+
+## Who You Contact: what CiV found, per list, vendor and file (2026-11-16)
+
+- `apps/metrics/glance.py`: "Each list at a glance", one answer per list for the month from a few database counts
+  (a check counts in the 31 days before the contact). No file = "Can't tell"; a DNC file with national rows only = State
+  "Not checked". The false "Checked by you" for State DNC with no file is gone.
+- `apps/metrics/per_source.py`: `Facts` reads each kind of file once for the numbers contacted in the month; every vendor
+  (CRM leads and vendor lead files, matched by name) and every uploaded list gets `found` per list. `numbers()` +
+  `GET /api/who-contact/numbers?source=all|<id>&column=…` returns the masked numbers behind a count (first 100 and the
+  total); each look is written to the access log (`who_numbers_viewed`).
+- Switches send `markedBy` ("Dana Reyes (Admin) · 2 Oct 2026") from the saved `set_by` / `set_at`.
+- Speed: the DNC, internal-list and reassigned checks no longer look up each contact one by one; 300,000 contacts in a
+  month take about 6 s for the whole page (was minutes). Tests: `tests/metrics/test_glance.py`, `test_per_source.py`,
+  `test_who_numbers.py`.
