@@ -1,6 +1,7 @@
 """Module 10 step 3: metrics CiV already measures on other pages, counted for one month so they can be saved and
 scored: M12 internal list, M34 opted-out numbers re-added, M11 reassigned checks, and the Module 9 checks M41, M42,
-M45, M48. A source the client never supplied gives the worst case (spec §7); a check CiV cannot run yet gives
+M45, M48. A source the client never supplied gives the worst case (spec §7), except during the client's first 30 days
+(owner, 2026-11-16: option B3), when it is "not measured" while they set up; a check CiV cannot run yet gives
 "not measured"."""
 from datetime import timedelta
 from statistics import median
@@ -19,9 +20,25 @@ def not_measured(code, why):
     return metric(code, None, 'Not measured', not_measured=why)
 
 
+GRACE_DAYS = 30
+
+
+def setting_up(client) -> bool:
+    """The client's first 30 days: a missing upload is not counted against them yet."""
+    from django.utils import timezone
+    return timezone.localdate() < client.start_date + timedelta(days=GRACE_DAYS)
+
+
+def missing(client, code, what):
+    if setting_up(client):
+        until = client.start_date + timedelta(days=GRACE_DAYS)
+        return not_measured(code, f'{what} not uploaded yet. Counted as the worst case from {until:%-d %b %Y} if still missing.')
+    return metric(code, None, 'Worst case', f'worst case — {what.lower()} not supplied', worst=True)
+
+
 def internal_list(client, contacts) -> dict:
     if not InternalListEntry.objects.filter(client=client).exists():
-        return metric('M12', None, 'Worst case', 'worst case — internal list not supplied', worst=True)
+        return missing(client, 'M12', 'Internal do-not-call list')
     n = sum(1 for c in contacts.only('phone_token', 'occurred_at') if InternalListEntry.objects.filter(
         client=client, phone_token=c.phone_token, added_on__lte=c.occurred_at.date()).exists())
     return metric('M12', n, f'{n:,}', 'Contacts after the number joined your internal list')
@@ -34,7 +51,7 @@ def readded(client, start, end) -> dict:
 
 def reassigned_checks(client, contacts) -> dict:
     if not RndQuery.objects.filter(client=client).exists():
-        return metric('M11', None, 'Worst case', 'worst case — reassigned-number query logs not supplied ("not checked")', worst=True)
+        return missing(client, 'M11', 'Reassigned-number query logs')
     total = contacts.count()
     if not total:
         return not_measured('M11', 'No contacts in the month')

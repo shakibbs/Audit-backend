@@ -1723,3 +1723,11 @@ The clock-change note is also in each number's evidence file (`timeNote` in the 
 2026-11-07.
 The own-name password rule now applies to client and insurer people too (2026-11-07): a new portal password may not
 contain the person's email name or name. Existing passwords keep working.
+
+## A missing list counts only after the first 30 days (2026-11-16)
+
+A client's internal do-not-call list (M12) or reassigned-number query logs (M11) that were never uploaded count as the
+worst case only from 30 days after the client's start date (`apps/scoring/extra.py: setting_up, missing`, owner option
+B3). Before that they are "not measured", with the note "… not uploaded yet. Counted as the worst case from <date> if
+still missing." So a new client is not shown a grade-F factor while still setting up. Test:
+`tests/scoring/test_setting_up_grace.py`.
